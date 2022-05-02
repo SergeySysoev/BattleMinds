@@ -2,6 +2,7 @@
 
 
 #include "BM_TileBase.h"
+#include "GameFramework/Actor.h"
 
 DEFINE_LOG_CATEGORY(LogBM_Tile);
 
@@ -76,6 +77,8 @@ void ABM_TileBase::TileWasChosen(FKey ButtonPressed, AActor* TouchedActor, ABM_P
 void ABM_TileBase::BeginPlay()
 {
 	Super::BeginPlay();
+	this->OnBeginCursorOver.AddDynamic(this, &ABM_TileBase::Highlight);
+	this->OnEndCursorOver.AddDynamic(this, &ABM_TileBase::Unhighlight);
 }
 
 void ABM_TileBase::Tick(float DeltaTime)
