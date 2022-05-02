@@ -6,5 +6,7 @@ DEFINE_LOG_CATEGORY(LogBM_PlayerController);
 
 ABM_PlayerControllerBase::ABM_PlayerControllerBase()
 {
-
+	bShowMouseCursor = true;
+	bEnableClickEvents = true;
+	bEnableMouseOverEvents = true;
 }

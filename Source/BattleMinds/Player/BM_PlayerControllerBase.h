@@ -18,4 +18,5 @@ public:
 protected:
 	UPROPERTY(BLueprintReadOnly, Category = "Player Info")
 	FString Nickname;
+
 };
