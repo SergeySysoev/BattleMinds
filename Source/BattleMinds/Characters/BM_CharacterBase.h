@@ -5,24 +5,21 @@
 #include "GameFramework/Character.h"
 #include "BM_CharacterBase.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogBM_Character, Display, All);
+
 UCLASS()
 class BATTLEMINDS_API ABM_CharacterBase : public ACharacter
 {
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
 	ABM_CharacterBase();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
-	// Called every frame
+public:
 	virtual void Tick(float DeltaTime) override;
 
-	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
 };

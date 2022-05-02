@@ -2,3 +2,9 @@
 
 #include "BM_PlayerControllerBase.h"
 
+DEFINE_LOG_CATEGORY(LogBM_PlayerController);
+
+ABM_PlayerControllerBase::ABM_PlayerControllerBase()
+{
+
+}
