@@ -29,6 +29,10 @@
 				"Mac",
 				"Linux"
 			]
+		},
+		{
+			"Name": "CommonUI",
+			"Enabled": true
 		}
 	],
 	"TargetPlatforms": [
