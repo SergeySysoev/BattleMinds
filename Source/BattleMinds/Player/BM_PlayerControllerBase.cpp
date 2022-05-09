@@ -1,6 +1,8 @@
 // Battle Minds, 2021. All rights reserved.
 
 #include "BM_PlayerControllerBase.h"
+#include "BattleMinds/Tiles/BM_TileBase.h"
+#include "BattleMinds/Player/BM_PlayerState.h"
 
 DEFINE_LOG_CATEGORY(LogBM_PlayerController);
 
@@ -9,4 +11,25 @@ ABM_PlayerControllerBase::ABM_PlayerControllerBase()
 	bShowMouseCursor = true;
 	bEnableClickEvents = true;
 	bEnableMouseOverEvents = true;
+}
+
+void ABM_PlayerControllerBase::SC_TryClickTheTile_Implementation(ABM_TileBase* TargetTile)
+{
+	MC_TryClickTheTile_Implementation(TargetTile);
+}
+
+bool ABM_PlayerControllerBase::SC_TryClickTheTile_Validate(ABM_TileBase* TargetTile)
+{
+	return true;
+}
+
+void ABM_PlayerControllerBase::MC_TryClickTheTile_Implementation(ABM_TileBase* TargetTile)
+{
+	ABM_PlayerState* BM_PlayerState = Cast<ABM_PlayerState>(this->PlayerState);
+	TargetTile->TileWasClicked_Implementation(EKeys::LeftMouseButton, BM_PlayerState->Nickname, BM_PlayerState->Material);
+}
+
+bool ABM_PlayerControllerBase::MC_TryClickTheTile_Validate(ABM_TileBase* TargetTile)
+{
+	return true;
 }

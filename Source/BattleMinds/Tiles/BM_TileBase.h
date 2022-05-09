@@ -12,14 +12,15 @@ DECLARE_LOG_CATEGORY_EXTERN(LogBM_Tile, Display, All);
 
 class UStaticMeshComponent;
 class ABM_PlayerControllerBase;
+class ABM_PlayerState;
 
 UENUM(BlueprintType)
 enum class ETileStatus : uint8
 {
-	NotOwned		UMETA(DisplayName = "Not Owned"),
-	Controlled		UMETA(DisplayName = "Controlled"),
-	Castle			UMETA(DisplayName = "Castle"),
-	Fortified		UMETA(DisplayName = "Fortified"),
+	NotOwned UMETA(DisplayName = "Not Owned"),
+	Controlled UMETA(DisplayName = "Controlled"),
+	Castle UMETA(DisplayName = "Castle"),
+	Fortified UMETA(DisplayName = "Fortified"),
 };
 
 UCLASS()
@@ -31,46 +32,45 @@ public:
 	ABM_TileBase();
 
 	UFUNCTION(NetMulticast, reliable, WithValidation, BlueprintCallable)
-		void ChangeStatus(ETileStatus NewStatus);
+	void ChangeStatus(ETileStatus NewStatus);
 
 	UFUNCTION(BlueprintCallable)
-		void Highlight(AActor* TouchedActor);
+	void Highlight(AActor* TouchedActor);
 
 	UFUNCTION(BlueprintCallable)
-		void Unhighlight(AActor* TouchedActor);
+	void Unhighlight(AActor* TouchedActor);
 
-	UFUNCTION(BlueprintCallable)
-		void TileWasChosen(FKey ButtonPressed, AActor* TouchedActor, ABM_PlayerControllerBase* Player);
+	UFUNCTION(NetMulticast, reliable, WithValidation, BlueprintCallable)
+	void TileWasChosen(const FString& PlayerNick, UMaterialInterface* PlayerMaterial);
+
+	UFUNCTION(NetMulticast, reliable, WithValidation, BlueprintCallable)
+	void TileWasClicked(FKey ButtonPressed, const FString& PlayerNick, UMaterialInterface* PlayerMaterial);
 
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-		UStaticMeshComponent* StaticMesh;
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Components")
+	UStaticMeshComponent* StaticMesh;
 
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Points")
-		float Points = 200.0f;
+	float Points = 200.0f;
 
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Territory")
-		ETileStatus Status;
+	ETileStatus Status;
 
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Territory")
-		bool bIsArtillery;
+	bool bIsArtillery;
 
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Visuals")
-		UMaterial* Material;
+	UMaterialInterface* Material;
 
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Visuals")
-		UMaterial* OriginalMaterial;
+	UMaterialInterface* OriginalMaterial;
 
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Player")
-		ABM_PlayerControllerBase* LastClickedPlayer;
-
-	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Player")
-		ABM_PlayerControllerBase* OwnerPlayer;
+	FString OwnerPlayerNick;
 
 	virtual void BeginPlay() override;
 
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
 };
