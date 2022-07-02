@@ -15,7 +15,12 @@ ABM_PlayerControllerBase::ABM_PlayerControllerBase()
 
 void ABM_PlayerControllerBase::SC_TryClickTheTile_Implementation(ABM_TileBase* TargetTile)
 {
-	MC_TryClickTheTile_Implementation(TargetTile);
+	ABM_PlayerState* BM_PlayerState = Cast<ABM_PlayerState>(this->PlayerState);
+	if (TargetTile->GetOwningPlayerNickname() == BM_PlayerState->Nickname || TargetTile->GetStatus() == ETileStatus::NotOwned)
+		TargetTile->TileWasClicked(EKeys::LeftMouseButton, BM_PlayerState->Nickname, BM_PlayerState->Material);
+	else
+		UE_LOG(LogBM_PlayerController, Warning, TEXT("You have clicked a tile that is already owned"));
+	//MC_TryClickTheTile_Implementation(TargetTile);
 }
 
 bool ABM_PlayerControllerBase::SC_TryClickTheTile_Validate(ABM_TileBase* TargetTile)

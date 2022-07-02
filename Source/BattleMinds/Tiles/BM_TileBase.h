@@ -19,8 +19,7 @@ enum class ETileStatus : uint8
 {
 	NotOwned UMETA(DisplayName = "Not Owned"),
 	Controlled UMETA(DisplayName = "Controlled"),
-	Castle UMETA(DisplayName = "Castle"),
-	Fortified UMETA(DisplayName = "Fortified"),
+	Castle UMETA(DisplayName = "Castle")
 };
 
 UCLASS()
@@ -31,7 +30,7 @@ class BATTLEMINDS_API ABM_TileBase : public AActor
 public:
 	ABM_TileBase();
 
-	UFUNCTION(NetMulticast, reliable, WithValidation, BlueprintCallable)
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void ChangeStatus(ETileStatus NewStatus);
 
 	UFUNCTION(BlueprintCallable)
@@ -39,34 +38,49 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void Unhighlight(AActor* TouchedActor);
+	
+	UFUNCTION()
+	void OnRep_TileChanged();
 
-	UFUNCTION(NetMulticast, reliable, WithValidation, BlueprintCallable)
+	UFUNCTION(Server, reliable, WithValidation, BlueprintCallable)
 	void TileWasChosen(const FString& PlayerNick, UMaterialInterface* PlayerMaterial);
 
-	UFUNCTION(NetMulticast, reliable, WithValidation, BlueprintCallable)
+	UFUNCTION(Server, reliable, WithValidation, BlueprintCallable)
 	void TileWasClicked(FKey ButtonPressed, const FString& PlayerNick, UMaterialInterface* PlayerMaterial);
+
+	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
+	void UnbindHighlightEvents();
+	
+	UFUNCTION(BlueprintCallable)
+	FString GetOwningPlayerNickname(){ return OwnerPlayerNickname; };
+	
+	UFUNCTION(BlueprintCallable)
+	ETileStatus GetStatus() { return Status; };
 
 protected:
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Components")
 	UStaticMeshComponent* StaticMesh;
 
-	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Points")
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_TileChanged, BlueprintReadWrite, Category = "Points")
 	float Points = 200.0f;
 
-	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Territory")
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_TileChanged, BlueprintReadWrite, Category = "Territory")
 	ETileStatus Status;
 
-	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Territory")
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_TileChanged, BlueprintReadWrite, Category = "Territory")
 	bool bIsArtillery;
 
-	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Visuals")
-	UMaterialInterface* Material;
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_TileChanged, BlueprintReadWrite, Category = "Territory")
+	bool bIsFortified;
 
-	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Visuals")
-	UMaterialInterface* OriginalMaterial;
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_TileChanged, BlueprintReadWrite, Category = "Visuals")
+	TObjectPtr<UMaterialInterface> Material;
 
-	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Player")
-	FString OwnerPlayerNick;
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_TileChanged, BlueprintReadWrite, Category = "Visuals")
+	TObjectPtr<UMaterialInterface> OriginalMaterial;
+
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_TileChanged, BlueprintReadWrite, Category = "Player")
+	FString OwnerPlayerNickname;
 
 	virtual void BeginPlay() override;
 

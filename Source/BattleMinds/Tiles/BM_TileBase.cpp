@@ -13,12 +13,14 @@ ABM_TileBase::ABM_TileBase()
 	PrimaryActorTick.bCanEverTick = true;
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Tile Mesh"));
 	StaticMesh->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+	StaticMesh->SetIsReplicated(true);
+
 }
 
 void ABM_TileBase::ChangeStatus_Implementation(ETileStatus NewStatus)
 {
 	Status = NewStatus;
-	UE_LOG(LogBM_Tile, Warning, TEXT("New owner: %s"), *OwnerPlayerNick);
+	UE_LOG(LogBM_Tile, Warning, TEXT("New owner: %s"), *OwnerPlayerNickname);
 }
 
 bool ABM_TileBase::ChangeStatus_Validate(ETileStatus NewStatus)
@@ -44,6 +46,12 @@ void ABM_TileBase::Unhighlight(AActor* TouchedActor)
 	StaticMesh->SetMaterial(0, OriginalMaterial);
 }
 
+void ABM_TileBase::OnRep_TileChanged()
+{
+	StaticMesh->SetMaterial(0, Material);
+	UnbindHighlightEvents();
+}
+
 void ABM_TileBase::TileWasChosen_Implementation(const FString& PlayerNick, UMaterialInterface* PlayerMaterial)
 {
 	switch (Status)
@@ -51,26 +59,23 @@ void ABM_TileBase::TileWasChosen_Implementation(const FString& PlayerNick, UMate
 	case ETileStatus::NotOwned:
 		if (!PlayerNick.IsEmpty()) // && Player.HasCastle())
 		{
-			OwnerPlayerNick = PlayerNick;
-			ChangeStatus_Implementation(ETileStatus::Controlled);
+			OwnerPlayerNickname = PlayerNick;
+			ChangeStatus(ETileStatus::Controlled);
 			Material = PlayerMaterial;
+			UE_LOG(LogBM_Tile, Display, TEXT("Current Material %s"), *StaticMesh->GetMaterial(0)->GetName());
 			StaticMesh->SetMaterial(0, Material);
-			UE_LOG(LogBM_Tile, Display, TEXT("Current Material %s"), *Material->GetName());
-			this->OnBeginCursorOver.RemoveDynamic(this, &ABM_TileBase::Highlight);
-			this->OnEndCursorOver.RemoveDynamic(this, &ABM_TileBase::Unhighlight);
+			UnbindHighlightEvents();
+			//OnRep_TileChanged();
 		}
-		//if(Player != nullptr // && !Player.HasCastle())
-		//{
-		//	LastClickedPlayer = Player;
-		//	ChangeStatus_Implementation(ETileStatus::Castle);
-		//}
 		break;
 	case ETileStatus::Controlled:
-		Status = ETileStatus::Fortified;
-		this->OnBeginCursorOver.Clear();
+		if (!bIsFortified)
+		{
+			bIsFortified = true;
+			UE_LOG(LogBM_Tile, Display, TEXT("Tile was fortified"));
+			this->OnBeginCursorOver.Clear();
+		}
 	case ETileStatus::Castle:
-		break;
-	case ETileStatus::Fortified:
 		break;
 	default:
 		break;
@@ -84,22 +89,23 @@ bool ABM_TileBase::TileWasChosen_Validate(const FString& PlayerNick, UMaterialIn
 
 void ABM_TileBase::TileWasClicked_Implementation(FKey ButtonPressed, const FString& PlayerNick, UMaterialInterface* PlayerMaterial)
 {
-	TileWasChosen_Implementation(PlayerNick, PlayerMaterial);
+	TileWasChosen(PlayerNick, PlayerMaterial);
 }
 
 bool ABM_TileBase::TileWasClicked_Validate(FKey ButtonPressed, const FString& PlayerNick, UMaterialInterface* PlayerMaterial)
 {
-	if (ButtonPressed == EKeys::LeftMouseButton)
-	{
-		return true;
-	}
-	return false;
+	return true;
+}
+
+void ABM_TileBase::UnbindHighlightEvents_Implementation()
+{
+	this->OnBeginCursorOver.RemoveDynamic(this, &ABM_TileBase::Highlight);
+	this->OnEndCursorOver.RemoveDynamic(this, &ABM_TileBase::Unhighlight);
 }
 
 void ABM_TileBase::BeginPlay()
 {
 	Super::BeginPlay();
-	bReplicates = true;
 	this->OnBeginCursorOver.AddDynamic(this, &ABM_TileBase::Highlight);
 	this->OnEndCursorOver.AddDynamic(this, &ABM_TileBase::Unhighlight);
 }
@@ -117,6 +123,7 @@ void ABM_TileBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME(ABM_TileBase, bIsArtillery);
 	DOREPLIFETIME(ABM_TileBase, Material);
 	DOREPLIFETIME(ABM_TileBase, OriginalMaterial);
-	DOREPLIFETIME(ABM_TileBase, OwnerPlayerNick);
+	DOREPLIFETIME(ABM_TileBase, OwnerPlayerNickname);
 	DOREPLIFETIME(ABM_TileBase, StaticMesh);
+	DOREPLIFETIME(ABM_TileBase, bIsFortified);
 }
