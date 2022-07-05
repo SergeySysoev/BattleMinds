@@ -1,4 +1,4 @@
-// Battle Minds, 2021. All rights reserved.
+// Battle Minds, 2022. All rights reserved.
 
 #pragma once
 

@@ -1,4 +1,4 @@
-// Battle Minds, 2021. All rights reserved.
+// Battle Minds, 2022. All rights reserved.
 
 
 #include "BM_TileBase.h"
@@ -62,7 +62,8 @@ void ABM_TileBase::TileWasChosen_Implementation(const FString& PlayerNick, UMate
 			OwnerPlayerNickname = PlayerNick;
 			ChangeStatus(ETileStatus::Controlled);
 			Material = PlayerMaterial;
-			UE_LOG(LogBM_Tile, Display, TEXT("Current Material %s"), *StaticMesh->GetMaterial(0)->GetName());
+			if (StaticMesh->GetMaterial(0))
+				UE_LOG(LogBM_Tile, Display, TEXT("Current Material %s"), *StaticMesh->GetMaterial(0)->GetName());
 			StaticMesh->SetMaterial(0, Material);
 			UnbindHighlightEvents();
 			//OnRep_TileChanged();
