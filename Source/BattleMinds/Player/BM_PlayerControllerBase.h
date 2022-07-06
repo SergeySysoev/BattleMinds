@@ -18,11 +18,14 @@ class BATTLEMINDS_API ABM_PlayerControllerBase : public APlayerController
 	
 public:
 	ABM_PlayerControllerBase();
-
+	UFUNCTION(BlueprintImplementableEvent)
+	void OpenQuestion();
+	/*UFUNCTION(Server, Reliable, BlueprintCallable, BlueprintImplementableEvent)
+	void SC_RequestToOpenQuestion();
+	UFUNCTION(Client, Reliable, BlueprintCallable,BlueprintImplementableEvent)
+	void CC_OpenQuestionWidget();*/
 protected:
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void SC_TryClickTheTile(ABM_TileBase* TargetTile);
-	
-	UFUNCTION(NetMulticast, Reliable, WithValidation, BlueprintCallable)
-	void MC_TryClickTheTile(ABM_TileBase* TargetTile);
+
 };

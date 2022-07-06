@@ -27,14 +27,3 @@ bool ABM_PlayerControllerBase::SC_TryClickTheTile_Validate(ABM_TileBase* TargetT
 {
 	return true;
 }
-
-void ABM_PlayerControllerBase::MC_TryClickTheTile_Implementation(ABM_TileBase* TargetTile)
-{
-	ABM_PlayerState* BM_PlayerState = Cast<ABM_PlayerState>(this->PlayerState);
-	TargetTile->TileWasClicked_Implementation(EKeys::LeftMouseButton, BM_PlayerState->Nickname, BM_PlayerState->Material);
-}
-
-bool ABM_PlayerControllerBase::MC_TryClickTheTile_Validate(ABM_TileBase* TargetTile)
-{
-	return true;
-}

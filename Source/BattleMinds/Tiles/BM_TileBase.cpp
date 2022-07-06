@@ -4,6 +4,7 @@
 #include "BM_TileBase.h"
 #include "BattleMinds/Player/BM_PlayerState.h"
 #include "GameFramework/Actor.h"
+#include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY(LogBM_Tile);
 
@@ -91,6 +92,11 @@ bool ABM_TileBase::TileWasChosen_Validate(const FString& PlayerNick, UMaterialIn
 void ABM_TileBase::TileWasClicked_Implementation(FKey ButtonPressed, const FString& PlayerNick, UMaterialInterface* PlayerMaterial)
 {
 	TileWasChosen(PlayerNick, PlayerMaterial);
+	if(true)
+	{
+		const auto PlayerController = Cast<ABM_PlayerControllerBase>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+		PlayerController->OpenQuestion();
+	}
 }
 
 bool ABM_TileBase::TileWasClicked_Validate(FKey ButtonPressed, const FString& PlayerNick, UMaterialInterface* PlayerMaterial)
