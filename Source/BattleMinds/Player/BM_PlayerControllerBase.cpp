@@ -36,6 +36,7 @@ void ABM_PlayerControllerBase::SC_RequestToOpenQuestion_Implementation()
 	if (ABM_GameModeBase* GameMode = Cast<ABM_GameModeBase>(GetWorld()->GetAuthGameMode()))
 	{
 		GameMode->OpenQuestion();
+		GameMode->PlayerTurnHandle.Invalidate();
 	}
 }
 

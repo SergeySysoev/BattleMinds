@@ -31,17 +31,24 @@ public:
 	TMap<int32, UMaterialInterface*> CastleMaterialMap;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Players settings")
 	TMap<int32, FString> NicknameMap;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Players settings")
+	int32 CurrentPlayerID = 0;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Game settings")
+	FTimerHandle PlayerTurnHandle;
 	UFUNCTION(BlueprintCallable)
 	void InitPlayer(APlayerController* NewPlayer);
-
 	UFUNCTION(BlueprintCallable)
 	void OpenQuestion();
-
 	UFUNCTION(BlueprintCallable)
 	void StartQuestionTimer();
-
 	UFUNCTION(BlueprintCallable)
 	void GatherPlayersAnswers();
+	UFUNCTION(BlueprintCallable)
+	void StartPlayerTurnTimer(int32 PlayerID);
+	UFUNCTION(BlueprintCallable)
+	void ChooseFirstAvailableTile();
+	UFUNCTION(NetMulticast, Reliable)
+	void NM_StartTurnTimer();
 protected:
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 

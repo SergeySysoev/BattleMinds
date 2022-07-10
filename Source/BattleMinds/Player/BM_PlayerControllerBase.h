@@ -11,6 +11,7 @@ class ABM_TileBase;
 class ABM_PlayerState;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogBM_PlayerController, Display, All);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSetTimerDelegate);
 
 UCLASS()
 class BATTLEMINDS_API ABM_PlayerControllerBase : public APlayerController
@@ -31,6 +32,8 @@ public:
 	UBM_UWQuestion* QuestionWidget;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "User Widgets")
 	TSubclassOf<UBM_UWQuestion> QuestionWidgetClass;
+	UPROPERTY(VisibleAnywhere, BlueprintAssignable, Category= "User Widgets")
+	FSetTimerDelegate OnTurnUpdate;
 protected:
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void SC_TryClickTheTile(ABM_TileBase* TargetTile);
