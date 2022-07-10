@@ -6,6 +6,7 @@
 #include "Net/UnrealNetwork.h"
 #include "BM_PlayerControllerBase.generated.h"
 
+class UBM_UWQuestion;
 class ABM_TileBase;
 class ABM_PlayerState;
 
@@ -20,10 +21,16 @@ public:
 	ABM_PlayerControllerBase();
 	UFUNCTION(BlueprintImplementableEvent)
 	void OpenQuestion();
-	/*UFUNCTION(Server, Reliable, BlueprintCallable, BlueprintImplementableEvent)
+	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_RequestToOpenQuestion();
-	UFUNCTION(Client, Reliable, BlueprintCallable,BlueprintImplementableEvent)
-	void CC_OpenQuestionWidget();*/
+	UFUNCTION(Client, Reliable, BlueprintCallable)
+	void CC_OpenQuestionWidget(FName QuestionRowName);
+	UFUNCTION(Client, Reliable, BlueprintCallable)
+	void CC_RemoveQuestionWidget();
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "User Widgets")
+	UBM_UWQuestion* QuestionWidget;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "User Widgets")
+	TSubclassOf<UBM_UWQuestion> QuestionWidgetClass;
 protected:
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void SC_TryClickTheTile(ABM_TileBase* TargetTile);

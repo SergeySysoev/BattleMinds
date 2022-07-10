@@ -53,6 +53,15 @@ struct FQuestion : public FTableRowBase
 	bool bWasAnswered;
 };
 
+UENUM(BlueprintType)
+enum class EGameRound : uint8
+{
+	ChooseCastle,
+	SetTerritory,
+	FightForTerritory,
+	End
+};
+
 UCLASS()
 class BATTLEMINDS_API UBM_Types : public UBlueprintFunctionLibrary
 {

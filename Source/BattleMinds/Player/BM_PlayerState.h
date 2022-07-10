@@ -20,7 +20,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
 	FString Nickname;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
-	UMaterialInterface* Material;
+	UMaterialInterface* MaterialTile;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
+	UMaterialInterface* MaterialCastle;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetPoints();

@@ -36,7 +36,7 @@ void ABM_TileBase::Highlight(AActor* TouchedActor)
 		ABM_PlayerState* PlayerState = Cast<ABM_PlayerState>(GetWorld()->GetFirstPlayerController()->PlayerState);
 		if (PlayerState)
 		{
-			StaticMesh->SetMaterial(0, PlayerState->Material);
+			StaticMesh->SetMaterial(0, PlayerState->MaterialTile);
 		}
 		
 	}
