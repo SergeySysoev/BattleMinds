@@ -57,10 +57,11 @@ void ABM_GameModeBase::GatherPlayersAnswers()
 
 void ABM_GameModeBase::StartPlayerTurnTimer(int32 PlayerID)
 {
-	GetWorld()->GetTimerManager().SetTimer(PlayerTurnHandle, this, &ABM_GameModeBase::ChooseFirstAvailableTile, TurnTimer, false);
+	CurrentTurnTimer = TurnTimer;
+	GetWorld()->GetTimerManager().SetTimer(PlayerTurnHandle, this, &ABM_GameModeBase::UpdatePlayerTurnTimers, 1.0, true, 1.0f);
 }
 
-void ABM_GameModeBase::ChooseFirstAvailableTile()
+void ABM_GameModeBase::ChooseFirstAvailableTileForPlayer(int32 PlayerID)
 {
 	TSubclassOf<ABM_TileBase> TileClass = ABM_TileBase::StaticClass();
 	TArray<AActor*> Tiles;
@@ -68,23 +69,43 @@ void ABM_GameModeBase::ChooseFirstAvailableTile()
 	for (auto Tile: Tiles)
 	{
 		auto FoundTile = Cast<ABM_TileBase>(Tile);
+		//TODO additional check if this tile is 1-tile close to the current one
+		// TArray<ABM_Tiles> NearestTiles = FoundTile->GetNearestTiles();
+		// for (Tile : NearestTiles)
+		//{ the code below}
 		if (FoundTile->GetStatus() == ETileStatus::NotOwned)
 		{
-			OpenQuestion();
+			if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[PlayerID]->GetPlayerController()))
+			{
+				PlayerController->SC_TryClickTheTile(FoundTile, Round);
+			}
 			break;
 		}
 	}
 }
 
-void ABM_GameModeBase::NM_StartTurnTimer_Implementation()
+void ABM_GameModeBase::UpdatePlayerTurnTimers()
 {
 	for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
 	{
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 		{
-			PlayerController->OnTurnUpdate.Broadcast();
+			PlayerController->UpdateTurnTimer();
 		}
-	} 
+	}
+	CurrentTurnTimer--;
+	if(CurrentTurnTimer == 0)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(PlayerTurnHandle);
+		ChooseFirstAvailableTileForPlayer(CurrentPlayerID);
+		for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
+		{
+			if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
+			{
+				PlayerController->ResetTurnTimer();
+			}
+		}
+	}
 }
 
 void ABM_GameModeBase::PostLogin(APlayerController* NewPlayer)
@@ -92,9 +113,4 @@ void ABM_GameModeBase::PostLogin(APlayerController* NewPlayer)
 	Super::PostLogin(NewPlayer);
 	NumberOfActivePlayers++;
 	InitPlayer(NewPlayer);
-	if (NumberOfActivePlayers == Cast<UBM_GameInstance>(GetWorld()->GetGameInstance())->NumberOfPlayers)
-	{
-		NM_StartTurnTimer();
-		StartPlayerTurnTimer(CurrentPlayerID);
-	}
 }

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Player/BM_PlayerControllerBase.h"
+#include "TimerManager.h"
 #include "BM_UWTurnTimer.generated.h"
 
 /**

@@ -46,9 +46,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void StartPlayerTurnTimer(int32 PlayerID);
 	UFUNCTION(BlueprintCallable)
-	void ChooseFirstAvailableTile();
-	UFUNCTION(NetMulticast, Reliable)
-	void NM_StartTurnTimer();
+	void ChooseFirstAvailableTileForPlayer(int32 PlayerID);
+	UFUNCTION(BlueprintCallable)
+	void UpdatePlayerTurnTimers();
 protected:
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 
@@ -58,4 +58,5 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Questions")
 	TArray<UDataTable*> QuestionTables;
 	
+	float CurrentTurnTimer;
 };

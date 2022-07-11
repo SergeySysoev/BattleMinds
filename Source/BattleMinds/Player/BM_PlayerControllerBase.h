@@ -2,6 +2,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Core/BM_Types.h"
 #include "GameFramework/PlayerController.h"
 #include "Net/UnrealNetwork.h"
 #include "BM_PlayerControllerBase.generated.h"
@@ -28,14 +29,15 @@ public:
 	void CC_OpenQuestionWidget(FName QuestionRowName);
 	UFUNCTION(Client, Reliable, BlueprintCallable)
 	void CC_RemoveQuestionWidget();
+	UFUNCTION(BlueprintImplementableEvent)
+	void UpdateTurnTimer();
+	UFUNCTION(BlueprintImplementableEvent)
+	void ResetTurnTimer();
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "User Widgets")
 	UBM_UWQuestion* QuestionWidget;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "User Widgets")
 	TSubclassOf<UBM_UWQuestion> QuestionWidgetClass;
-	UPROPERTY(VisibleAnywhere, BlueprintAssignable, Category= "User Widgets")
-	FSetTimerDelegate OnTurnUpdate;
-protected:
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
-	void SC_TryClickTheTile(ABM_TileBase* TargetTile);
+	void SC_TryClickTheTile(ABM_TileBase* TargetTile, EGameRound GameRound);
 
 };

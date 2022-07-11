@@ -5,14 +5,13 @@
 
 void UBM_UWTurnTimer::StartTimer()
 {
-	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &UBM_UWTurnTimer::ResetTimer, 1.0, true);
+	TimerCurrent = 0.0;
+	UpdateTimer();
 }
 void UBM_UWTurnTimer::ResetTimer()
 {
 	TimerMaterialDynamic->SetScalarParameterValue(FName(TEXT("Percent")), 0.0);
-	if (TimerHandle.IsValid())
-		TimerHandle.Invalidate();
-	StartTimer();
+	TimerCurrent = 0.0;
 }
 void UBM_UWTurnTimer::UpdateTimer()
 {

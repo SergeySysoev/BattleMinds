@@ -62,6 +62,15 @@ enum class EGameRound : uint8
 	End
 };
 
+UENUM(BlueprintType)
+enum class EClassicRound : uint8
+{
+	ChooseCastle,
+	SetTerritory,
+	FightForTerritory,
+	CountResults
+};
+
 UCLASS()
 class BATTLEMINDS_API UBM_Types : public UBlueprintFunctionLibrary
 {

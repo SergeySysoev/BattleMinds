@@ -7,6 +7,7 @@
 #include "BattleMinds/Player/BM_PlayerState.h"
 #include "Blueprint/UserWidget.h"
 #include "Core/BM_GameModeBase.h"
+#include "Core/Classic/BM_GameModeClassic.h"
 
 DEFINE_LOG_CATEGORY(LogBM_PlayerController);
 
@@ -36,31 +37,40 @@ void ABM_PlayerControllerBase::SC_RequestToOpenQuestion_Implementation()
 	if (ABM_GameModeBase* GameMode = Cast<ABM_GameModeBase>(GetWorld()->GetAuthGameMode()))
 	{
 		GameMode->OpenQuestion();
-		GameMode->PlayerTurnHandle.Invalidate();
+		GetWorldTimerManager().ClearTimer(GameMode->PlayerTurnHandle);
 	}
 }
 
-void ABM_PlayerControllerBase::SC_TryClickTheTile_Implementation(ABM_TileBase* TargetTile)
+void ABM_PlayerControllerBase::SC_TryClickTheTile_Implementation(ABM_TileBase* TargetTile, EGameRound GameRound)
 {
-	const ABM_PlayerState* BM_PlayerState = Cast<ABM_PlayerState>(this->PlayerState);
-	const ABM_GameModeBase* GameMode = Cast<ABM_GameModeBase>(GetWorld()->GetAuthGameMode());
+	ABM_PlayerState* BM_PlayerState = Cast<ABM_PlayerState>(this->PlayerState);
+	ABM_GameModeBase* GameMode = Cast<ABM_GameModeBase>(GetWorld()->GetAuthGameMode());
 	if(GameMode->Round == EGameRound::ChooseCastle)
 	{
 		if (TargetTile->GetOwningPlayerNickname() == BM_PlayerState->Nickname || TargetTile->GetStatus() == ETileStatus::NotOwned)
-			TargetTile->TileWasClicked(EKeys::LeftMouseButton, BM_PlayerState->Nickname, BM_PlayerState->MaterialCastle);
+			//TargetTile->TileWasClicked(EKeys::LeftMouseButton, BM_PlayerState->Nickname, BM_PlayerState->MaterialCastle, GameRound);
+			{
+				TargetTile->TileWasChosen(BM_PlayerState->Nickname, BM_PlayerState->MaterialCastle);
+				if(ABM_GameModeClassic* ClassicGameMode = Cast<ABM_GameModeClassic>(GameMode))
+				{
+					ClassicGameMode->CurrentPlayerID++;
+					GetWorld()->GetTimerManager().ClearTimer(ClassicGameMode->CastleTurnTimer);
+					ClassicGameMode->StartChooseCastleTimer();
+				}
+			}
 		else
 			UE_LOG(LogBM_PlayerController, Warning, TEXT("You have clicked a tile that is already owned"));
 	}
 	else
 	{
 		if (TargetTile->GetOwningPlayerNickname() == BM_PlayerState->Nickname || TargetTile->GetStatus() == ETileStatus::NotOwned)
-			TargetTile->TileWasClicked(EKeys::LeftMouseButton, BM_PlayerState->Nickname, BM_PlayerState->MaterialTile);
+			TargetTile->TileWasClicked(EKeys::LeftMouseButton, BM_PlayerState->Nickname, BM_PlayerState->MaterialTile, GameRound);
 		else
 			UE_LOG(LogBM_PlayerController, Warning, TEXT("You have clicked a tile that is already owned"));
 	}
 }
 
-bool ABM_PlayerControllerBase::SC_TryClickTheTile_Validate(ABM_TileBase* TargetTile)
+bool ABM_PlayerControllerBase::SC_TryClickTheTile_Validate(ABM_TileBase* TargetTile, EGameRound)
 {
 	return true;
 }

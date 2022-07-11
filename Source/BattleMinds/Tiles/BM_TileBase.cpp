@@ -89,17 +89,17 @@ bool ABM_TileBase::TileWasChosen_Validate(const FString& PlayerNick, UMaterialIn
 	return true;
 }
 
-void ABM_TileBase::TileWasClicked_Implementation(FKey ButtonPressed, const FString& PlayerNick, UMaterialInterface* PlayerMaterial)
+void ABM_TileBase::TileWasClicked_Implementation(FKey ButtonPressed, const FString& PlayerNick, UMaterialInterface* PlayerMaterial, EGameRound GameRound)
 {
 	TileWasChosen(PlayerNick, PlayerMaterial);
-	if(true)
+	if(GameRound == EGameRound::SetTerritory || GameRound == EGameRound::FightForTerritory)
 	{
 		const auto PlayerController = Cast<ABM_PlayerControllerBase>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
 		PlayerController->OpenQuestion();
 	}
 }
 
-bool ABM_TileBase::TileWasClicked_Validate(FKey ButtonPressed, const FString& PlayerNick, UMaterialInterface* PlayerMaterial)
+bool ABM_TileBase::TileWasClicked_Validate(FKey ButtonPressed, const FString& PlayerNick, UMaterialInterface* PlayerMaterial, EGameRound)
 {
 	return true;
 }

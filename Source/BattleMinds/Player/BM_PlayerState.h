@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerState.h"
 #include "Net/UnrealNetwork.h"
 #include "Core/BM_Types.h"
+#include "Tiles/BM_TileBase.h"
 #include "BM_PlayerState.generated.h"
 
 /**
@@ -24,6 +25,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
 	UMaterialInterface* MaterialCastle;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Player Stats")
+	TArray<ABM_TileBase*> OwnedTiles;
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetPoints();
 	UFUNCTION(BlueprintCallable, BlueprintPure)

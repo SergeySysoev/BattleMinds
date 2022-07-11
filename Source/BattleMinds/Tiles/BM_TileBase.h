@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "BattleMinds/Player/BM_PlayerControllerBase.h"
+#include "Core/BM_Types.h"
 #include "Net/UnrealNetwork.h"
 #include "BM_TileBase.generated.h"
 
@@ -46,7 +47,7 @@ public:
 	void TileWasChosen(const FString& PlayerNick, UMaterialInterface* PlayerMaterial);
 
 	UFUNCTION(Server, reliable, WithValidation, BlueprintCallable)
-	void TileWasClicked(FKey ButtonPressed, const FString& PlayerNick, UMaterialInterface* PlayerMaterial);
+	void TileWasClicked(FKey ButtonPressed, const FString& PlayerNick, UMaterialInterface* PlayerMaterial, EGameRound GameRound);
 
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
 	void UnbindHighlightEvents();
