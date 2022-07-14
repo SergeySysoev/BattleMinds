@@ -15,6 +15,7 @@ ABM_TileBase::ABM_TileBase()
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Tile Mesh"));
 	StaticMesh->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
 	StaticMesh->SetIsReplicated(true);
+	Material = OriginalMaterial;
 
 }
 
@@ -50,7 +51,33 @@ void ABM_TileBase::Unhighlight(AActor* TouchedActor)
 void ABM_TileBase::OnRep_TileChanged()
 {
 	StaticMesh->SetMaterial(0, Material);
-	UnbindHighlightEvents();
+	//UnbindHighlightEvents();
+}
+
+void ABM_TileBase::BindHighlightEvents_Implementation()
+{
+	this->OnBeginCursorOver.AddDynamic(this, &ABM_TileBase::Highlight);
+	this->OnEndCursorOver.AddDynamic(this, &ABM_TileBase::Unhighlight);
+}
+
+void ABM_TileBase::CancelAttack_Implementation()
+{
+	bIsAttacked = false;
+	Material = OriginalMaterial; 
+	StaticMesh->SetMaterial(0, Material);
+	BindHighlightEvents();
+}
+
+void ABM_TileBase::TileWasAttacked_Implementation(UMaterialInterface* PlayerMaterialAttack)
+{
+	if (PlayerMaterialAttack)
+	{
+		bIsAttacked = true;
+		OriginalMaterial = Material;
+		Material = PlayerMaterialAttack;
+		StaticMesh->SetMaterial(0, Material);
+		UnbindHighlightEvents();
+	}
 }
 
 void ABM_TileBase::TileWasChosen_Implementation(const FString& PlayerNick, UMaterialInterface* PlayerMaterial)
@@ -91,11 +118,18 @@ bool ABM_TileBase::TileWasChosen_Validate(const FString& PlayerNick, UMaterialIn
 
 void ABM_TileBase::TileWasClicked_Implementation(FKey ButtonPressed, const FString& PlayerNick, UMaterialInterface* PlayerMaterial, EGameRound GameRound)
 {
-	TileWasChosen(PlayerNick, PlayerMaterial);
-	if(GameRound == EGameRound::SetTerritory || GameRound == EGameRound::FightForTerritory)
+	switch (GameRound)
 	{
-		const auto PlayerController = Cast<ABM_PlayerControllerBase>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-		PlayerController->OpenQuestion();
+		case EGameRound::ChooseCastle:
+			TileWasChosen(PlayerNick, PlayerMaterial);
+			break;
+		case EGameRound::SetTerritory:
+			TileWasAttacked(PlayerMaterial);
+			break;
+		case EGameRound::FightForTerritory:
+			const auto PlayerController = Cast<ABM_PlayerControllerBase>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+			PlayerController->OpenQuestion();
+			break;
 	}
 }
 
@@ -133,4 +167,5 @@ void ABM_TileBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME(ABM_TileBase, OwnerPlayerNickname);
 	DOREPLIFETIME(ABM_TileBase, StaticMesh);
 	DOREPLIFETIME(ABM_TileBase, bIsFortified);
+	DOREPLIFETIME(ABM_TileBase, bIsAttacked);
 }

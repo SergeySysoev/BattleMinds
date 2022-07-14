@@ -41,18 +41,24 @@ void ABM_PlayerControllerBase::SC_RequestToOpenQuestion_Implementation()
 	}
 }
 
-void ABM_PlayerControllerBase::SC_TryClickTheTile_Implementation(ABM_TileBase* TargetTile, EGameRound GameRound)
+void ABM_PlayerControllerBase::SC_TryClickTheTile_Implementation(ABM_TileBase* TargetTile)
 {
 	ABM_PlayerState* BM_PlayerState = Cast<ABM_PlayerState>(this->PlayerState);
 	ABM_GameModeBase* GameMode = Cast<ABM_GameModeBase>(GetWorld()->GetAuthGameMode());
+	CurrentClickedTile = TargetTile;
 	if(GameMode->Round == EGameRound::ChooseCastle)
 	{
-		if (TargetTile->GetOwningPlayerNickname() == BM_PlayerState->Nickname || TargetTile->GetStatus() == ETileStatus::NotOwned)
+		if (GameMode->CurrentPlayerID == PlayerID)
+		{
+			GetPlayerState<ABM_PlayerState>()->SetPlayerTurn(true);
+		}
+		if (GetPlayerState<ABM_PlayerState>()->IsPlayerTurn() &&(TargetTile->GetOwningPlayerNickname() == BM_PlayerState->Nickname || TargetTile->GetStatus() == ETileStatus::NotOwned))
 			//TargetTile->TileWasClicked(EKeys::LeftMouseButton, BM_PlayerState->Nickname, BM_PlayerState->MaterialCastle, GameRound);
 			{
 				TargetTile->TileWasChosen(BM_PlayerState->Nickname, BM_PlayerState->MaterialCastle);
 				if(ABM_GameModeClassic* ClassicGameMode = Cast<ABM_GameModeClassic>(GameMode))
 				{
+					GetPlayerState<ABM_PlayerState>()->SetPlayerTurn(false);
 					ClassicGameMode->CurrentPlayerID++;
 					GetWorld()->GetTimerManager().ClearTimer(ClassicGameMode->CastleTurnTimer);
 					ClassicGameMode->StartChooseCastleTimer();
@@ -64,13 +70,13 @@ void ABM_PlayerControllerBase::SC_TryClickTheTile_Implementation(ABM_TileBase* T
 	else
 	{
 		if (TargetTile->GetOwningPlayerNickname() == BM_PlayerState->Nickname || TargetTile->GetStatus() == ETileStatus::NotOwned)
-			TargetTile->TileWasClicked(EKeys::LeftMouseButton, BM_PlayerState->Nickname, BM_PlayerState->MaterialTile, GameRound);
+			TargetTile->TileWasClicked(EKeys::LeftMouseButton, BM_PlayerState->Nickname, BM_PlayerState->MaterialAttack, GameMode->Round);
 		else
 			UE_LOG(LogBM_PlayerController, Warning, TEXT("You have clicked a tile that is already owned"));
 	}
 }
 
-bool ABM_PlayerControllerBase::SC_TryClickTheTile_Validate(ABM_TileBase* TargetTile, EGameRound)
+bool ABM_PlayerControllerBase::SC_TryClickTheTile_Validate(ABM_TileBase* TargetTile)
 {
 	return true;
 }

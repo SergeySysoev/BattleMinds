@@ -12,16 +12,29 @@ void ABM_PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(ABM_PlayerState, bHasTurn);
 	DOREPLIFETIME(ABM_PlayerState, AnsweredQuestions);
 	DOREPLIFETIME(ABM_PlayerState, MaterialCastle);
+	DOREPLIFETIME(ABM_PlayerState, MaterialAttack);
 }
 
 float ABM_PlayerState::GetPoints()
 {
 	return Points;
 }
+
+void ABM_PlayerState::AddPoints(int32 inPoints)
+{
+	Points += inPoints;
+}
+
 bool ABM_PlayerState::IsPlayerTurn()
 {
 	return bHasTurn;
 }
+
+void ABM_PlayerState::SetPlayerTurn(bool inTurn)
+{
+	bHasTurn = inTurn;
+}
+
 bool ABM_PlayerState::HasArtillery()
 {
 	return bHasArtillery;

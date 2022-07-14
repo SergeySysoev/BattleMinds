@@ -15,9 +15,11 @@ void ABM_GameModeBase::InitPlayer(APlayerController* NewPlayer)
 {
 	if (ABM_PlayerState* PlayerState = Cast<ABM_PlayerState>(NewPlayer->GetPlayerState<ABM_PlayerState>()))
 	{
+		Cast<ABM_PlayerControllerBase>(NewPlayer)->PlayerID = NumberOfActivePlayers-1;
 		PlayerState->MaterialTile = MaterialMap.FindRef(NumberOfActivePlayers);
 		PlayerState->Nickname = NicknameMap.FindRef(NumberOfActivePlayers);
 		PlayerState->MaterialCastle = CastleMaterialMap.FindRef(NumberOfActivePlayers);
+		PlayerState->MaterialAttack = MaterialAttackMap.FindRef(NumberOfActivePlayers);
 	}
 }
 void ABM_GameModeBase::OpenQuestion()
@@ -45,12 +47,29 @@ void ABM_GameModeBase::StartQuestionTimer()
 }
 void ABM_GameModeBase::GatherPlayersAnswers()
 {
+	CurrentAnsweredQuestions.Empty();
 	for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
 	{
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 		{
 			//TODO: Add actual gathering logic
+			CurrentAnsweredQuestions.Add(Cast<ABM_PlayerState>(PlayerState)->AnsweredQuestions.Last());
 			PlayerController->CC_RemoveQuestionWidget();
+		}
+	}
+	for (int i = 0; i < CurrentAnsweredQuestions.Num(); i++)
+	{
+		const ABM_PlayerControllerBase* CurrentPlayerController = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[i]->GetPlayerController());
+		const ABM_PlayerState* CurrentPlayerState = Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[i]);
+		if (CurrentAnsweredQuestions[i].bWasAnswered == false)
+		{
+			//Set Tile color back to default
+			CurrentPlayerController->CurrentClickedTile->CancelAttack();
+		}
+		else
+		{
+			CurrentPlayerController->CurrentClickedTile->TileWasChosen(CurrentPlayerState->Nickname, CurrentPlayerState->MaterialTile);
+			CurrentPlayerController->CurrentClickedTile->bIsAttacked = false;
 		}
 	}
 }
@@ -77,7 +96,7 @@ void ABM_GameModeBase::ChooseFirstAvailableTileForPlayer(int32 PlayerID)
 		{
 			if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[PlayerID]->GetPlayerController()))
 			{
-				PlayerController->SC_TryClickTheTile(FoundTile, Round);
+				PlayerController->SC_TryClickTheTile(FoundTile);
 			}
 			break;
 		}
@@ -113,4 +132,9 @@ void ABM_GameModeBase::PostLogin(APlayerController* NewPlayer)
 	Super::PostLogin(NewPlayer);
 	NumberOfActivePlayers++;
 	InitPlayer(NewPlayer);
+}
+
+void ABM_GameModeBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	DOREPLIFETIME(ABM_GameModeBase, Round);
 }

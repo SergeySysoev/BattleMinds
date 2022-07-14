@@ -15,7 +15,7 @@ class BATTLEMINDS_API ABM_GameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game settings")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category="Game settings")
 	EGameRound Round;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Game settings")
 	FTimerHandle QuestionTimerHandle;
@@ -28,6 +28,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Players settings")
 	TMap<int32, UMaterialInterface*> MaterialMap;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Players settings")
+	TMap<int32, UMaterialInterface*> MaterialAttackMap;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Players settings")
 	TMap<int32, UMaterialInterface*> CastleMaterialMap;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Players settings")
 	TMap<int32, FString> NicknameMap;
@@ -35,6 +37,8 @@ public:
 	int32 CurrentPlayerID = 0;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Game settings")
 	FTimerHandle PlayerTurnHandle;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Players settings")
+	TArray<FQuestion> CurrentAnsweredQuestions;
 	UFUNCTION(BlueprintCallable)
 	void InitPlayer(APlayerController* NewPlayer);
 	UFUNCTION(BlueprintCallable)

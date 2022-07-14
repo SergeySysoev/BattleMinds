@@ -31,6 +31,11 @@ class BATTLEMINDS_API ABM_TileBase : public AActor
 public:
 	ABM_TileBase();
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category="Status")
+	bool bIsAttacked = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category="Neighbours")
+	TArray<TObjectPtr<ABM_TileBase>> NeighbourTiles;
+	
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void ChangeStatus(ETileStatus NewStatus);
 
@@ -49,6 +54,15 @@ public:
 	UFUNCTION(Server, reliable, WithValidation, BlueprintCallable)
 	void TileWasClicked(FKey ButtonPressed, const FString& PlayerNick, UMaterialInterface* PlayerMaterial, EGameRound GameRound);
 
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void TileWasAttacked(UMaterialInterface* PlayerMaterialAttack);
+
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void CancelAttack();
+
+	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
+	void BindHighlightEvents();
+	
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
 	void UnbindHighlightEvents();
 	

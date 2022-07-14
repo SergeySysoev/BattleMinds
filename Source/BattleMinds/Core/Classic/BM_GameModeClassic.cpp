@@ -16,7 +16,6 @@ void ABM_GameModeClassic::PostLogin(APlayerController* NewPlayer)
 	Super::PostLogin(NewPlayer);
 	if (NumberOfActivePlayers == Cast<UBM_GameInstance>(GetWorld()->GetGameInstance())->NumberOfPlayers)
 	{
-		//StartPlayerTurnTimer(CurrentPlayerID);
 		Round = EGameRound::ChooseCastle;
 		StartChooseCastleRound();
 	}
@@ -41,7 +40,7 @@ void ABM_GameModeClassic::StartChooseCastleTimer()
 		}
 	}
 	if (CurrentPlayerID < NumberOfActivePlayers)
-		GetWorld()->GetTimerManager().SetTimer(CastleTurnTimer, this, &ABM_GameModeClassic::UpdateChooseCastleTimer, 1.0f, true, 0.0f);
+		GetWorld()->GetTimerManager().SetTimer(CastleTurnTimer, this, &ABM_GameModeClassic::UpdateChooseCastleTimer, 1.0f, true, 1.0f);
 	else
 	{
 		CurrentPlayerID = 0;
@@ -51,8 +50,36 @@ void ABM_GameModeClassic::StartChooseCastleTimer()
 
 void ABM_GameModeClassic::StartSetTerritoryRound()
 {
+	Round = EGameRound::SetTerritory;
+	CurrentPlayerID = 0;
+	StartSetTerritoryTimer();
+}
+
+void ABM_GameModeClassic::StartSetTerritoryTimer()
+{
 	CurrentTurnTimer = TurnTimer;
-	//GetWorld()->GetTimerManager().SetTimer(CastleTurnTimer, this, &ABM_GameModeClassic::UpdateChooseCastleTimer, 1.0f, true, 1.0f);
+	GetWorld()->GetTimerManager().SetTimer(TerritoryTurnTimer, this, &ABM_GameModeClassic::UpdateSetTerritoryTimer, 1.0f, true, 1.0f);
+}
+
+void ABM_GameModeClassic::UpdateSetTerritoryTimer()
+{
+	for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
+	{
+		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
+		{
+			PlayerController->UpdateTurnTimer();
+		}
+	}
+	CurrentTurnTimer--;
+	if(CurrentTurnTimer == 0)
+	{
+		OpenQuestion();
+	}
+}
+
+void ABM_GameModeClassic::ChooseFirstAvailableTile()
+{
+	
 }
 
 void ABM_GameModeClassic::UpdateChooseCastleTimer()
@@ -81,28 +108,51 @@ void ABM_GameModeClassic::UpdateChooseCastleTimer()
 
 void ABM_GameModeClassic::ChooseFirstAvailableCastle()
 {
-	
 	TSubclassOf<ABM_TileBase> TileClass = ABM_TileBase::StaticClass();
 	TArray<AActor*> Tiles;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), TileClass, Tiles);
 	for (auto Tile: Tiles)
 	{
+		bool NeigboursFree = true;
 		auto FoundTile = Cast<ABM_TileBase>(Tile);
 		//TODO additional check if this tile is 1-tile close to the current one
 		// TArray<ABM_Tiles> NearestTiles = FoundTile->GetNearestTiles();
 		// for (Tile : NearestTiles)
 		//{ the code below}
-		if (FoundTile->GetStatus() == ETileStatus::NotOwned)
+		if(FoundTile->GetStatus() == ETileStatus::NotOwned)
 		{
-			if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID]->GetPlayerController()))
+			for (const auto NeighbourTile : FoundTile->NeighbourTiles)
 			{
-				PlayerController->SC_TryClickTheTile(FoundTile, Round);
+				if(NeighbourTile->GetStatus() != ETileStatus::NotOwned)
+				{
+					NeigboursFree = false;
+					break;
+				}
 			}
-			if (ABM_PlayerState* PlayerState = Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID]))
+			if(NeigboursFree)
 			{
-				PlayerState->OwnedTiles.Add(FoundTile);
+				if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID]->GetPlayerController()))
+				{
+					PlayerController->SC_TryClickTheTile(FoundTile);
+				}
+				if (ABM_PlayerState* PlayerState = Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID]))
+				{
+					PlayerState->OwnedTiles.Add(FoundTile);
+				}
+				break;
 			}
-			break;
 		}
+			/*if (NeighbourTile->GetStatus() == ETileStatus::NotOwned)
+			{
+				if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID]->GetPlayerController()))
+				{
+					PlayerController->SC_TryClickTheTile(FoundTile);
+				}
+				if (ABM_PlayerState* PlayerState = Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID]))
+				{
+					PlayerState->OwnedTiles.Add(FoundTile);
+				}
+				break;
+			}*/
 	}
 }

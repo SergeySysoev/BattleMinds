@@ -21,6 +21,14 @@ class BATTLEMINDS_API ABM_PlayerControllerBase : public APlayerController
 	
 public:
 	ABM_PlayerControllerBase();
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "User Widgets")
+	UBM_UWQuestion* QuestionWidget;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "User Widgets")
+	TSubclassOf<UBM_UWQuestion> QuestionWidgetClass;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "Player Settings")
+	int32 PlayerID;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "Tiles")
+	ABM_TileBase* CurrentClickedTile = nullptr;
 	UFUNCTION(BlueprintImplementableEvent)
 	void OpenQuestion();
 	UFUNCTION(Server, Reliable, BlueprintCallable)
@@ -33,11 +41,7 @@ public:
 	void UpdateTurnTimer();
 	UFUNCTION(BlueprintImplementableEvent)
 	void ResetTurnTimer();
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "User Widgets")
-	UBM_UWQuestion* QuestionWidget;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "User Widgets")
-	TSubclassOf<UBM_UWQuestion> QuestionWidgetClass;
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
-	void SC_TryClickTheTile(ABM_TileBase* TargetTile, EGameRound GameRound);
+	void SC_TryClickTheTile(ABM_TileBase* TargetTile);
 
 };

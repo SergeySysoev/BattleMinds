@@ -18,4 +18,7 @@ class BATTLEMINDS_API UBM_UWQuestion : public UUserWidget, public IBM_QuestionIn
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Question settings")
 	FName QuestionName;
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void GatherAnswers();
 };

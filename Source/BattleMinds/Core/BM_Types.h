@@ -42,7 +42,7 @@ USTRUCT(BlueprintType)
 struct FQuestion : public FTableRowBase
 {
 	GENERATED_BODY()
-	
+public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Question settings")
 	FText Question;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Question settings")
