@@ -13,6 +13,20 @@ void ABM_PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(ABM_PlayerState, AnsweredQuestions);
 	DOREPLIFETIME(ABM_PlayerState, MaterialCastle);
 	DOREPLIFETIME(ABM_PlayerState, MaterialAttack);
+	DOREPLIFETIME(ABM_PlayerState, MaterialNeighbour);
+}
+
+TSet<ABM_TileBase*> ABM_PlayerState::GetAllCurrentNeighbours()
+{
+	TSet<ABM_TileBase*> AllNeighbours;
+	for (const auto Tile: OwnedTiles)
+	{
+		for (const auto Neighbour: Tile->NeighbourTiles)
+		{
+			AllNeighbours.Add(Neighbour);
+		}
+	}
+	return AllNeighbours;
 }
 
 float ABM_PlayerState::GetPoints()

@@ -26,6 +26,8 @@ public:
 	UMaterialInterface* MaterialCastle;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
 	UMaterialInterface* MaterialAttack;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
+	UMaterialInterface* MaterialNeighbour;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Player Stats")
 	TArray<ABM_TileBase*> OwnedTiles;
@@ -33,6 +35,8 @@ public:
 	bool bHasChosenTile;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
 	TArray<FQuestion> AnsweredQuestions;
+	UFUNCTION(BlueprintCallable)
+	TSet<ABM_TileBase*> GetAllCurrentNeighbours();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetPoints();
 	UFUNCTION(BlueprintCallable)
