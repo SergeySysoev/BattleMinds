@@ -11,6 +11,8 @@
 #include "Player/BM_PlayerState.h"
 #include "Tiles/BM_TileBase.h"
 
+DEFINE_LOG_CATEGORY(LogBM_GameMode);
+
 void ABM_GameModeBase::InitPlayer(APlayerController* NewPlayer)
 {
 	if (ABM_PlayerState* PlayerState = Cast<ABM_PlayerState>(NewPlayer->GetPlayerState<ABM_PlayerState>()))
@@ -24,6 +26,7 @@ void ABM_GameModeBase::InitPlayer(APlayerController* NewPlayer)
 }
 void ABM_GameModeBase::OpenQuestion()
 {
+	GetWorld()->GetTimerManager().ClearTimer(PauseHandle);
 	int32 TableIndex = FMath::RandRange(0, QuestionTables.Num()-1);
 	FString ContextString = FString("Questions");
 	TArray<FName> RowNames = QuestionTables[TableIndex]->GetRowNames();
@@ -48,6 +51,7 @@ void ABM_GameModeBase::StartQuestionTimer()
 void ABM_GameModeBase::GatherPlayersAnswers()
 {
 	CurrentAnsweredQuestions.Empty();
+	//Remove Question Widget and add Player's answer to the CurrentAnswers array
 	for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
 	{
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
@@ -57,34 +61,108 @@ void ABM_GameModeBase::GatherPlayersAnswers()
 			PlayerController->CC_RemoveQuestionWidget();
 		}
 	}
+	//Verify Players answers: If false, cancel attack, if true, add the tile to the Player's territory
 	for (int i = 0; i < CurrentAnsweredQuestions.Num(); i++)
 	{
 		const ABM_PlayerControllerBase* CurrentPlayerController = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[i]->GetPlayerController());
-		const ABM_PlayerState* CurrentPlayerState = Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[i]);
+		ABM_PlayerState* CurrentPlayerState = Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[i]);
+		CurrentPlayerController->CurrentClickedTile->MC_RemoveSelection();
 		if (CurrentAnsweredQuestions[i].bWasAnswered == false)
 		{
 			//Set Tile color back to default
 			CurrentPlayerController->CurrentClickedTile->CancelAttack();
+			if(Round == EGameRound::FightForTerritory)
+			{
+				CurrentPlayerState->AddPoints(-1* CurrentPlayerController->CurrentClickedTile->GetPoints());
+			}
 		}
 		else
 		{
-			CurrentPlayerController->CurrentClickedTile->TileWasChosen(CurrentPlayerState->Nickname, CurrentPlayerState->MaterialTile);
-			CurrentPlayerController->CurrentClickedTile->bIsAttacked = false;
+			CurrentPlayerController->CurrentClickedTile->AddTileToPlayerTerritory(CurrentPlayerState);
+			CurrentPlayerState->AddPoints(CurrentPlayerController->CurrentClickedTile->GetPoints());
+		}
+	}
+	//If GameRound == SetTerritory,
+	// check if there are available tiles and their amount == NumberOfActivePlayers%
+	// if yes, Continue SetTerritory round
+	// if no, Start Battle Mode for the rest of the tiles - TODO later
+	// If GameRound == FightForTerritory, check how many
+	if (Round == EGameRound::SetTerritory)
+	{
+		int32 NotOwnedTiles = 0;
+		for (auto Tile:Tiles)
+		{
+			ABM_TileBase* FoundTile = Cast<ABM_TileBase>(Tile);
+			if (FoundTile && FoundTile->GetStatus()==ETileStatus::NotOwned)
+			{
+				NotOwnedTiles++;
+			}
+		}
+		if (NotOwnedTiles > 0)
+		{
+			Round = EGameRound::SetTerritory;
+			GetWorld()->GetTimerManager().ClearTimer(PlayerTurnHandle);
+			CurrentPlayerID = 0;
+			StartPlayerTurnTimer(CurrentPlayerID);
+		}
+		else
+		{
+			Round = EGameRound::FightForTerritory;
+			UE_LOG(LogBM_GameMode, Display, TEXT("Switch to Fight for Territory round"));
 		}
 	}
 }
 
+EGameRound ABM_GameModeBase::NextGameRound()
+{
+	if(Round == EGameRound::ChooseCastle)
+		return EGameRound::SetTerritory;
+	if(Round == EGameRound::SetTerritory)
+		return EGameRound::FightForTerritory;
+	if(Round == EGameRound::FightForTerritory)
+		return  EGameRound::End;
+	return EGameRound::End;
+}
+
 void ABM_GameModeBase::StartPlayerTurnTimer(int32 PlayerID)
 {
+	GetWorld()->GetTimerManager().ClearTimer(PlayerTurnHandle);
+	UE_LOG(LogTemp, Warning, TEXT("Current PlayerID %d"), CurrentPlayerID);
 	CurrentTurnTimer = TurnTimer;
-	GetWorld()->GetTimerManager().SetTimer(PlayerTurnHandle, this, &ABM_GameModeBase::UpdatePlayerTurnTimers, 1.0, true, 1.0f);
+	for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
+	{
+		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
+		{
+			PlayerController->ResetTurnTimer(Round);
+		}
+	}
+	if (CurrentPlayerID < NumberOfActivePlayers)
+		GetWorld()->GetTimerManager().SetTimer(PlayerTurnHandle, this, &ABM_GameModeBase::UpdatePlayerTurnTimers, 1.0, true, 1.0f);
+	else
+	{
+		switch (Round)
+		{
+			case EGameRound::ChooseCastle:
+				CurrentPlayerID = 0;
+				Round = NextGameRound();
+				StartPlayerTurnTimer(CurrentPlayerID);
+				break;
+			case EGameRound::SetTerritory:
+				//All players have chosen their tiles, open Choose Question with 2sec delay
+				GetWorld()->GetTimerManager().SetTimer(PauseHandle, this, &ABM_GameModeBase::OpenQuestion, 1.0, false, 2.0);
+				break;
+			case EGameRound::FightForTerritory:
+				break;
+			default: break;
+		}
+	}
 }
 
 void ABM_GameModeBase::ChooseFirstAvailableTileForPlayer(int32 PlayerID)
 {
-	TSubclassOf<ABM_TileBase> TileClass = ABM_TileBase::StaticClass();
+	/*TSubclassOf<ABM_TileBase> TileClass = ABM_TileBase::StaticClass();
 	TArray<AActor*> Tiles;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), TileClass, Tiles);
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), TileClass, Tiles);*/
 	for (auto Tile: Tiles)
 	{
 		auto FoundTile = Cast<ABM_TileBase>(Tile);
@@ -92,7 +170,7 @@ void ABM_GameModeBase::ChooseFirstAvailableTileForPlayer(int32 PlayerID)
 		// TArray<ABM_Tiles> NearestTiles = FoundTile->GetNearestTiles();
 		// for (Tile : NearestTiles)
 		//{ the code below}
-		if (FoundTile->GetStatus() == ETileStatus::NotOwned)
+		if (FoundTile->GetStatus() == ETileStatus::NotOwned && !FoundTile->bIsAttacked)
 		{
 			if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[PlayerID]->GetPlayerController()))
 			{
@@ -109,7 +187,7 @@ void ABM_GameModeBase::UpdatePlayerTurnTimers()
 	{
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 		{
-			PlayerController->UpdateTurnTimer();
+			PlayerController->UpdateTurnTimer(Round);
 		}
 	}
 	CurrentTurnTimer--;
@@ -121,7 +199,7 @@ void ABM_GameModeBase::UpdatePlayerTurnTimers()
 		{
 			if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 			{
-				PlayerController->ResetTurnTimer();
+				PlayerController->ResetTurnTimer(Round);
 			}
 		}
 	}

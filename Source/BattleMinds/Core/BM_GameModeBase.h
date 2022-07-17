@@ -7,9 +7,7 @@
 #include "TimerManager.h"
 #include "BM_GameModeBase.generated.h"
 
-/**
- * 
- */
+DECLARE_LOG_CATEGORY_EXTERN(LogBM_GameMode, Display, All);
 UCLASS()
 class BATTLEMINDS_API ABM_GameModeBase : public AGameModeBase
 {
@@ -47,6 +45,8 @@ public:
 	void StartQuestionTimer();
 	UFUNCTION(BlueprintCallable)
 	void GatherPlayersAnswers();
+	UFUNCTION()
+	EGameRound NextGameRound();
 	UFUNCTION(BlueprintCallable)
 	void StartPlayerTurnTimer(int32 PlayerID);
 	UFUNCTION(BlueprintCallable)
@@ -61,6 +61,10 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Questions")
 	TArray<UDataTable*> QuestionTables;
-	
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Tiles")
+	TArray<AActor*> Tiles;
+
+	FTimerHandle PauseHandle;
 	float CurrentTurnTimer;
 };

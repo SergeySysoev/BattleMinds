@@ -58,6 +58,7 @@ enum class EGameRound : uint8
 {
 	ChooseCastle,
 	SetTerritory,
+	FightForTheRestTiles,
 	FightForTerritory,
 	End
 };

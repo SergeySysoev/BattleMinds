@@ -15,6 +15,12 @@ ABM_TileBase::ABM_TileBase()
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Tile Mesh"));
 	StaticMesh->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
 	StaticMesh->SetIsReplicated(true);
+	FlagMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Flag Mesh"));
+	FlagMesh->AttachToComponent(StaticMesh, FAttachmentTransformRules::KeepRelativeTransform);
+	FlagMesh->SetIsReplicated(true);
+	CastleMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Castle Mesh"));
+	CastleMesh->AttachToComponent(StaticMesh, FAttachmentTransformRules::KeepRelativeTransform);
+	CastleMesh->SetIsReplicated(true);
 	Material = OriginalMaterial;
 
 }
@@ -50,59 +56,106 @@ void ABM_TileBase::Unhighlight(AActor* TouchedActor)
 
 void ABM_TileBase::OnRep_TileChanged()
 {
-	StaticMesh->SetMaterial(0, Material);
+	StaticMesh->SetMaterial(0, MaterialOwned);
 	//UnbindHighlightEvents();
 }
 
-void ABM_TileBase::BindHighlightEvents_Implementation()
+void ABM_TileBase::OnRep_TileMeshChanged()
+{
+	StaticMesh->SetMaterial(0, MaterialOwned);
+}
+void ABM_TileBase::OnRep_FlagMeshChanged()
+{
+	FlagMesh->SetMaterial(0, MaterialAttacked);
+}
+void ABM_TileBase::OnRep_CastleMeshChanged()
+{
+	CastleMesh->SetMaterial(0, MaterialCastle);
+}
+
+void ABM_TileBase::MC_RemoveHighlighting_Implementation()
+{
+	if (MaterialOwned)
+		StaticMesh->SetMaterial(0, MaterialOwned);
+	else
+		StaticMesh->SetMaterial(0, OriginalMaterial);
+}
+
+void ABM_TileBase::MC_RemoveSelection_Implementation()
+{
+	FlagMesh->SetVisibility(false);
+}
+
+void ABM_TileBase::MC_BindHighlightEvents_Implementation()
 {
 	this->OnBeginCursorOver.AddDynamic(this, &ABM_TileBase::Highlight);
 	this->OnEndCursorOver.AddDynamic(this, &ABM_TileBase::Unhighlight);
 }
 
-void ABM_TileBase::CancelAttack_Implementation()
+void ABM_TileBase::AddTileToPlayerTerritory_Implementation(ABM_PlayerState* PlayerState)
 {
 	bIsAttacked = false;
-	Material = OriginalMaterial; 
-	StaticMesh->SetMaterial(0, Material);
-	BindHighlightEvents();
+	ChangeStatus(ETileStatus::Controlled);
+	MaterialOwned = PlayerState->MaterialTile;
+	StaticMesh->SetMaterial(0, MaterialOwned);
+	MC_RemoveSelection();
+	MC_UnbindHighlightEvents();
 }
 
-void ABM_TileBase::TileWasAttacked_Implementation(UMaterialInterface* PlayerMaterialAttack)
+void ABM_TileBase::CancelAttack_Implementation()
 {
-	if (PlayerMaterialAttack)
-	{
-		bIsAttacked = true;
-		OriginalMaterial = Material;
-		Material = PlayerMaterialAttack;
-		StaticMesh->SetMaterial(0, Material);
-		UnbindHighlightEvents();
-	}
+	ChangeStatus(ETileStatus::NotOwned);
+	bIsAttacked = false;
+	MC_RemoveSelection();
+	MC_BindHighlightEvents();
 }
 
-void ABM_TileBase::TileWasChosen_Implementation(const FString& PlayerNick, UMaterialInterface* PlayerMaterial)
+void ABM_TileBase::TileWasChosen_Implementation(const FString& PlayerNick, UMaterialInterface* PlayerMaterial, EGameRound GameRound)
 {
 	switch (Status)
 	{
 	case ETileStatus::NotOwned:
-		if (!PlayerNick.IsEmpty()) // && Player.HasCastle())
+		if (!PlayerNick.IsEmpty())
 		{
-			OwnerPlayerNickname = PlayerNick;
-			ChangeStatus(ETileStatus::Controlled);
-			Material = PlayerMaterial;
-			if (StaticMesh->GetMaterial(0))
-				UE_LOG(LogBM_Tile, Display, TEXT("Current Material %s"), *StaticMesh->GetMaterial(0)->GetName());
-			StaticMesh->SetMaterial(0, Material);
-			UnbindHighlightEvents();
-			//OnRep_TileChanged();
+			if (GameRound == EGameRound::ChooseCastle)
+			{
+				OwnerPlayerNickname = PlayerNick;
+				ChangeStatus(ETileStatus::Castle);
+				MaterialCastle = PlayerMaterial;
+				MaterialOwned = PlayerMaterial;
+				if (StaticMesh->GetMaterial(0))
+					UE_LOG(LogBM_Tile, Display, TEXT("Current Material %s"), *StaticMesh->GetMaterial(0)->GetName());
+				StaticMesh->SetMaterial(0, MaterialOwned);
+				CastleMesh->SetVisibility(true);
+				CastleMesh->SetMaterial(0, MaterialCastle);
+				MC_UnbindHighlightEvents();
+			}
+			else //Attacking the tile or setting the territory
+			{
+				bIsAttacked = true;
+				//OriginalMaterial = Material;
+				MaterialAttacked = PlayerMaterial;
+				StaticMesh->SetMaterial(0 , OriginalMaterial);
+				MC_RemoveHighlighting();
+				FlagMesh->SetVisibility(true);
+				FlagMesh->SetMaterial(0, MaterialAttacked);
+				MC_UnbindHighlightEvents();
+			}
 		}
 		break;
 	case ETileStatus::Controlled:
-		if (!bIsFortified)
+		if(OwnerPlayerNickname == PlayerNick)
 		{
-			bIsFortified = true;
+			if (!bIsFortified)
+			{
+				bIsFortified = true;
+				UE_LOG(LogBM_Tile, Display, TEXT("Tile was fortified"));
+				this->OnBeginCursorOver.Clear();
+			}
+		}
+		else
+		{
 			UE_LOG(LogBM_Tile, Display, TEXT("Tile was fortified"));
-			this->OnBeginCursorOver.Clear();
 		}
 	case ETileStatus::Castle:
 		break;
@@ -111,34 +164,25 @@ void ABM_TileBase::TileWasChosen_Implementation(const FString& PlayerNick, UMate
 	};
 }
 
-bool ABM_TileBase::TileWasChosen_Validate(const FString& PlayerNick, UMaterialInterface* PlayerMaterial)
-{
-	return true;
-}
-
-void ABM_TileBase::TileWasClicked_Implementation(FKey ButtonPressed, const FString& PlayerNick, UMaterialInterface* PlayerMaterial, EGameRound GameRound)
+void ABM_TileBase::TileWasClicked_Implementation(FKey ButtonPressed, EGameRound GameRound, ABM_PlayerState* PlayerState)
 {
 	switch (GameRound)
 	{
 		case EGameRound::ChooseCastle:
-			TileWasChosen(PlayerNick, PlayerMaterial);
+			TileWasChosen(PlayerState->Nickname, PlayerState->MaterialCastle, GameRound);
 			break;
 		case EGameRound::SetTerritory:
-			TileWasAttacked(PlayerMaterial);
+			TileWasChosen(PlayerState->Nickname, PlayerState->MaterialAttack, GameRound);
 			break;
 		case EGameRound::FightForTerritory:
-			const auto PlayerController = Cast<ABM_PlayerControllerBase>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+			TileWasChosen(PlayerState->Nickname, PlayerState->MaterialAttack, GameRound);
+			const auto PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController());
 			PlayerController->OpenQuestion();
 			break;
 	}
 }
 
-bool ABM_TileBase::TileWasClicked_Validate(FKey ButtonPressed, const FString& PlayerNick, UMaterialInterface* PlayerMaterial, EGameRound)
-{
-	return true;
-}
-
-void ABM_TileBase::UnbindHighlightEvents_Implementation()
+void ABM_TileBase::MC_UnbindHighlightEvents_Implementation()
 {
 	this->OnBeginCursorOver.RemoveDynamic(this, &ABM_TileBase::Highlight);
 	this->OnEndCursorOver.RemoveDynamic(this, &ABM_TileBase::Unhighlight);
@@ -163,6 +207,9 @@ void ABM_TileBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME(ABM_TileBase, Status);
 	DOREPLIFETIME(ABM_TileBase, bIsArtillery);
 	DOREPLIFETIME(ABM_TileBase, Material);
+	DOREPLIFETIME(ABM_TileBase, MaterialAttacked);
+	DOREPLIFETIME(ABM_TileBase, MaterialOwned);
+	DOREPLIFETIME(ABM_TileBase, MaterialCastle);
 	DOREPLIFETIME(ABM_TileBase, OriginalMaterial);
 	DOREPLIFETIME(ABM_TileBase, OwnerPlayerNickname);
 	DOREPLIFETIME(ABM_TileBase, StaticMesh);

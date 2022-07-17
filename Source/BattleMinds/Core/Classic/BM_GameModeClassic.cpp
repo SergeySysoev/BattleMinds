@@ -16,8 +16,13 @@ void ABM_GameModeClassic::PostLogin(APlayerController* NewPlayer)
 	Super::PostLogin(NewPlayer);
 	if (NumberOfActivePlayers == Cast<UBM_GameInstance>(GetWorld()->GetGameInstance())->NumberOfPlayers)
 	{
+		TSubclassOf<ABM_TileBase> TileClass = ABM_TileBase::StaticClass();
+		TArray<AActor*> FoundTiles;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), TileClass, FoundTiles);
+		Tiles.Append(FoundTiles);
 		Round = EGameRound::ChooseCastle;
-		StartChooseCastleRound();
+		//StartChooseCastleRound();
+		StartPlayerTurnTimer(0);
 	}
 }
 
@@ -36,7 +41,7 @@ void ABM_GameModeClassic::StartChooseCastleTimer()
 	{
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 		{
-			PlayerController->ResetTurnTimer();
+			PlayerController->ResetTurnTimer(Round);
 		}
 	}
 	if (CurrentPlayerID < NumberOfActivePlayers)
@@ -67,7 +72,7 @@ void ABM_GameModeClassic::UpdateSetTerritoryTimer()
 	{
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 		{
-			PlayerController->UpdateTurnTimer();
+			PlayerController->UpdateTurnTimer(Round);
 		}
 	}
 	CurrentTurnTimer--;
@@ -88,7 +93,7 @@ void ABM_GameModeClassic::UpdateChooseCastleTimer()
 	{
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 		{
-			PlayerController->UpdateTurnTimer();
+			PlayerController->UpdateTurnTimer(Round);
 		}
 	}
 	CurrentTurnTimer--;
@@ -100,7 +105,7 @@ void ABM_GameModeClassic::UpdateChooseCastleTimer()
 		{
 			if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 			{
-				PlayerController->ResetTurnTimer();
+				PlayerController->ResetTurnTimer(Round);
 			}
 		}
 	}
@@ -108,9 +113,6 @@ void ABM_GameModeClassic::UpdateChooseCastleTimer()
 
 void ABM_GameModeClassic::ChooseFirstAvailableCastle()
 {
-	TSubclassOf<ABM_TileBase> TileClass = ABM_TileBase::StaticClass();
-	TArray<AActor*> Tiles;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), TileClass, Tiles);
 	for (auto Tile: Tiles)
 	{
 		bool NeigboursFree = true;

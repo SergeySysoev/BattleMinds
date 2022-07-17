@@ -46,34 +46,28 @@ void ABM_PlayerControllerBase::SC_TryClickTheTile_Implementation(ABM_TileBase* T
 	ABM_PlayerState* BM_PlayerState = Cast<ABM_PlayerState>(this->PlayerState);
 	ABM_GameModeBase* GameMode = Cast<ABM_GameModeBase>(GetWorld()->GetAuthGameMode());
 	CurrentClickedTile = TargetTile;
-	if(GameMode->Round == EGameRound::ChooseCastle)
+	if (GameMode->CurrentPlayerID == PlayerID)
 	{
-		if (GameMode->CurrentPlayerID == PlayerID)
+		BM_PlayerState->SetPlayerTurn(true);
+		if (BM_PlayerState->IsPlayerTurn() && TargetTile->GetStatus() == ETileStatus::NotOwned)
 		{
-			GetPlayerState<ABM_PlayerState>()->SetPlayerTurn(true);
-		}
-		if (GetPlayerState<ABM_PlayerState>()->IsPlayerTurn() &&(TargetTile->GetOwningPlayerNickname() == BM_PlayerState->Nickname || TargetTile->GetStatus() == ETileStatus::NotOwned))
-			//TargetTile->TileWasClicked(EKeys::LeftMouseButton, BM_PlayerState->Nickname, BM_PlayerState->MaterialCastle, GameRound);
+			TargetTile->TileWasClicked(EKeys::LeftMouseButton, GameMode->Round, BM_PlayerState);
+			/*if(ABM_GameModeClassic* ClassicGameMode = Cast<ABM_GameModeClassic>(GameMode))
 			{
-				TargetTile->TileWasChosen(BM_PlayerState->Nickname, BM_PlayerState->MaterialCastle);
-				if(ABM_GameModeClassic* ClassicGameMode = Cast<ABM_GameModeClassic>(GameMode))
-				{
-					GetPlayerState<ABM_PlayerState>()->SetPlayerTurn(false);
-					ClassicGameMode->CurrentPlayerID++;
-					GetWorld()->GetTimerManager().ClearTimer(ClassicGameMode->CastleTurnTimer);
-					ClassicGameMode->StartChooseCastleTimer();
-				}
+				BM_PlayerState->SetPlayerTurn(false);
+				ClassicGameMode->CurrentPlayerID++;
+				GetWorld()->GetTimerManager().ClearTimer(ClassicGameMode->CastleTurnTimer);
+				ClassicGameMode->StartChooseCastleTimer();
 			}
-		else
-			UE_LOG(LogBM_PlayerController, Warning, TEXT("You have clicked a tile that is already owned"));
+			else
+			{*/
+			BM_PlayerState->SetPlayerTurn(false);
+			GameMode->CurrentPlayerID++;
+			GameMode->StartPlayerTurnTimer(GameMode->CurrentPlayerID);
+		}
 	}
 	else
-	{
-		if (TargetTile->GetOwningPlayerNickname() == BM_PlayerState->Nickname || TargetTile->GetStatus() == ETileStatus::NotOwned)
-			TargetTile->TileWasClicked(EKeys::LeftMouseButton, BM_PlayerState->Nickname, BM_PlayerState->MaterialAttack, GameMode->Round);
-		else
-			UE_LOG(LogBM_PlayerController, Warning, TEXT("You have clicked a tile that is already owned"));
-	}
+		UE_LOG(LogBM_PlayerController, Warning, TEXT("It's not your turn"));
 }
 
 bool ABM_PlayerControllerBase::SC_TryClickTheTile_Validate(ABM_TileBase* TargetTile)

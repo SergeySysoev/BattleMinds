@@ -38,9 +38,9 @@ public:
 	UFUNCTION(Client, Reliable, BlueprintCallable)
 	void CC_RemoveQuestionWidget();
 	UFUNCTION(BlueprintImplementableEvent)
-	void UpdateTurnTimer();
+	void UpdateTurnTimer(EGameRound GameRound);
 	UFUNCTION(BlueprintImplementableEvent)
-	void ResetTurnTimer();
+	void ResetTurnTimer(EGameRound GameRound);
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void SC_TryClickTheTile(ABM_TileBase* TargetTile);
 
