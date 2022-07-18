@@ -78,7 +78,7 @@ void ABM_GameModeClassic::UpdateSetTerritoryTimer()
 	CurrentTurnTimer--;
 	if(CurrentTurnTimer == 0)
 	{
-		OpenQuestion();
+		OpenQuestion(EQuestionType::Choose);
 	}
 }
 

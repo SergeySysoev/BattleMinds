@@ -26,7 +26,10 @@ void ABM_PlayerControllerBase::CC_RemoveQuestionWidget_Implementation()
 
 void ABM_PlayerControllerBase::CC_OpenQuestionWidget_Implementation(FName QuestionRowName)
 {
-	QuestionWidget = CreateWidget<UBM_UWQuestion>(this,QuestionWidgetClass);
+	if(QuestionRowName.ToString().Contains("CHS"))
+		QuestionWidget = CreateWidget<UBM_UWQuestion>(this,ChooseQuestionWidgetClass);
+	if(QuestionRowName.ToString().Contains("SHT"))
+		QuestionWidget = CreateWidget<UBM_UWQuestion>(this,ShotQuestionWidgetClass);
 	QuestionWidget->QuestionName = QuestionRowName;
 	if (QuestionWidget)
 		QuestionWidget->AddToViewport(0);
@@ -36,7 +39,7 @@ void ABM_PlayerControllerBase::SC_RequestToOpenQuestion_Implementation()
 {
 	if (ABM_GameModeBase* GameMode = Cast<ABM_GameModeBase>(GetWorld()->GetAuthGameMode()))
 	{
-		GameMode->OpenQuestion();
+		//GameMode->OpenQuestion();
 		GetWorldTimerManager().ClearTimer(GameMode->PlayerTurnHandle);
 	}
 }
@@ -46,7 +49,7 @@ void ABM_PlayerControllerBase::SC_TryClickTheTile_Implementation(ABM_TileBase* T
 	ABM_PlayerState* BM_PlayerState = Cast<ABM_PlayerState>(this->PlayerState);
 	ABM_GameModeBase* GameMode = Cast<ABM_GameModeBase>(GetWorld()->GetAuthGameMode());
 	CurrentClickedTile = TargetTile;
-	if (GameMode->CurrentPlayerID == PlayerID)
+	if (GameMode->CurrentPlayerID == BM_PlayerState->BMPlayerID)
 	{
 		BM_PlayerState->SetPlayerTurn(true);
 		if (BM_PlayerState->IsPlayerTurn() && TargetTile->GetStatus() == ETileStatus::NotOwned)
@@ -74,3 +77,7 @@ bool ABM_PlayerControllerBase::SC_TryClickTheTile_Validate(ABM_TileBase* TargetT
 {
 	return true;
 }
+/*void ABM_PlayerControllerBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	DOREPLIFETIME(ABM_PlayerControllerBase, QuestionWidgetClass);
+}*/

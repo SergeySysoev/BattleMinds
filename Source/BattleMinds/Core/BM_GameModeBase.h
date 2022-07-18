@@ -19,6 +19,10 @@ public:
 	FTimerHandle QuestionTimerHandle;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game settings")
 	float QuestionTimer;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Game settings")
+	int32 QuestionsCount = 0;
+	UPROPERTY(BlueprintReadWrite, Category="Game settings")
+	FQuestion LastQuestion;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game settings")
 	float TurnTimer;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Game settings")
@@ -40,7 +44,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void InitPlayer(APlayerController* NewPlayer);
 	UFUNCTION(BlueprintCallable)
-	void OpenQuestion();
+	void OpenQuestion(EQuestionType QuestionType);
 	UFUNCTION(BlueprintCallable)
 	void StartQuestionTimer();
 	UFUNCTION(BlueprintCallable)
@@ -60,11 +64,15 @@ protected:
 	TMap<FName, FQuestion> UsedQuestions;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Questions")
-	TArray<UDataTable*> QuestionTables;
+	TArray<UDataTable*> QuestionTablesChoose;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Questions")
+	TArray<UDataTable*> QuestionTablesShot;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Tiles")
 	TArray<AActor*> Tiles;
 
 	FTimerHandle PauseHandle;
+	FTimerDelegate QuestionDelegate;
 	float CurrentTurnTimer;
 };

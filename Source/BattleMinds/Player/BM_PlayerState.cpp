@@ -5,6 +5,7 @@
 
 void ABM_PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
+	DOREPLIFETIME(ABM_PlayerState, BMPlayerID);
 	DOREPLIFETIME(ABM_PlayerState, Nickname);
 	DOREPLIFETIME(ABM_PlayerState, Points);
 	DOREPLIFETIME(ABM_PlayerState, MaterialTile);
