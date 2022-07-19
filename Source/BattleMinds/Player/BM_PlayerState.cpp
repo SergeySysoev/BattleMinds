@@ -38,6 +38,7 @@ float ABM_PlayerState::GetPoints()
 void ABM_PlayerState::AddPoints(int32 inPoints)
 {
 	Points += inPoints;
+	SetPointsInWidget();
 }
 
 bool ABM_PlayerState::IsPlayerTurn()
@@ -78,4 +79,15 @@ int32 ABM_PlayerState::GetWrongAnswersNumber()
 		}
 	}
 	return  Count;
+}
+
+TSet<ABM_TileBase*> ABM_PlayerState::GetNeighbors()
+{
+	TSet<ABM_TileBase*> Neighbors;
+	for(ABM_TileBase* Tile : OwnedTiles)
+	{
+		for(ABM_TileBase* Neighbor : Tile->NeighbourTiles)
+			Neighbors.Add(Neighbor);
+	}
+	return Neighbors;
 }

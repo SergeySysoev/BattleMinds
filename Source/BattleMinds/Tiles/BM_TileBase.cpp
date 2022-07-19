@@ -21,7 +21,7 @@ ABM_TileBase::ABM_TileBase()
 	CastleMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Castle Mesh"));
 	CastleMesh->AttachToComponent(StaticMesh, FAttachmentTransformRules::KeepRelativeTransform);
 	CastleMesh->SetIsReplicated(true);
-	Material = OriginalMaterial;
+	CurrentMaterial = MaterialOwned;
 
 }
 
@@ -36,34 +36,11 @@ bool ABM_TileBase::ChangeStatus_Validate(ETileStatus NewStatus)
 	return true;
 }
 
-void ABM_TileBase::Highlight(AActor* TouchedActor)
-{
-	if (Status == ETileStatus::NotOwned)
-	{
-		ABM_PlayerState* PlayerState = Cast<ABM_PlayerState>(GetWorld()->GetFirstPlayerController()->PlayerState);
-		if (PlayerState)
-		{
-			StaticMesh->SetMaterial(0, PlayerState->MaterialTile);
-		}
-		
-	}
-}
-
-void ABM_TileBase::Unhighlight(AActor* TouchedActor)
-{
-	StaticMesh->SetMaterial(0, OriginalMaterial);
-}
-
-void ABM_TileBase::OnRep_TileChanged()
-{
-	StaticMesh->SetMaterial(0, MaterialOwned);
-	//UnbindHighlightEvents();
-}
-
 void ABM_TileBase::OnRep_TileMeshChanged()
 {
-	StaticMesh->SetMaterial(0, MaterialOwned);
+	StaticMesh->SetMaterial(0, CurrentMaterial);
 }
+
 void ABM_TileBase::OnRep_FlagMeshChanged()
 {
 	FlagMesh->SetMaterial(0, MaterialAttacked);
@@ -73,12 +50,21 @@ void ABM_TileBase::OnRep_CastleMeshChanged()
 	CastleMesh->SetMaterial(0, MaterialCastle);
 }
 
+void ABM_TileBase::TurnOffHighlight_Implementation()
+{
+	CurrentMaterial = MaterialOwned;
+	OnRep_TileMeshChanged();
+}
+
+void ABM_TileBase::TurnOnHighlight_Implementation(UMaterialInterface* NeighborMaterial)
+{
+	CurrentMaterial = NeighborMaterial;
+	OnRep_TileMeshChanged();
+}
+
 void ABM_TileBase::MC_RemoveHighlighting_Implementation()
 {
-	if (MaterialOwned)
-		StaticMesh->SetMaterial(0, MaterialOwned);
-	else
-		StaticMesh->SetMaterial(0, OriginalMaterial);
+	StaticMesh->SetMaterial(0, MaterialOwned);
 }
 
 void ABM_TileBase::MC_RemoveSelection_Implementation()
@@ -86,20 +72,16 @@ void ABM_TileBase::MC_RemoveSelection_Implementation()
 	FlagMesh->SetVisibility(false);
 }
 
-void ABM_TileBase::MC_BindHighlightEvents_Implementation()
-{
-	this->OnBeginCursorOver.AddDynamic(this, &ABM_TileBase::Highlight);
-	this->OnEndCursorOver.AddDynamic(this, &ABM_TileBase::Unhighlight);
-}
-
 void ABM_TileBase::AddTileToPlayerTerritory_Implementation(ABM_PlayerState* PlayerState)
 {
 	bIsAttacked = false;
 	ChangeStatus(ETileStatus::Controlled);
 	MaterialOwned = PlayerState->MaterialTile;
-	StaticMesh->SetMaterial(0, MaterialOwned);
+	CurrentMaterial = MaterialOwned;
+	StaticMesh->SetMaterial(0, CurrentMaterial);
+	PlayerState->AddPoints(Points);
+	PlayerState->OwnedTiles.Add(this);
 	MC_RemoveSelection();
-	MC_UnbindHighlightEvents();
 }
 
 void ABM_TileBase::CancelAttack_Implementation()
@@ -107,44 +89,42 @@ void ABM_TileBase::CancelAttack_Implementation()
 	ChangeStatus(ETileStatus::NotOwned);
 	bIsAttacked = false;
 	MC_RemoveSelection();
-	MC_BindHighlightEvents();
 }
 
-void ABM_TileBase::TileWasChosen_Implementation(const FString& PlayerNick, UMaterialInterface* PlayerMaterial, EGameRound GameRound)
+void ABM_TileBase::TileWasChosen_Implementation(ABM_PlayerState* PlayerState, EGameRound GameRound)
 {
 	switch (Status)
 	{
 	case ETileStatus::NotOwned:
-		if (!PlayerNick.IsEmpty())
+		if (PlayerState)
 		{
 			if (GameRound == EGameRound::ChooseCastle)
 			{
-				OwnerPlayerNickname = PlayerNick;
+				OwnerPlayerNickname = PlayerState->Nickname;
 				ChangeStatus(ETileStatus::Castle);
-				MaterialCastle = PlayerMaterial;
-				MaterialOwned = PlayerMaterial;
+				MaterialCastle = PlayerState->MaterialCastle;
+				CurrentMaterial = MaterialCastle;
 				if (StaticMesh->GetMaterial(0))
 					UE_LOG(LogBM_Tile, Display, TEXT("Current Material %s"), *StaticMesh->GetMaterial(0)->GetName());
-				StaticMesh->SetMaterial(0, MaterialOwned);
+				StaticMesh->SetMaterial(0, CurrentMaterial);
 				CastleMesh->SetVisibility(true);
 				CastleMesh->SetMaterial(0, MaterialCastle);
-				MC_UnbindHighlightEvents();
+				PlayerState->OwnedTiles.Add(this);
 			}
 			else //Attacking the tile or setting the territory
 			{
 				bIsAttacked = true;
 				//OriginalMaterial = Material;
-				MaterialAttacked = PlayerMaterial;
-				StaticMesh->SetMaterial(0 , OriginalMaterial);
+				MaterialAttacked = PlayerState->MaterialAttack;
+				StaticMesh->SetMaterial(0 , MaterialOwned);
 				MC_RemoveHighlighting();
 				FlagMesh->SetVisibility(true);
 				FlagMesh->SetMaterial(0, MaterialAttacked);
-				MC_UnbindHighlightEvents();
 			}
 		}
 		break;
 	case ETileStatus::Controlled:
-		if(OwnerPlayerNickname == PlayerNick)
+		if(OwnerPlayerNickname == PlayerState->Nickname)
 		{
 			if (!bIsFortified)
 			{
@@ -169,30 +149,22 @@ void ABM_TileBase::TileWasClicked_Implementation(FKey ButtonPressed, EGameRound 
 	switch (GameRound)
 	{
 		case EGameRound::ChooseCastle:
-			TileWasChosen(PlayerState->Nickname, PlayerState->MaterialCastle, GameRound);
+			TileWasChosen(PlayerState, GameRound);
 			break;
 		case EGameRound::SetTerritory:
-			TileWasChosen(PlayerState->Nickname, PlayerState->MaterialAttack, GameRound);
+			TileWasChosen(PlayerState, GameRound);
 			break;
 		case EGameRound::FightForTerritory:
-			TileWasChosen(PlayerState->Nickname, PlayerState->MaterialAttack, GameRound);
+			TileWasChosen(PlayerState, GameRound);
 			const auto PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController());
 			PlayerController->OpenQuestion();
 			break;
 	}
 }
 
-void ABM_TileBase::MC_UnbindHighlightEvents_Implementation()
-{
-	this->OnBeginCursorOver.RemoveDynamic(this, &ABM_TileBase::Highlight);
-	this->OnEndCursorOver.RemoveDynamic(this, &ABM_TileBase::Unhighlight);
-}
-
 void ABM_TileBase::BeginPlay()
 {
 	Super::BeginPlay();
-	this->OnBeginCursorOver.AddDynamic(this, &ABM_TileBase::Highlight);
-	this->OnEndCursorOver.AddDynamic(this, &ABM_TileBase::Unhighlight);
 }
 
 void ABM_TileBase::Tick(float DeltaTime)
@@ -206,11 +178,10 @@ void ABM_TileBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME(ABM_TileBase, Points);
 	DOREPLIFETIME(ABM_TileBase, Status);
 	DOREPLIFETIME(ABM_TileBase, bIsArtillery);
-	DOREPLIFETIME(ABM_TileBase, Material);
+	DOREPLIFETIME(ABM_TileBase, CurrentMaterial);
 	DOREPLIFETIME(ABM_TileBase, MaterialAttacked);
 	DOREPLIFETIME(ABM_TileBase, MaterialOwned);
 	DOREPLIFETIME(ABM_TileBase, MaterialCastle);
-	DOREPLIFETIME(ABM_TileBase, OriginalMaterial);
 	DOREPLIFETIME(ABM_TileBase, OwnerPlayerNickname);
 	DOREPLIFETIME(ABM_TileBase, StaticMesh);
 	DOREPLIFETIME(ABM_TileBase, bIsFortified);

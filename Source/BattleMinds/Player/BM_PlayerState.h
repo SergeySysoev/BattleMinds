@@ -53,9 +53,12 @@ public:
 	int32 GetCorrectAnswersNumber();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int32 GetWrongAnswersNumber();
-	
+	UFUNCTION(BlueprintImplementableEvent)
+	void SetPointsInWidget();
+	UFUNCTION()
+	TSet<ABM_TileBase*> GetNeighbors();
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing=SetPointsInWidget, Category = "Player Info")
 	float Points;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
 	bool bHasArtillery;

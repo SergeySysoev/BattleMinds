@@ -22,6 +22,7 @@ void ABM_GameModeBase::InitPlayer(APlayerController* NewPlayer)
 		PlayerState->Nickname = NicknameMap.FindRef(NumberOfActivePlayers);
 		PlayerState->MaterialCastle = CastleMaterialMap.FindRef(NumberOfActivePlayers);
 		PlayerState->MaterialAttack = MaterialAttackMap.FindRef(NumberOfActivePlayers);
+		PlayerState->MaterialNeighbour = MaterialNeighborMap.FindRef(NumberOfActivePlayers);
 	}
 }
 void ABM_GameModeBase::OpenQuestion(EQuestionType QuestionType)
@@ -122,7 +123,7 @@ void ABM_GameModeBase::GatherPlayersAnswers()
 				else
 				{
 					CurrentPlayerController->CurrentClickedTile->AddTileToPlayerTerritory(CurrentPlayerState);
-					CurrentPlayerState->AddPoints(CurrentPlayerController->CurrentClickedTile->GetPoints());
+					//CurrentPlayerState->AddPoints(CurrentPlayerController->CurrentClickedTile->GetPoints());
 				}
 			}
 			break;
@@ -151,7 +152,7 @@ void ABM_GameModeBase::GatherPlayersAnswers()
 				{
 					if(Answer.Value == false)
 					{
-						CurrentAnsweredQuestions.RemoveAt(Answer.Key);
+						CurrentAnsweredQuestions.RemoveAtSwap(Answer.Key);
 						if (Round == EGameRound::FightForTerritory)
 						{
 							const ABM_PlayerControllerBase* CurrentPlayerController = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[Answer.Key]->GetPlayerController());
@@ -246,6 +247,7 @@ void ABM_GameModeBase::GatherPlayersAnswers()
 			CurrentPlayerID = 0;
 			Round = EGameRound::FightForTerritory;
 			UE_LOG(LogBM_GameMode, Display, TEXT("Switch to Fight for Territory round"));
+			StartPlayerTurnTimer(CurrentPlayerID);
 		}
 	}
 }
@@ -264,6 +266,7 @@ EGameRound ABM_GameModeBase::NextGameRound()
 void ABM_GameModeBase::StartPlayerTurnTimer(int32 PlayerID)
 {
 	GetWorld()->GetTimerManager().ClearTimer(PlayerTurnHandle);
+	CurrentPlayerAvailableTiles.Empty();
 	UE_LOG(LogTemp, Warning, TEXT("Current PlayerID %d"), CurrentPlayerID);
 	CurrentTurnTimer = TurnTimer;
 	for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
@@ -271,10 +274,80 @@ void ABM_GameModeBase::StartPlayerTurnTimer(int32 PlayerID)
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 		{
 			PlayerController->ResetTurnTimer(Round);
+			if(Cast<ABM_PlayerState>(PlayerState)->BMPlayerID == PlayerID)
+				Cast<ABM_PlayerState>(PlayerState)->SetPlayerTurn(true);
+			else
+			{
+				Cast<ABM_PlayerState>(PlayerState)->SetPlayerTurn(false);
+			}
+		}
+	}
+	for (const auto Tile : Tiles)
+	{
+		ABM_TileBase* BMTile = Cast<ABM_TileBase>(Tile);
+		if(BMTile->GetStatus()==ETileStatus::NotOwned)
+		{
+			BMTile->MC_RemoveHighlighting();
 		}
 	}
 	if (CurrentPlayerID < NumberOfActivePlayers)
+	{
+		switch (Round)
+		{
+			case EGameRound::ChooseCastle:
+			{
+				for (const auto Tile : Tiles)
+				{
+					ABM_TileBase* BMTile = Cast<ABM_TileBase>(Tile);
+					if (BMTile->GetStatus() == ETileStatus::NotOwned)
+					{
+						bool NeighborsAvailable = true;;
+						for (const auto Neighbor: BMTile->NeighbourTiles)
+						{
+							if(Neighbor->GetStatus() != ETileStatus::NotOwned)
+							{
+								NeighborsAvailable = false;
+								break;
+							}
+						}
+						if(NeighborsAvailable)
+						{
+							BMTile->TurnOnHighlight(Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID])->MaterialNeighbour);
+							CurrentPlayerAvailableTiles.Add(BMTile);
+						}
+					}
+				}
+				break;
+			}
+			case EGameRound::SetTerritory:
+			{
+				const auto CurrentPlayerState = Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID]);
+				for (const auto NeighborTile : CurrentPlayerState->GetNeighbors())
+				{
+					if (NeighborTile->GetStatus() == ETileStatus::NotOwned && !NeighborTile->bIsAttacked)
+					{
+						UE_LOG(LogBM_GameMode, Display, TEXT("Neighbor tile: %s"), *NeighborTile->GetActorNameOrLabel());
+						NeighborTile->TurnOnHighlight(CurrentPlayerState->MaterialNeighbour);
+						CurrentPlayerAvailableTiles.Add(NeighborTile);
+					}
+				}
+				break;
+			}
+			case EGameRound::FightForTerritory:
+			{
+				const auto CurrentPlayerState = Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID]);
+				for (const auto NeighborTile : CurrentPlayerState->GetNeighbors())
+				{
+					UE_LOG(LogBM_GameMode, Display, TEXT("Neighbor tile: %s"), *NeighborTile->GetActorNameOrLabel());
+					NeighborTile->TurnOnHighlight(CurrentPlayerState->MaterialNeighbour);
+					CurrentPlayerAvailableTiles.Add(NeighborTile);
+				}
+				break;
+			}
+		}
 		GetWorld()->GetTimerManager().SetTimer(PlayerTurnHandle, this, &ABM_GameModeBase::UpdatePlayerTurnTimers, 1.0, true, 1.0f);
+	}
+		
 	else
 	{
 		switch (Round)
@@ -319,10 +392,7 @@ void ABM_GameModeBase::StartPlayerTurnTimer(int32 PlayerID)
 
 void ABM_GameModeBase::ChooseFirstAvailableTileForPlayer(int32 PlayerID)
 {
-	/*TSubclassOf<ABM_TileBase> TileClass = ABM_TileBase::StaticClass();
-	TArray<AActor*> Tiles;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), TileClass, Tiles);*/
-	for (auto Tile: Tiles)
+	/*for (auto Tile: Tiles)
 	{
 		auto FoundTile = Cast<ABM_TileBase>(Tile);
 		//TODO additional check if this tile is 1-tile close to the current one
@@ -337,6 +407,11 @@ void ABM_GameModeBase::ChooseFirstAvailableTileForPlayer(int32 PlayerID)
 			}
 			break;
 		}
+	}*/
+	const int32 RandomTileIndex = FMath::RandRange(0, CurrentPlayerAvailableTiles.Num()-1);
+	if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[PlayerID]->GetPlayerController()))
+	{
+		PlayerController->SC_TryClickTheTile(CurrentPlayerAvailableTiles[RandomTileIndex]);
 	}
 }
 

@@ -5,6 +5,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "Core/BM_Types.h"
 #include "TimerManager.h"
+#include "Tiles/BM_TileBase.h"
 #include "BM_GameModeBase.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogBM_GameMode, Display, All);
@@ -33,6 +34,8 @@ public:
 	TMap<int32, UMaterialInterface*> MaterialAttackMap;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Players settings")
 	TMap<int32, UMaterialInterface*> CastleMaterialMap;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Players settings")
+	TMap<int32, UMaterialInterface*> MaterialNeighborMap;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Players settings")
 	TMap<int32, FString> NicknameMap;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Players settings")
@@ -71,6 +74,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Tiles")
 	TArray<AActor*> Tiles;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Tiles")
+	TArray<ABM_TileBase*> CurrentPlayerAvailableTiles;
 
 	FTimerHandle PauseHandle;
 	FTimerDelegate QuestionDelegate;

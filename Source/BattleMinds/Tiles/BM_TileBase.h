@@ -38,15 +38,6 @@ public:
 	
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void ChangeStatus(ETileStatus NewStatus);
-
-	UFUNCTION(BlueprintCallable)
-	void Highlight(AActor* TouchedActor);
-
-	UFUNCTION(BlueprintCallable)
-	void Unhighlight(AActor* TouchedActor);
-	
-	UFUNCTION()
-	void OnRep_TileChanged();
 	UFUNCTION()
 	void OnRep_TileMeshChanged();
 	UFUNCTION()
@@ -55,7 +46,7 @@ public:
 	void OnRep_CastleMeshChanged();
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void TileWasChosen(const FString& PlayerNick, UMaterialInterface* PlayerMaterial, EGameRound GameRound);
+	void TileWasChosen(ABM_PlayerState* PlayerState, EGameRound GameRound);
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void TileWasClicked(FKey ButtonPressed, EGameRound GameRound, ABM_PlayerState* PlayerState);
@@ -65,13 +56,7 @@ public:
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void CancelAttack();
-
-	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
-	void MC_BindHighlightEvents();
 	
-	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
-	void MC_UnbindHighlightEvents();
-
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
 	void MC_RemoveHighlighting();
 	
@@ -86,6 +71,11 @@ public:
 
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable, Category="Visuals")
 	void MC_RemoveSelection();
+
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category="Visuals")
+	void TurnOnHighlight(UMaterialInterface* NeighborMaterial);
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category="Visuals")
+	void TurnOffHighlight();
 
 protected:
 	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_TileMeshChanged, BlueprintReadWrite, Category = "Components")
@@ -102,16 +92,14 @@ protected:
 	bool bIsArtillery;
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Territory")
 	bool bIsFortified;
-	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_TileChanged, BlueprintReadWrite, Category = "Visuals")
-	TObjectPtr<UMaterialInterface> Material;
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_TileMeshChanged, BlueprintReadWrite, Category = "Visuals")
+	TObjectPtr<UMaterialInterface> CurrentMaterial;
 	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_FlagMeshChanged, BlueprintReadWrite, Category = "Visuals")
 	TObjectPtr<UMaterialInterface> MaterialAttacked;
-	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_TileChanged, BlueprintReadWrite, Category = "Visuals")
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_TileMeshChanged, BlueprintReadWrite, Category = "Visuals")
 	TObjectPtr<UMaterialInterface> MaterialOwned;
 	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_CastleMeshChanged, BlueprintReadWrite, Category = "Visuals")
 	TObjectPtr<UMaterialInterface> MaterialCastle;
-	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_TileChanged, BlueprintReadWrite, Category = "Visuals")
-	TObjectPtr<UMaterialInterface> OriginalMaterial;
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Player")
 	FString OwnerPlayerNickname;
 
