@@ -41,6 +41,8 @@ public:
 	void RemoveQuestionWidget();
 	UFUNCTION(Client, Reliable, BlueprintCallable)
 	void CC_RemoveQuestionWidget();
+	UFUNCTION(Client, Reliable, BlueprintCallable)
+	void CC_ShowCorrectAnswers();
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateTurnTimer(EGameRound GameRound);
 	UFUNCTION(BlueprintImplementableEvent)

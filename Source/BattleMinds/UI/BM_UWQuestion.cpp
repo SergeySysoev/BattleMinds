@@ -3,3 +3,4 @@
 
 #include "BM_UWQuestion.h"
 
+void UBM_UWQuestion::ShowCorrectAnswers_Implementation() {}
