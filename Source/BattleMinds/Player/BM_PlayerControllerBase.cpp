@@ -18,6 +18,12 @@ ABM_PlayerControllerBase::ABM_PlayerControllerBase()
 	bEnableMouseOverEvents = true;
 }
 
+void ABM_PlayerControllerBase::CC_ShowCorrectAnswers_Implementation(const TArray<int32> &PlayersChoices)
+{
+	if(QuestionWidget)
+		QuestionWidget->ShowCorrectAnswers(PlayersChoices);
+}
+
 void ABM_PlayerControllerBase::CC_RemoveQuestionWidget_Implementation()
 {
 	if(QuestionWidget)

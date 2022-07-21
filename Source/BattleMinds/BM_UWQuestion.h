@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Core/BM_Types.h"
 #include "Interfaces/BM_QuestionInterface.h"
 #include "BM_UWQuestion.generated.h"
 
@@ -21,4 +22,6 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void GatherAnswers();
+	UFUNCTION(BlueprintNativeEvent)
+	void ShowCorrectAnswers(const TArray<int32> &PlayerChoices);
 };

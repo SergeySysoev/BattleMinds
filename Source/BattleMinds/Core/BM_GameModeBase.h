@@ -52,6 +52,14 @@ public:
 	void StartQuestionTimer();
 	UFUNCTION(BlueprintCallable)
 	void GatherPlayersAnswers();
+	UFUNCTION(BlueprintCallable)
+	void ShowCorrectAnswers();
+	UFUNCTION(BlueprintCallable)
+	void VerifyAnswers();
+	UFUNCTION()
+	void VertifyChooseAnswers();
+	UFUNCTION()
+	void VerifyShotAnswers();
 	UFUNCTION()
 	EGameRound NextGameRound();
 	UFUNCTION(BlueprintCallable)
