@@ -55,6 +55,27 @@ struct FAnswerShot
 	UPROPERTY(BlueprintReadWrite, Category="Answer settings")
 	int32 Difference = MAX_int32;
 };
+USTRUCT(BlueprintType)
+struct FPlayerChoice
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Answer settings")
+	int32 PlayerID;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Answer settings")
+	int32 AnswerID;
+
+	FPlayerChoice()
+	{
+		PlayerID=0;
+		AnswerID=0;
+	};
+	FPlayerChoice(int32 inPlayerID, int32 inAnswerID)
+	{
+		PlayerID = inPlayerID;
+		AnswerID = inAnswerID;
+	}
+};
 
 USTRUCT(BlueprintType)
 struct FQuestion : public FTableRowBase

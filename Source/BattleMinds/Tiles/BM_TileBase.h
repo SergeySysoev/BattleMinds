@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "BattleMinds/Player/BM_PlayerControllerBase.h"
+#include "Components/BoxComponent.h"
 #include "Core/BM_Types.h"
 #include "Net/UnrealNetwork.h"
 #include "BM_TileBase.generated.h"
@@ -62,6 +63,8 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	FString GetOwningPlayerNickname(){ return OwnerPlayerNickname; };
+	UFUNCTION(BlueprintCallable)
+	int32 GetOwningPlayerID(){return OwnerPlayerID;};
 	
 	UFUNCTION(BlueprintCallable)
 	ETileStatus GetStatus() { return Status; };
@@ -76,6 +79,8 @@ public:
 	void TurnOnHighlight(UMaterialInterface* NeighborMaterial);
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category="Visuals")
 	void TurnOffHighlight();
+	UFUNCTION(NetMulticast, Reliable, BlueprintCallable, Category="Visuals")
+	void MC_ShowEdges(bool bVisibility, FColor PlayerColor);
 
 protected:
 	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_TileMeshChanged, BlueprintReadWrite, Category = "Components")
@@ -84,6 +89,8 @@ protected:
     UStaticMeshComponent* FlagMesh;
     UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_CastleMeshChanged, BlueprintReadWrite, Category = "Components")
     UStaticMeshComponent* CastleMesh;
+	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_CastleMeshChanged, BlueprintReadWrite, Category = "Components")
+	UBoxComponent* EdgesBox;
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Points")
 	float Points = 200.0f;
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Territory")
@@ -102,6 +109,8 @@ protected:
 	TObjectPtr<UMaterialInterface> MaterialCastle;
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Player")
 	FString OwnerPlayerNickname;
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Player")
+	int32 OwnerPlayerID;
 
 	virtual void BeginPlay() override;
 

@@ -28,6 +28,8 @@ public:
 	float TurnTimer;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Game settings")
 	int32 NumberOfActivePlayers;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game settings")
+	int32 NumberOfPlayerTurns = 6;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Players settings")
 	TMap<int32, UMaterialInterface*> MaterialMap;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Players settings")
@@ -37,6 +39,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Players settings")
 	TMap<int32, UMaterialInterface*> MaterialNeighborMap;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Players settings")
+	TMap<int32, FColor> ColorMap;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Players settings")
 	TMap<int32, FString> NicknameMap;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Players settings")
 	int32 CurrentPlayerID = 0;
@@ -44,6 +48,10 @@ public:
 	FTimerHandle PlayerTurnHandle;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Players settings")
 	TArray<FQuestion> CurrentAnsweredQuestions;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Tiles")
+	TArray<ABM_TileBase*> CurrentPlayerAvailableTiles;
+	UPROPERTY(BlueprintReadWrite)
+	int32 DefendingPlayerID;
 	UFUNCTION(BlueprintCallable)
 	void InitPlayer(APlayerController* NewPlayer);
 	UFUNCTION(BlueprintCallable)
@@ -57,7 +65,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void VerifyAnswers();
 	UFUNCTION()
-	void VertifyChooseAnswers();
+	void VerifyChooseAnswers();
 	UFUNCTION()
 	void VerifyShotAnswers();
 	UFUNCTION()
@@ -68,6 +76,8 @@ public:
 	void ChooseFirstAvailableTileForPlayer(int32 PlayerID);
 	UFUNCTION(BlueprintCallable)
 	void UpdatePlayerTurnTimers();
+	UFUNCTION(BlueprintCallable)
+	void CountResults();
 protected:
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 
@@ -83,10 +93,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Tiles")
 	TArray<AActor*> Tiles;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Tiles")
-	TArray<ABM_TileBase*> CurrentPlayerAvailableTiles;
-
+	TArray<int32> AnsweringPlayers;
 	FTimerHandle PauseHandle;
 	FTimerDelegate QuestionDelegate;
 	float CurrentTurnTimer;
+	int32 NumberOfTotalTurns;
+	bool bShotQuestionIsNeeded =false;
 };

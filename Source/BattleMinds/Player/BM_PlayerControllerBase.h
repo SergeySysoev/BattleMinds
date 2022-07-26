@@ -27,6 +27,8 @@ public:
 	TSubclassOf<UBM_UWQuestion> ChooseQuestionWidgetClass;
 	UPROPERTY(EditAnywhere, /*Replicated,*/ BlueprintReadWrite, Category= "User Widgets")
 	TSubclassOf<UBM_UWQuestion> ShotQuestionWidgetClass;
+	UPROPERTY(EditAnywhere, /*Replicated,*/ BlueprintReadWrite, Category= "User Widgets")
+	UUserWidget* ResultsWidget;;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "Tiles")
 	ABM_TileBase* CurrentClickedTile = nullptr;
 	UFUNCTION(BlueprintImplementableEvent)
@@ -36,13 +38,17 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void OpenQuestionWidget(EQuestionType QuestionType, FName QuestionName);
 	UFUNCTION(Client, Reliable, BlueprintCallable)
-	void CC_OpenQuestionWidget(FName QuestionRowName);
+	void CC_OpenQuestionWidget(FName QuestionRowName, const TArray<int32> &AnsweringPlayers);
 	UFUNCTION(BlueprintImplementableEvent)
 	void RemoveQuestionWidget();
+	UFUNCTION(BlueprintImplementableEvent)
+	void UpdateCurrentPlayerNickname(const FString &CurrentPlayerNickname);
 	UFUNCTION(Client, Reliable, BlueprintCallable)
 	void CC_RemoveQuestionWidget();
 	UFUNCTION(Client, Reliable, BlueprintCallable)
-	void CC_ShowCorrectAnswers(const TArray<int32> &PlayersChoices);
+	void CC_ShowResultsWidget();
+	UFUNCTION(Client, Reliable, BlueprintCallable)
+	void CC_ShowCorrectAnswers(const TArray<FPlayerChoice> &PlayersChoices);
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateTurnTimer(EGameRound GameRound);
 	UFUNCTION(BlueprintImplementableEvent)

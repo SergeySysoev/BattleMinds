@@ -18,7 +18,13 @@ ABM_PlayerControllerBase::ABM_PlayerControllerBase()
 	bEnableMouseOverEvents = true;
 }
 
-void ABM_PlayerControllerBase::CC_ShowCorrectAnswers_Implementation(const TArray<int32> &PlayersChoices)
+void ABM_PlayerControllerBase::CC_ShowResultsWidget_Implementation()
+{
+	if(ResultsWidget)
+		ResultsWidget->AddToViewport(0);
+}
+
+void ABM_PlayerControllerBase::CC_ShowCorrectAnswers_Implementation(const TArray<FPlayerChoice> &PlayersChoices)
 {
 	if(QuestionWidget)
 		QuestionWidget->ShowCorrectAnswers(PlayersChoices);
@@ -30,13 +36,15 @@ void ABM_PlayerControllerBase::CC_RemoveQuestionWidget_Implementation()
 		QuestionWidget->RemoveFromViewport();
 }
 
-void ABM_PlayerControllerBase::CC_OpenQuestionWidget_Implementation(FName QuestionRowName)
+void ABM_PlayerControllerBase::CC_OpenQuestionWidget_Implementation(FName QuestionRowName,  const TArray<int32> &AnsweringPlayers)
 {
 	if(QuestionRowName.ToString().Contains("CHS"))
 		QuestionWidget = CreateWidget<UBM_UWQuestion>(this,ChooseQuestionWidgetClass);
 	if(QuestionRowName.ToString().Contains("SHT"))
 		QuestionWidget = CreateWidget<UBM_UWQuestion>(this,ShotQuestionWidgetClass);
 	QuestionWidget->QuestionName = QuestionRowName;
+	QuestionWidget->AnsweringPlayers.Empty();
+	QuestionWidget->AnsweringPlayers.Append(AnsweringPlayers);
 	if (QuestionWidget)
 		QuestionWidget->AddToViewport(0);
 }
@@ -58,21 +66,31 @@ void ABM_PlayerControllerBase::SC_TryClickTheTile_Implementation(ABM_TileBase* T
 	if (GameMode->CurrentPlayerID == BM_PlayerState->BMPlayerID)
 	{
 		BM_PlayerState->SetPlayerTurn(true);
-		if (BM_PlayerState->IsPlayerTurn() && TargetTile->GetStatus() == ETileStatus::NotOwned)
+		if (BM_PlayerState->IsPlayerTurn())
 		{
-			TargetTile->TileWasClicked(EKeys::LeftMouseButton, GameMode->Round, BM_PlayerState);
-			/*if(ABM_GameModeClassic* ClassicGameMode = Cast<ABM_GameModeClassic>(GameMode))
+			if (GameMode->CurrentPlayerAvailableTiles.Contains(CurrentClickedTile))
 			{
-				BM_PlayerState->SetPlayerTurn(false);
-				ClassicGameMode->CurrentPlayerID++;
-				GetWorld()->GetTimerManager().ClearTimer(ClassicGameMode->CastleTurnTimer);
-				ClassicGameMode->StartChooseCastleTimer();
+				if(GameMode->Round != EGameRound::FightForTerritory)
+				{
+					TargetTile->TileWasClicked(EKeys::LeftMouseButton, GameMode->Round, BM_PlayerState);
+					BM_PlayerState->SetPlayerTurn(false);
+					GameMode->CurrentPlayerID++;
+					GameMode->StartPlayerTurnTimer(GameMode->CurrentPlayerID);
+				}
+				else
+				{
+					TargetTile->TileWasClicked(EKeys::LeftMouseButton, GameMode->Round, BM_PlayerState);
+					BM_PlayerState->SetPlayerTurn(false);
+					GameMode->DefendingPlayerID = CurrentClickedTile->GetOwningPlayerID();
+					GameMode->OpenQuestion(EQuestionType::Choose);
+					//GameMode->CurrentPlayerID++;
+				}
 			}
 			else
-			{*/
-			BM_PlayerState->SetPlayerTurn(false);
-			GameMode->CurrentPlayerID++;
-			GameMode->StartPlayerTurnTimer(GameMode->CurrentPlayerID);
+			{
+				//TODO: add option to attack any tile once per game
+				UE_LOG(LogBM_PlayerController, Warning, TEXT("This tile is not available"));
+			}
 		}
 	}
 	else

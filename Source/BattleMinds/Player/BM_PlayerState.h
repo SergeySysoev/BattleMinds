@@ -30,6 +30,15 @@ public:
 	UMaterialInterface* MaterialAttack;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
 	UMaterialInterface* MaterialNeighbour;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
+	FColor PlayerColor;
+	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Questions")
+	bool CurrentQuestionAnswerSent;
+	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Questions")
+	int32 NumberOfTurns;
+	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Questions")
+	int32 WinnerPosition;
+	
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Player Stats")
 	TArray<ABM_TileBase*> OwnedTiles;

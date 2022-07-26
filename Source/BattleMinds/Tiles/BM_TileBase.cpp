@@ -21,6 +21,11 @@ ABM_TileBase::ABM_TileBase()
 	CastleMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Castle Mesh"));
 	CastleMesh->AttachToComponent(StaticMesh, FAttachmentTransformRules::KeepRelativeTransform);
 	CastleMesh->SetIsReplicated(true);
+	EdgesBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Edges box"));
+	EdgesBox->SetIsReplicated(true);
+	EdgesBox->AttachToComponent(StaticMesh,FAttachmentTransformRules::KeepRelativeTransform);
+	EdgesBox->SetVisibility(false);
+	EdgesBox->SetHiddenInGame(false);
 	CurrentMaterial = MaterialOwned;
 
 }
@@ -50,6 +55,12 @@ void ABM_TileBase::OnRep_CastleMeshChanged()
 	CastleMesh->SetMaterial(0, MaterialCastle);
 }
 
+void ABM_TileBase::MC_ShowEdges_Implementation(bool bVisibility, FColor PlayerColor)
+{
+	EdgesBox->ShapeColor = PlayerColor;
+	EdgesBox->SetVisibility(bVisibility);
+}
+
 void ABM_TileBase::TurnOffHighlight_Implementation()
 {
 	CurrentMaterial = MaterialOwned;
@@ -75,13 +86,24 @@ void ABM_TileBase::MC_RemoveSelection_Implementation()
 void ABM_TileBase::AddTileToPlayerTerritory_Implementation(ABM_PlayerState* PlayerState)
 {
 	bIsAttacked = false;
-	ChangeStatus(ETileStatus::Controlled);
+	if(PlayerState->OwnedTiles.Num() == 0)
+	{
+		ChangeStatus(ETileStatus::Castle);
+		PlayerState->AddPoints(1000.0f);
+	}
+	else
+	{
+		ChangeStatus(ETileStatus::Controlled);
+		PlayerState->AddPoints(Points);
+	}
 	MaterialOwned = PlayerState->MaterialTile;
 	CurrentMaterial = MaterialOwned;
 	StaticMesh->SetMaterial(0, CurrentMaterial);
-	PlayerState->AddPoints(Points);
 	PlayerState->OwnedTiles.Add(this);
+	OwnerPlayerID = PlayerState->BMPlayerID;
+	PlayerState->SetPointsInWidget();
 	MC_RemoveSelection();
+	MC_ShowEdges(false, FColor::Black);
 }
 
 void ABM_TileBase::CancelAttack_Implementation()
@@ -89,6 +111,7 @@ void ABM_TileBase::CancelAttack_Implementation()
 	ChangeStatus(ETileStatus::NotOwned);
 	bIsAttacked = false;
 	MC_RemoveSelection();
+	MC_ShowEdges(false, FColor::Black);
 }
 
 void ABM_TileBase::TileWasChosen_Implementation(ABM_PlayerState* PlayerState, EGameRound GameRound)
@@ -109,7 +132,8 @@ void ABM_TileBase::TileWasChosen_Implementation(ABM_PlayerState* PlayerState, EG
 				StaticMesh->SetMaterial(0, CurrentMaterial);
 				CastleMesh->SetVisibility(true);
 				CastleMesh->SetMaterial(0, MaterialCastle);
-				PlayerState->OwnedTiles.Add(this);
+				AddTileToPlayerTerritory(PlayerState);
+				//PlayerState->OwnedTiles.Add(this);
 			}
 			else //Attacking the tile or setting the territory
 			{
@@ -118,6 +142,7 @@ void ABM_TileBase::TileWasChosen_Implementation(ABM_PlayerState* PlayerState, EG
 				MaterialAttacked = PlayerState->MaterialAttack;
 				StaticMesh->SetMaterial(0 , MaterialOwned);
 				MC_RemoveHighlighting();
+				MC_ShowEdges(false, FColor::Black);
 				FlagMesh->SetVisibility(true);
 				FlagMesh->SetMaterial(0, MaterialAttacked);
 			}
@@ -186,4 +211,5 @@ void ABM_TileBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME(ABM_TileBase, StaticMesh);
 	DOREPLIFETIME(ABM_TileBase, bIsFortified);
 	DOREPLIFETIME(ABM_TileBase, bIsAttacked);
+	DOREPLIFETIME(ABM_TileBase, OwnerPlayerID);
 }

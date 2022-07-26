@@ -19,9 +19,11 @@ class BATTLEMINDS_API UBM_UWQuestion : public UUserWidget, public IBM_QuestionIn
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Question settings")
 	FName QuestionName;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Question settings")
+	TArray<int32> AnsweringPlayers;
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void GatherAnswers();
 	UFUNCTION(BlueprintNativeEvent)
-	void ShowCorrectAnswers(const TArray<int32> &PlayerChoices);
+	void ShowCorrectAnswers(const TArray<FPlayerChoice> &PlayersChoices);
 };

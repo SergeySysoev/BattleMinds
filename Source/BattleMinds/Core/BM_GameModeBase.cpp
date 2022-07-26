@@ -23,6 +23,9 @@ void ABM_GameModeBase::InitPlayer(APlayerController* NewPlayer)
 		PlayerState->MaterialCastle = CastleMaterialMap.FindRef(NumberOfActivePlayers);
 		PlayerState->MaterialAttack = MaterialAttackMap.FindRef(NumberOfActivePlayers);
 		PlayerState->MaterialNeighbour = MaterialNeighborMap.FindRef(NumberOfActivePlayers);
+		PlayerState->PlayerColor = ColorMap.FindRef(NumberOfActivePlayers);
+		PlayerState->NumberOfTurns = NumberOfPlayerTurns;
+		NumberOfTotalTurns += NumberOfPlayerTurns;
 	}
 }
 void ABM_GameModeBase::OpenQuestion(EQuestionType QuestionType)
@@ -57,11 +60,24 @@ void ABM_GameModeBase::OpenQuestion(EQuestionType QuestionType)
 		default:
 			break;
 	}
+	AnsweringPlayers.Empty();
+	if(Round != EGameRound::FightForTerritory)
+	{
+		for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
+		{
+			AnsweringPlayers.Add(Cast<ABM_PlayerState>(PlayerState)->BMPlayerID);
+		}
+	}
+	else
+	{
+		AnsweringPlayers.Add(CurrentPlayerID);
+		AnsweringPlayers.Add(DefendingPlayerID);
+	}
 	for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
 	{
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 		{
-			PlayerController->CC_OpenQuestionWidget(RowNames[QuestionIndex]);
+			PlayerController->CC_OpenQuestionWidget(RowNames[QuestionIndex], AnsweringPlayers);
 			//PlayerController->OpenQuestionWidget(QuestionType ,RowNames[QuestionIndex]);
 		}
 	}
@@ -75,27 +91,42 @@ void ABM_GameModeBase::GatherPlayersAnswers()
 {
 	CurrentAnsweredQuestions.Empty();
 	//Remove Question Widget and add Player's answer to the CurrentAnswers array
-	for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
+	if (Round != EGameRound::FightForTerritory)
 	{
-		// Answers may not be pushed by the Player manually ,TODO: add default answer instead
-		if(Cast<ABM_PlayerState>(PlayerState)->AnsweredQuestions.Num() < QuestionsCount)
+		for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
 		{
-			switch (LastQuestion.Type)
+			// Answers may not be pushed by the Player manually ,TODO: add default answer instead
+			//if(Cast<ABM_PlayerState>(PlayerState)->AnsweredQuestions.Num() < QuestionsCount)
+			if(Cast<ABM_PlayerState>(PlayerState)->CurrentQuestionAnswerSent == false)
 			{
-				case EQuestionType::Choose:
+				switch (LastQuestion.Type)
 				{
-					Cast<ABM_PlayerState>(PlayerState)->AnsweredQuestions.Add(LastQuestion);
-					break;
+					case EQuestionType::Choose:
+					{
+						Cast<ABM_PlayerState>(PlayerState)->AnsweredQuestions.Add(LastQuestion);
+						break;
+					}
+					case EQuestionType::Shot:
+					{
+						Cast<ABM_PlayerState>(PlayerState)->AnsweredQuestions.Add(LastQuestion);
+						break;
+					}
+					default: break;
 				}
-				case EQuestionType::Shot:
-				{
-					Cast<ABM_PlayerState>(PlayerState)->AnsweredQuestions.Add(LastQuestion);
-					break;
-				}
-				default: break;
 			}
+			CurrentAnsweredQuestions.Add(Cast<ABM_PlayerState>(PlayerState)->AnsweredQuestions.Last());
 		}
-		CurrentAnsweredQuestions.Add(Cast<ABM_PlayerState>(PlayerState)->AnsweredQuestions.Last());
+	}
+	else
+	{
+		ABM_PlayerState* AttackingPlayerState = Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID]);
+		ABM_PlayerState* DefendingPlayerState = Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[DefendingPlayerID]);
+		if(AttackingPlayerState && AttackingPlayerState->CurrentQuestionAnswerSent == false)
+			AttackingPlayerState->AnsweredQuestions.Add(LastQuestion);
+		if (DefendingPlayerState && DefendingPlayerState->CurrentQuestionAnswerSent == false)
+			DefendingPlayerState->AnsweredQuestions.Add(LastQuestion);
+		CurrentAnsweredQuestions.Add(Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID])->AnsweredQuestions.Last());
+		CurrentAnsweredQuestions.Add(Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[DefendingPlayerID])->AnsweredQuestions.Last());
 	}
 	GetWorld()->GetTimerManager().ClearTimer(PauseHandle);
 	GetWorld()->GetTimerManager().SetTimer(PauseHandle,this,&ABM_GameModeBase::ShowCorrectAnswers, 1.0f, false);
@@ -103,7 +134,7 @@ void ABM_GameModeBase::GatherPlayersAnswers()
 
 void ABM_GameModeBase::ShowCorrectAnswers()
 {
-	TArray<int32> PlayersChoices;
+	TArray<FPlayerChoice> PlayersChoices;
 	switch (LastQuestion.Type)
 	{
 		case EQuestionType::Choose:
@@ -114,7 +145,7 @@ void ABM_GameModeBase::ShowCorrectAnswers()
 				{
 					if (AnsweredQuestion.Answers[i].bWasChosen)
 					{
-						PlayersChoices.Add(i);
+						PlayersChoices.Add(FPlayerChoice::FPlayerChoice(AnsweredQuestion.PlayerID, i));
 					}
 				}
 			}
@@ -124,7 +155,7 @@ void ABM_GameModeBase::ShowCorrectAnswers()
 		{
 			for (const auto AnsweredQuestion: CurrentAnsweredQuestions)
 			{
-				PlayersChoices.Add(AnsweredQuestion.AnswerShot.PlayerAnswer);
+				PlayersChoices.Add(FPlayerChoice::FPlayerChoice(AnsweredQuestion.PlayerID ,AnsweredQuestion.AnswerShot.PlayerAnswer));
 			}
 			break;
 		}
@@ -143,6 +174,7 @@ void ABM_GameModeBase::ShowCorrectAnswers()
 
 void ABM_GameModeBase::VerifyAnswers()
 {
+	bShotQuestionIsNeeded = false;
 	for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
 	{
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
@@ -155,7 +187,7 @@ void ABM_GameModeBase::VerifyAnswers()
 	{
 		case EQuestionType::Choose:
 		{
-			VertifyChooseAnswers();
+			VerifyChooseAnswers();
 			break;
 		}
 		case EQuestionType::Shot:
@@ -249,12 +281,35 @@ void ABM_GameModeBase::VerifyAnswers()
 			 * else
 			 * switch to the CountResults round
 			 */
+			if (bShotQuestionIsNeeded)
+			{
+				OpenQuestion(EQuestionType::Shot);
+				break;
+			}
+			ABM_PlayerState* AttackingPlayer = Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID]);
+			if(AttackingPlayer)
+			{
+				AttackingPlayer->NumberOfTurns--;
+			}
+			NumberOfTotalTurns--;
+			if (NumberOfActivePlayers < 2 || NumberOfTotalTurns == 0)
+			{
+				Round = NextGameRound();
+				CountResults();
+			}
+			else
+			{
+				CurrentPlayerID++;
+				if (CurrentPlayerID >= NumberOfActivePlayers)
+					CurrentPlayerID = 0;
+				StartPlayerTurnTimer(CurrentPlayerID);
+			}
 			break;
 		}
 	}
 }
 
-void ABM_GameModeBase::VertifyChooseAnswers()
+void ABM_GameModeBase::VerifyChooseAnswers()
 {
 	switch (Round)
 	{
@@ -269,10 +324,6 @@ void ABM_GameModeBase::VertifyChooseAnswers()
 				{
 					//Set Tile color back to default
 					CurrentPlayerController->CurrentClickedTile->CancelAttack();
-					if(Round == EGameRound::FightForTerritory)
-					{
-						CurrentPlayerState->AddPoints(-1* CurrentPlayerController->CurrentClickedTile->GetPoints());
-					}
 				}
 				else
 				{
@@ -285,9 +336,24 @@ void ABM_GameModeBase::VertifyChooseAnswers()
 		{
 			if (CurrentAnsweredQuestions[0].bWasAnswered && CurrentAnsweredQuestions[1].bWasAnswered)
 			{
-				QuestionDelegate.Unbind();
-				QuestionDelegate.BindUFunction(this, FName("OpenQuestion"), EQuestionType::Shot);
-				GetWorld()->GetTimerManager().SetTimer(PauseHandle, QuestionDelegate, 1.0, false, 2.0);
+				bShotQuestionIsNeeded = true;
+			}
+			else
+			{
+				if(CurrentAnsweredQuestions[0].bWasAnswered)
+				{
+					ABM_PlayerControllerBase* AttackingPlayer = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID]->GetPlayerController());
+					ABM_PlayerState* AttackingPlayerState = Cast<ABM_PlayerState>(AttackingPlayer->PlayerState);
+					if (AttackingPlayer)
+						AttackingPlayer->CurrentClickedTile->AddTileToPlayerTerritory(AttackingPlayerState);
+				}
+				else
+				{
+					ABM_PlayerControllerBase* DefendingPlayer = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[DefendingPlayerID]->GetPlayerController());
+					ABM_PlayerState* DefendingPlayerState = Cast<ABM_PlayerState>(DefendingPlayer->PlayerState);
+					if (DefendingPlayer)
+						DefendingPlayer->CurrentClickedTile->AddTileToPlayerTerritory(DefendingPlayerState);
+				}
 			}
 			break;
 		}
@@ -386,15 +452,20 @@ void ABM_GameModeBase::StartPlayerTurnTimer(int32 PlayerID)
 {
 	GetWorld()->GetTimerManager().ClearTimer(PlayerTurnHandle);
 	CurrentPlayerAvailableTiles.Empty();
-	UE_LOG(LogTemp, Warning, TEXT("Current PlayerID %d"), CurrentPlayerID);
+	UE_LOG(LogTemp, Warning, TEXT("Current PlayerID %d"), PlayerID);
 	CurrentTurnTimer = TurnTimer;
 	for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
 	{
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 		{
+			if (PlayerID < NumberOfActivePlayers)
+				PlayerController->UpdateCurrentPlayerNickname(Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[PlayerID])->Nickname);
+			Cast<ABM_PlayerState>(PlayerState)->CurrentQuestionAnswerSent = false;
 			PlayerController->ResetTurnTimer(Round);
 			if(Cast<ABM_PlayerState>(PlayerState)->BMPlayerID == PlayerID)
+			{
 				Cast<ABM_PlayerState>(PlayerState)->SetPlayerTurn(true);
+			}
 			else
 			{
 				Cast<ABM_PlayerState>(PlayerState)->SetPlayerTurn(false);
@@ -407,6 +478,7 @@ void ABM_GameModeBase::StartPlayerTurnTimer(int32 PlayerID)
 		if(BMTile->GetStatus()==ETileStatus::NotOwned)
 		{
 			BMTile->MC_RemoveHighlighting();
+			BMTile->MC_ShowEdges(false, FColor::Black);
 		}
 	}
 	if (CurrentPlayerID < NumberOfActivePlayers)
@@ -431,7 +503,9 @@ void ABM_GameModeBase::StartPlayerTurnTimer(int32 PlayerID)
 						}
 						if(NeighborsAvailable)
 						{
-							BMTile->TurnOnHighlight(Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID])->MaterialNeighbour);
+							const ABM_PlayerState* PlayerState = Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID]);
+							//BMTile->TurnOnHighlight(PlayerState->MaterialNeighbour);
+							BMTile->MC_ShowEdges(true, PlayerState->PlayerColor);
 							CurrentPlayerAvailableTiles.Add(BMTile);
 						}
 					}
@@ -440,25 +514,40 @@ void ABM_GameModeBase::StartPlayerTurnTimer(int32 PlayerID)
 			}
 			case EGameRound::SetTerritory:
 			{
-				const auto CurrentPlayerState = Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID]);
+				const auto CurrentPlayerState = Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[PlayerID]);
 				for (const auto NeighborTile : CurrentPlayerState->GetNeighbors())
 				{
 					if (NeighborTile->GetStatus() == ETileStatus::NotOwned && !NeighborTile->bIsAttacked)
 					{
 						UE_LOG(LogBM_GameMode, Display, TEXT("Neighbor tile: %s"), *NeighborTile->GetActorNameOrLabel());
-						NeighborTile->TurnOnHighlight(CurrentPlayerState->MaterialNeighbour);
+						//NeighborTile->TurnOnHighlight(CurrentPlayerState->MaterialNeighbour);
+						NeighborTile->MC_ShowEdges(true, CurrentPlayerState->PlayerColor);
 						CurrentPlayerAvailableTiles.Add(NeighborTile);
+					}
+				}
+				if(CurrentPlayerAvailableTiles.Num()==0)
+				{
+					for (const auto Tile : Tiles)
+					{
+						ABM_TileBase* BMTile = Cast<ABM_TileBase>(Tile);
+						if (BMTile->GetStatus() == ETileStatus::NotOwned && BMTile->bIsAttacked == false)
+						{
+							BMTile->MC_ShowEdges(true, CurrentPlayerState->PlayerColor);
+							CurrentPlayerAvailableTiles.Add(BMTile);
+							break;
+						}
 					}
 				}
 				break;
 			}
 			case EGameRound::FightForTerritory:
 			{
-				const auto CurrentPlayerState = Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID]);
+				const auto CurrentPlayerState = Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[PlayerID]);
 				for (const auto NeighborTile : CurrentPlayerState->GetNeighbors())
 				{
 					UE_LOG(LogBM_GameMode, Display, TEXT("Neighbor tile: %s"), *NeighborTile->GetActorNameOrLabel());
-					NeighborTile->TurnOnHighlight(CurrentPlayerState->MaterialNeighbour);
+					//NeighborTile->TurnOnHighlight(CurrentPlayerState->MaterialNeighbour);
+					NeighborTile->MC_ShowEdges(true, CurrentPlayerState->PlayerColor);
 					CurrentPlayerAvailableTiles.Add(NeighborTile);
 				}
 				break;
@@ -466,7 +555,6 @@ void ABM_GameModeBase::StartPlayerTurnTimer(int32 PlayerID)
 		}
 		GetWorld()->GetTimerManager().SetTimer(PlayerTurnHandle, this, &ABM_GameModeBase::UpdatePlayerTurnTimers, 1.0, true, 1.0f);
 	}
-		
 	else
 	{
 		switch (Round)
@@ -538,6 +626,17 @@ void ABM_GameModeBase::UpdatePlayerTurnTimers()
 			{
 				PlayerController->ResetTurnTimer(Round);
 			}
+		}
+	}
+}
+
+void ABM_GameModeBase::CountResults()
+{
+	for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
+	{
+		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
+		{
+			PlayerController->CC_ShowResultsWidget();
 		}
 	}
 }

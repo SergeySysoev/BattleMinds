@@ -15,6 +15,10 @@ void ABM_PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(ABM_PlayerState, MaterialCastle);
 	DOREPLIFETIME(ABM_PlayerState, MaterialAttack);
 	DOREPLIFETIME(ABM_PlayerState, MaterialNeighbour);
+	DOREPLIFETIME(ABM_PlayerState, PlayerColor);
+	DOREPLIFETIME(ABM_PlayerState, CurrentQuestionAnswerSent);
+	DOREPLIFETIME(ABM_PlayerState, NumberOfTurns);
+	DOREPLIFETIME(ABM_PlayerState, WinnerPosition);
 }
 
 TSet<ABM_TileBase*> ABM_PlayerState::GetAllCurrentNeighbours()

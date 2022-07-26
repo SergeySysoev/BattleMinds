@@ -3,4 +3,4 @@
 
 #include "BM_UWQuestion.h"
 
-void UBM_UWQuestion::ShowCorrectAnswers_Implementation(const TArray<int32> &PlayerChoices) {}
+void UBM_UWQuestion::ShowCorrectAnswers_Implementation(const TArray<FPlayerChoice> &PlayersChoices) {}
