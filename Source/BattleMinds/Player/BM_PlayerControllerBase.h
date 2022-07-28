@@ -5,6 +5,7 @@
 #include "Core/BM_Types.h"
 #include "GameFramework/PlayerController.h"
 #include "Net/UnrealNetwork.h"
+#include "UI/BM_UWResults.h"
 #include "BM_PlayerControllerBase.generated.h"
 
 class UBM_UWQuestion;
@@ -23,30 +24,28 @@ public:
 	ABM_PlayerControllerBase();
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "User Widgets")
 	UBM_UWQuestion* QuestionWidget;
-	UPROPERTY(EditAnywhere, /*Replicated,*/ BlueprintReadWrite, Category= "User Widgets")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "User Widgets")
 	TSubclassOf<UBM_UWQuestion> ChooseQuestionWidgetClass;
-	UPROPERTY(EditAnywhere, /*Replicated,*/ BlueprintReadWrite, Category= "User Widgets")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "User Widgets")
 	TSubclassOf<UBM_UWQuestion> ShotQuestionWidgetClass;
-	UPROPERTY(EditAnywhere, /*Replicated,*/ BlueprintReadWrite, Category= "User Widgets")
-	UUserWidget* ResultsWidget;;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "User Widgets")
+	UBM_UWResults* ResultsWidget;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "User Widgets")
+	TSubclassOf<UUserWidget> ResultsWidgetClass;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "Tiles")
 	ABM_TileBase* CurrentClickedTile = nullptr;
 	UFUNCTION(BlueprintImplementableEvent)
 	void OpenQuestion();
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_RequestToOpenQuestion();
-	UFUNCTION(BlueprintImplementableEvent)
-	void OpenQuestionWidget(EQuestionType QuestionType, FName QuestionName);
 	UFUNCTION(Client, Reliable, BlueprintCallable)
 	void CC_OpenQuestionWidget(FName QuestionRowName, const TArray<int32> &AnsweringPlayers);
-	UFUNCTION(BlueprintImplementableEvent)
-	void RemoveQuestionWidget();
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateCurrentPlayerNickname(const FString &CurrentPlayerNickname);
 	UFUNCTION(Client, Reliable, BlueprintCallable)
 	void CC_RemoveQuestionWidget();
 	UFUNCTION(Client, Reliable, BlueprintCallable)
-	void CC_ShowResultsWidget();
+	void CC_ShowResultsWidget(const TArray<APlayerState*> &PlayerArray);
 	UFUNCTION(Client, Reliable, BlueprintCallable)
 	void CC_ShowCorrectAnswers(const TArray<FPlayerChoice> &PlayersChoices);
 	UFUNCTION(BlueprintImplementableEvent)
@@ -55,5 +54,4 @@ public:
 	void ResetTurnTimer(EGameRound GameRound);
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void SC_TryClickTheTile(ABM_TileBase* TargetTile);
-
 };

@@ -7,7 +7,9 @@
 #include "BattleMinds/Player/BM_PlayerState.h"
 #include "Blueprint/UserWidget.h"
 #include "Core/BM_GameModeBase.h"
+#include "Core/BM_GameStateBase.h"
 #include "Core/Classic/BM_GameModeClassic.h"
+#include "UI/BM_UWResults.h"
 
 DEFINE_LOG_CATEGORY(LogBM_PlayerController);
 
@@ -18,10 +20,16 @@ ABM_PlayerControllerBase::ABM_PlayerControllerBase()
 	bEnableMouseOverEvents = true;
 }
 
-void ABM_PlayerControllerBase::CC_ShowResultsWidget_Implementation()
+void ABM_PlayerControllerBase::CC_ShowResultsWidget_Implementation(const TArray<APlayerState*> &PlayerArray)
 {
 	if(ResultsWidget)
 		ResultsWidget->AddToViewport(0);
+	else
+	{
+		ResultsWidget = CreateWidget<UBM_UWResults>(this,ResultsWidgetClass);
+		ResultsWidget->PlayerArray.Append(PlayerArray);
+		ResultsWidget->AddToViewport(0);
+	}
 }
 
 void ABM_PlayerControllerBase::CC_ShowCorrectAnswers_Implementation(const TArray<FPlayerChoice> &PlayersChoices)
@@ -83,7 +91,7 @@ void ABM_PlayerControllerBase::SC_TryClickTheTile_Implementation(ABM_TileBase* T
 					BM_PlayerState->SetPlayerTurn(false);
 					GameMode->DefendingPlayerID = CurrentClickedTile->GetOwningPlayerID();
 					GameMode->OpenQuestion(EQuestionType::Choose);
-					//GameMode->CurrentPlayerID++;
+					Cast<ABM_PlayerControllerBase>(GameMode->GetGameState<ABM_GameStateBase>()->PlayerArray[GameMode->DefendingPlayerID]->GetPlayerController())->CurrentClickedTile = CurrentClickedTile;
 				}
 			}
 			else
@@ -101,7 +109,3 @@ bool ABM_PlayerControllerBase::SC_TryClickTheTile_Validate(ABM_TileBase* TargetT
 {
 	return true;
 }
-/*void ABM_PlayerControllerBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	DOREPLIFETIME(ABM_PlayerControllerBase, QuestionWidgetClass);
-}*/

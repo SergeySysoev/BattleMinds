@@ -64,16 +64,18 @@ struct FPlayerChoice
 	int32 PlayerID;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Answer settings")
 	int32 AnswerID;
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Answer settings")
+	FTimespan ElapsedTime;
 	FPlayerChoice()
 	{
 		PlayerID=0;
 		AnswerID=0;
 	};
-	FPlayerChoice(int32 inPlayerID, int32 inAnswerID)
+	FPlayerChoice(int32 inPlayerID, int32 inAnswerID, FTimespan inElapsedTime)
 	{
 		PlayerID = inPlayerID;
 		AnswerID = inAnswerID;
+		ElapsedTime = inElapsedTime;
 	}
 };
 

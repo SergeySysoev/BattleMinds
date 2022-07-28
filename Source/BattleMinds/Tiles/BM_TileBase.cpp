@@ -55,6 +55,13 @@ void ABM_TileBase::OnRep_CastleMeshChanged()
 	CastleMesh->SetMaterial(0, MaterialCastle);
 }
 
+void ABM_TileBase::RemoveTileFromPlayerTerritory_Implementation(ABM_PlayerState* PlayerState)
+{
+	bIsAttacked = false;
+	PlayerState->AddPoints(-1 * Points);
+	PlayerState->OwnedTiles.RemoveSwap(this);
+}
+
 void ABM_TileBase::MC_ShowEdges_Implementation(bool bVisibility, FColor PlayerColor)
 {
 	EdgesBox->ShapeColor = PlayerColor;

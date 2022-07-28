@@ -145,7 +145,7 @@ void ABM_GameModeBase::ShowCorrectAnswers()
 				{
 					if (AnsweredQuestion.Answers[i].bWasChosen)
 					{
-						PlayersChoices.Add(FPlayerChoice::FPlayerChoice(AnsweredQuestion.PlayerID, i));
+						PlayersChoices.Add(FPlayerChoice::FPlayerChoice(AnsweredQuestion.PlayerID, i, AnsweredQuestion.ElapsedTime));
 					}
 				}
 			}
@@ -155,7 +155,7 @@ void ABM_GameModeBase::ShowCorrectAnswers()
 		{
 			for (const auto AnsweredQuestion: CurrentAnsweredQuestions)
 			{
-				PlayersChoices.Add(FPlayerChoice::FPlayerChoice(AnsweredQuestion.PlayerID ,AnsweredQuestion.AnswerShot.PlayerAnswer));
+				PlayersChoices.Add(FPlayerChoice::FPlayerChoice(AnsweredQuestion.PlayerID ,AnsweredQuestion.AnswerShot.PlayerAnswer, AnsweredQuestion.ElapsedTime));
 			}
 			break;
 		}
@@ -328,6 +328,7 @@ void ABM_GameModeBase::VerifyChooseAnswers()
 				else
 				{
 					CurrentPlayerController->CurrentClickedTile->AddTileToPlayerTerritory(CurrentPlayerState);
+					
 				}
 			}
 			break;
@@ -340,19 +341,29 @@ void ABM_GameModeBase::VerifyChooseAnswers()
 			}
 			else
 			{
-				if(CurrentAnsweredQuestions[0].bWasAnswered)
+				ABM_PlayerControllerBase* AttackingPlayer = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID]->GetPlayerController());
+				ABM_PlayerState* AttackingPlayerState = Cast<ABM_PlayerState>(AttackingPlayer->PlayerState);
+				ABM_PlayerControllerBase* DefendingPlayer = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[DefendingPlayerID]->GetPlayerController());
+				ABM_PlayerState* DefendingPlayerState = Cast<ABM_PlayerState>(DefendingPlayer->PlayerState);
+				for (const auto AnsweredQuestion : CurrentAnsweredQuestions)
 				{
-					ABM_PlayerControllerBase* AttackingPlayer = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID]->GetPlayerController());
-					ABM_PlayerState* AttackingPlayerState = Cast<ABM_PlayerState>(AttackingPlayer->PlayerState);
-					if (AttackingPlayer)
-						AttackingPlayer->CurrentClickedTile->AddTileToPlayerTerritory(AttackingPlayerState);
-				}
-				else
-				{
-					ABM_PlayerControllerBase* DefendingPlayer = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[DefendingPlayerID]->GetPlayerController());
-					ABM_PlayerState* DefendingPlayerState = Cast<ABM_PlayerState>(DefendingPlayer->PlayerState);
-					if (DefendingPlayer)
-						DefendingPlayer->CurrentClickedTile->AddTileToPlayerTerritory(DefendingPlayerState);
+					if(AnsweredQuestion.bWasAnswered)
+					{
+						// correct answer
+						if(AnsweredQuestion.PlayerID == CurrentPlayerID)
+						{
+							// attacking player was right
+							AttackingPlayer->CurrentClickedTile->AddTileToPlayerTerritory(AttackingPlayerState);
+							DefendingPlayer->CurrentClickedTile->RemoveTileFromPlayerTerritory(DefendingPlayerState);
+						}
+						else
+						{
+							// defending player was right
+							AttackingPlayer->CurrentClickedTile->CancelAttack();
+							DefendingPlayerState->AddPoints(200);
+						}
+						break;
+					}
 				}
 			}
 			break;
@@ -475,11 +486,8 @@ void ABM_GameModeBase::StartPlayerTurnTimer(int32 PlayerID)
 	for (const auto Tile : Tiles)
 	{
 		ABM_TileBase* BMTile = Cast<ABM_TileBase>(Tile);
-		if(BMTile->GetStatus()==ETileStatus::NotOwned)
-		{
-			BMTile->MC_RemoveHighlighting();
-			BMTile->MC_ShowEdges(false, FColor::Black);
-		}
+		BMTile->MC_RemoveHighlighting();
+		BMTile->MC_ShowEdges(false, FColor::Black);
 	}
 	if (CurrentPlayerID < NumberOfActivePlayers)
 	{
@@ -545,10 +553,13 @@ void ABM_GameModeBase::StartPlayerTurnTimer(int32 PlayerID)
 				const auto CurrentPlayerState = Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[PlayerID]);
 				for (const auto NeighborTile : CurrentPlayerState->GetNeighbors())
 				{
-					UE_LOG(LogBM_GameMode, Display, TEXT("Neighbor tile: %s"), *NeighborTile->GetActorNameOrLabel());
-					//NeighborTile->TurnOnHighlight(CurrentPlayerState->MaterialNeighbour);
-					NeighborTile->MC_ShowEdges(true, CurrentPlayerState->PlayerColor);
-					CurrentPlayerAvailableTiles.Add(NeighborTile);
+					if (!CurrentPlayerState->OwnedTiles.Contains(NeighborTile))
+					{
+						UE_LOG(LogBM_GameMode, Display, TEXT("Neighbor tile: %s"), *NeighborTile->GetActorNameOrLabel());
+						//NeighborTile->TurnOnHighlight(CurrentPlayerState->MaterialNeighbour);
+						NeighborTile->MC_ShowEdges(true, CurrentPlayerState->PlayerColor);
+						CurrentPlayerAvailableTiles.Add(NeighborTile);
+					}
 				}
 				break;
 			}
@@ -636,7 +647,7 @@ void ABM_GameModeBase::CountResults()
 	{
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 		{
-			PlayerController->CC_ShowResultsWidget();
+			PlayerController->CC_ShowResultsWidget(GetGameState<ABM_GameStateBase>()->PlayerArray);
 		}
 	}
 }

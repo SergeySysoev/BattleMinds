@@ -54,6 +54,8 @@ public:
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void AddTileToPlayerTerritory(ABM_PlayerState* PlayerState);
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void RemoveTileFromPlayerTerritory(ABM_PlayerState* PlayerState);
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void CancelAttack();
