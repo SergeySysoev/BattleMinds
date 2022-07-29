@@ -14,7 +14,7 @@
 void ABM_GameModeClassic::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
-	if (NumberOfActivePlayers == Cast<UBM_GameInstance>(GetWorld()->GetGameInstance())->NumberOfPlayers && GetNumPlayers()== NumberOfActivePlayers)
+	if (NumberOfActivePlayers == Cast<UBM_GameInstance>(GetWorld()->GetGameInstance())->NumberOfPlayers)
 	{
 		TSubclassOf<ABM_TileBase> TileClass = ABM_TileBase::StaticClass();
 		TArray<AActor*> FoundTiles;

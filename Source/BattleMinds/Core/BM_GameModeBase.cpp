@@ -8,6 +8,7 @@
 #include "Kismet/DataTableFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "Player/BM_PlayerControllerBase.h"
+#include "Player/BM_PlayerPawn.h"
 #include "Player/BM_PlayerState.h"
 #include "Tiles/BM_TileBase.h"
 
@@ -17,7 +18,7 @@ void ABM_GameModeBase::InitPlayer(APlayerController* NewPlayer)
 {
 	if (ABM_PlayerState* PlayerState = Cast<ABM_PlayerState>(NewPlayer->GetPlayerState<ABM_PlayerState>()))
 	{
-		PlayerState->BMPlayerID = NumberOfActivePlayers-1;
+		PlayerState->BMPlayerID = NumberOfActivePlayers;
 		PlayerState->MaterialTile = MaterialMap.FindRef(NumberOfActivePlayers);
 		PlayerState->Nickname = NicknameMap.FindRef(NumberOfActivePlayers);
 		PlayerState->MaterialCastle = CastleMaterialMap.FindRef(NumberOfActivePlayers);
@@ -26,6 +27,12 @@ void ABM_GameModeBase::InitPlayer(APlayerController* NewPlayer)
 		PlayerState->PlayerColor = ColorMap.FindRef(NumberOfActivePlayers);
 		PlayerState->NumberOfTurns = NumberOfPlayerTurns;
 		NumberOfTotalTurns += NumberOfPlayerTurns;
+		const auto AvailablePlayerStart = FindPlayerStart(NewPlayer, TEXT(""));
+		const FVector Location = AvailablePlayerStart->GetActorLocation();
+		const FRotator Rotation = AvailablePlayerStart->GetActorRotation();
+		ABM_PlayerPawn* SpawnedPawn = GetWorld()->SpawnActor<ABM_PlayerPawn>(PawnClass, Location, Rotation);
+		//SpawnedPawn->SetActorRotation(Rotation);
+		NewPlayer->Possess(SpawnedPawn);
 	}
 }
 void ABM_GameModeBase::OpenQuestion(EQuestionType QuestionType)
@@ -655,8 +662,8 @@ void ABM_GameModeBase::CountResults()
 void ABM_GameModeBase::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
-	NumberOfActivePlayers++;
 	InitPlayer(NewPlayer);
+	NumberOfActivePlayers++;
 }
 
 void ABM_GameModeBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

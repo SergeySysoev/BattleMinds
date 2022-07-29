@@ -5,6 +5,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "Core/BM_Types.h"
 #include "TimerManager.h"
+#include "Player/BM_PlayerPawn.h"
 #include "Tiles/BM_TileBase.h"
 #include "BM_GameModeBase.generated.h"
 
@@ -27,7 +28,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game settings")
 	float TurnTimer;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Game settings")
-	int32 NumberOfActivePlayers;
+	int32 NumberOfActivePlayers = 0;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game settings")
 	int32 NumberOfPlayerTurns = 6;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Players settings")
@@ -92,7 +93,8 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Tiles")
 	TArray<AActor*> Tiles;
-
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Players settings")
+	TSubclassOf<ABM_PlayerPawn> PawnClass;
 	TArray<int32> AnsweringPlayers;
 	FTimerHandle PauseHandle;
 	FTimerDelegate QuestionDelegate;

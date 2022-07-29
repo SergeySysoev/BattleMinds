@@ -162,7 +162,6 @@ void ABM_TileBase::TileWasChosen_Implementation(ABM_PlayerState* PlayerState, EG
 			{
 				bIsFortified = true;
 				UE_LOG(LogBM_Tile, Display, TEXT("Tile was fortified"));
-				this->OnBeginCursorOver.Clear();
 			}
 		}
 		else
