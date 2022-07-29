@@ -20,6 +20,12 @@ ABM_PlayerControllerBase::ABM_PlayerControllerBase()
 	bEnableMouseOverEvents = true;
 }
 
+void ABM_PlayerControllerBase::CC_MarkAnsweredPlayers_Implementation(int32 LastSentPlayer)
+{
+	if(QuestionWidget)
+		QuestionWidget->MarkAnsweredPlayers(LastSentPlayer);
+}
+
 void ABM_PlayerControllerBase::CC_ShowResultsWidget_Implementation(const TArray<APlayerState*> &PlayerArray)
 {
 	if(ResultsWidget)

@@ -10,6 +10,7 @@
 #include "BM_GameModeBase.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogBM_GameMode, Display, All);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAnswerSentSignature, int32, PlayerID);
 UCLASS()
 class BATTLEMINDS_API ABM_GameModeBase : public AGameModeBase
 {
@@ -53,12 +54,16 @@ public:
 	TArray<ABM_TileBase*> CurrentPlayerAvailableTiles;
 	UPROPERTY(BlueprintReadWrite)
 	int32 DefendingPlayerID;
+	UPROPERTY(BlueprintAssignable, BlueprintReadOnly, BlueprintCallable)
+	FAnswerSentSignature OnAnswerSent;
 	UFUNCTION(BlueprintCallable)
 	void InitPlayer(APlayerController* NewPlayer);
 	UFUNCTION(BlueprintCallable)
 	void OpenQuestion(EQuestionType QuestionType);
 	UFUNCTION(BlueprintCallable)
 	void StartQuestionTimer();
+	UFUNCTION()
+	void ResetQuestionTimer(int32 LastSentPlayer);
 	UFUNCTION(BlueprintCallable)
 	void GatherPlayersAnswers();
 	UFUNCTION(BlueprintCallable)
@@ -101,4 +106,5 @@ protected:
 	float CurrentTurnTimer;
 	int32 NumberOfTotalTurns;
 	bool bShotQuestionIsNeeded =false;
+	int32 NumberOfSentAnswers = 0;
 };

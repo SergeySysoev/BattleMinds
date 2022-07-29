@@ -43,6 +43,8 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateCurrentPlayerNickname(const FString &CurrentPlayerNickname);
 	UFUNCTION(Client, Reliable, BlueprintCallable)
+	void CC_MarkAnsweredPlayers(int32 LastSentPlayer);
+	UFUNCTION(Client, Reliable, BlueprintCallable)
 	void CC_RemoveQuestionWidget();
 	UFUNCTION(Client, Reliable, BlueprintCallable)
 	void CC_ShowResultsWidget(const TArray<APlayerState*> &PlayerArray);

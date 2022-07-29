@@ -88,12 +88,60 @@ void ABM_GameModeBase::OpenQuestion(EQuestionType QuestionType)
 			//PlayerController->OpenQuestionWidget(QuestionType ,RowNames[QuestionIndex]);
 		}
 	}
+	NumberOfSentAnswers = 0;
+	if (!OnAnswerSent.IsBound())
+		OnAnswerSent.AddDynamic(this, &ABM_GameModeBase::ResetQuestionTimer);
 	StartQuestionTimer();
 }
 void ABM_GameModeBase::StartQuestionTimer()
 {
 	GetWorld()->GetTimerManager().SetTimer(QuestionTimerHandle, this, &ABM_GameModeBase::GatherPlayersAnswers, QuestionTimer, false);
 }
+
+void ABM_GameModeBase::ResetQuestionTimer(int32 LastSentPlayer)
+{
+	NumberOfSentAnswers++;
+	for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
+	{
+		ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController());
+		if (PlayerController)
+		{
+			PlayerController->CC_MarkAnsweredPlayers(LastSentPlayer);
+		}
+	}
+	switch (Round)
+	{
+		case EGameRound::SetTerritory:
+		{
+			if(NumberOfSentAnswers == NumberOfActivePlayers)
+			{
+				GetWorld()->GetTimerManager().ClearTimer(QuestionTimerHandle);
+				GatherPlayersAnswers();
+			}
+			break;
+		}
+		case EGameRound::FightForTheRestTiles:
+		{
+			if(NumberOfSentAnswers == NumberOfActivePlayers)
+			{
+				GetWorld()->GetTimerManager().ClearTimer(QuestionTimerHandle);
+				GatherPlayersAnswers();
+			}
+			break;
+		}
+		case EGameRound::FightForTerritory:
+		{
+			if(NumberOfSentAnswers == 2)
+			{
+				GetWorld()->GetTimerManager().ClearTimer(QuestionTimerHandle);
+				GatherPlayersAnswers();
+			}
+			break;
+		}
+	}
+	
+}
+
 void ABM_GameModeBase::GatherPlayersAnswers()
 {
 	CurrentAnsweredQuestions.Empty();
@@ -102,8 +150,7 @@ void ABM_GameModeBase::GatherPlayersAnswers()
 	{
 		for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
 		{
-			// Answers may not be pushed by the Player manually ,TODO: add default answer instead
-			//if(Cast<ABM_PlayerState>(PlayerState)->AnsweredQuestions.Num() < QuestionsCount)
+			// Answers may not be pushed by the Player manually
 			if(Cast<ABM_PlayerState>(PlayerState)->CurrentQuestionAnswerSent == false)
 			{
 				switch (LastQuestion.Type)

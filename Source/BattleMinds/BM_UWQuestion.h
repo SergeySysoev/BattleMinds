@@ -26,4 +26,6 @@ public:
 	void GatherAnswers();
 	UFUNCTION(BlueprintNativeEvent)
 	void ShowCorrectAnswers(const TArray<FPlayerChoice> &PlayersChoices);
+	UFUNCTION(BlueprintImplementableEvent)
+	void MarkAnsweredPlayers(int32 AnsweredPlayerID);
 };
