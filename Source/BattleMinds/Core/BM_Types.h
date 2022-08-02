@@ -127,6 +127,56 @@ enum class EClassicRound : uint8
 	FightForTerritory,
 	CountResults
 };
+USTRUCT(BlueprintType)
+struct FTooltip
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tooltip Settings")
+	bool bIsEnabled;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tooltip Settings")
+	TObjectPtr<UTexture2D> TooltipImage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tooltip Settings")
+	FText Title;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tooltip Settings")
+	FText Description;
+};
+USTRUCT(BlueprintType)
+struct FGameModeAvailableSettings : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game Mode Settings")
+	FString SettingName;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game Mode Settings")
+	TArray<FString> Options;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game Mode Settings")
+	FTooltip Tooltip;
+};
+USTRUCT(BlueprintType)
+struct FGameModeSetting : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game Mode Setting")
+	FString SettingName;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game Mode Setting")
+	FString Option;
+};
+USTRUCT(BlueprintType)
+struct FGameModeDescription : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game Mode Description")
+	FString Name;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game Mode Description")
+	FString Description;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game Mode Description")
+	TArray<FName> AvailableMaps;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game Mode Description")
+	TArray<FGameModeAvailableSettings> AvailableSettings;
+};
 
 UCLASS()
 class BATTLEMINDS_API UBM_Types : public UBlueprintFunctionLibrary
