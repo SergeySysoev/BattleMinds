@@ -13,13 +13,14 @@ class ABM_TileBase;
 class ABM_PlayerState;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogBM_PlayerController, Display, All);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSetTimerDelegate);
 
 UCLASS()
 class BATTLEMINDS_API ABM_PlayerControllerBase : public APlayerController
 {
 	GENERATED_BODY()
-	
+
 public:
 	ABM_PlayerControllerBase();
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "User Widgets")
@@ -39,17 +40,17 @@ public:
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_RequestToOpenQuestion();
 	UFUNCTION(Client, Reliable, BlueprintCallable)
-	void CC_OpenQuestionWidget(FName QuestionRowName, const TArray<int32> &AnsweringPlayers);
+	void CC_OpenQuestionWidget(FName QuestionRowName, const TArray<int32>& AnsweringPlayers);
 	UFUNCTION(BlueprintImplementableEvent)
-	void UpdateCurrentPlayerNickname(const FString &CurrentPlayerNickname);
+	void UpdateCurrentPlayerNickname(const FString& CurrentPlayerNickname);
 	UFUNCTION(Client, Reliable, BlueprintCallable)
 	void CC_MarkAnsweredPlayers(int32 LastSentPlayer);
 	UFUNCTION(Client, Reliable, BlueprintCallable)
 	void CC_RemoveQuestionWidget();
 	UFUNCTION(Client, Reliable, BlueprintCallable)
-	void CC_ShowResultsWidget(const TArray<APlayerState*> &PlayerArray);
+	void CC_ShowResultsWidget(const TArray<APlayerState*>& PlayerArray);
 	UFUNCTION(Client, Reliable, BlueprintCallable)
-	void CC_ShowCorrectAnswers(const TArray<FPlayerChoice> &PlayersChoices);
+	void CC_ShowCorrectAnswers(const TArray<FPlayerChoice>& PlayersChoices);
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateTurnTimer(EGameRound GameRound);
 	UFUNCTION(BlueprintImplementableEvent)

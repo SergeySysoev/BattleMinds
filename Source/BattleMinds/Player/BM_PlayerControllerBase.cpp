@@ -22,45 +22,59 @@ ABM_PlayerControllerBase::ABM_PlayerControllerBase()
 
 void ABM_PlayerControllerBase::CC_MarkAnsweredPlayers_Implementation(int32 LastSentPlayer)
 {
-	if(QuestionWidget)
+	if (QuestionWidget)
+	{
 		QuestionWidget->MarkAnsweredPlayers(LastSentPlayer);
+	}
 }
 
-void ABM_PlayerControllerBase::CC_ShowResultsWidget_Implementation(const TArray<APlayerState*> &PlayerArray)
+void ABM_PlayerControllerBase::CC_ShowResultsWidget_Implementation(const TArray<APlayerState*>& PlayerArray)
 {
-	if(ResultsWidget)
+	if (ResultsWidget)
+	{
 		ResultsWidget->AddToViewport(0);
+	}
 	else
 	{
-		ResultsWidget = CreateWidget<UBM_UWResults>(this,ResultsWidgetClass);
+		ResultsWidget = CreateWidget<UBM_UWResults>(this, ResultsWidgetClass);
 		ResultsWidget->PlayerArray.Append(PlayerArray);
 		ResultsWidget->AddToViewport(0);
 	}
 }
 
-void ABM_PlayerControllerBase::CC_ShowCorrectAnswers_Implementation(const TArray<FPlayerChoice> &PlayersChoices)
+void ABM_PlayerControllerBase::CC_ShowCorrectAnswers_Implementation(const TArray<FPlayerChoice>& PlayersChoices)
 {
-	if(QuestionWidget)
+	if (QuestionWidget)
+	{
 		QuestionWidget->ShowCorrectAnswers(PlayersChoices);
+	}
 }
 
 void ABM_PlayerControllerBase::CC_RemoveQuestionWidget_Implementation()
 {
-	if(QuestionWidget)
+	if (QuestionWidget)
+	{
 		QuestionWidget->RemoveFromViewport();
+	}
 }
 
-void ABM_PlayerControllerBase::CC_OpenQuestionWidget_Implementation(FName QuestionRowName,  const TArray<int32> &AnsweringPlayers)
+void ABM_PlayerControllerBase::CC_OpenQuestionWidget_Implementation(FName QuestionRowName, const TArray<int32>& AnsweringPlayers)
 {
-	if(QuestionRowName.ToString().Contains("CHS"))
-		QuestionWidget = CreateWidget<UBM_UWQuestion>(this,ChooseQuestionWidgetClass);
-	if(QuestionRowName.ToString().Contains("SHT"))
-		QuestionWidget = CreateWidget<UBM_UWQuestion>(this,ShotQuestionWidgetClass);
+	if (QuestionRowName.ToString().Contains("CHS"))
+	{
+		QuestionWidget = CreateWidget<UBM_UWQuestion>(this, ChooseQuestionWidgetClass);
+	}
+	if (QuestionRowName.ToString().Contains("SHT"))
+	{
+		QuestionWidget = CreateWidget<UBM_UWQuestion>(this, ShotQuestionWidgetClass);
+	}
 	QuestionWidget->QuestionName = QuestionRowName;
 	QuestionWidget->AnsweringPlayers.Empty();
 	QuestionWidget->AnsweringPlayers.Append(AnsweringPlayers);
 	if (QuestionWidget)
+	{
 		QuestionWidget->AddToViewport(0);
+	}
 }
 
 void ABM_PlayerControllerBase::SC_RequestToOpenQuestion_Implementation()
@@ -84,7 +98,7 @@ void ABM_PlayerControllerBase::SC_TryClickTheTile_Implementation(ABM_TileBase* T
 		{
 			if (GameMode->CurrentPlayerAvailableTiles.Contains(CurrentClickedTile))
 			{
-				if(GameMode->Round != EGameRound::FightForTerritory)
+				if (GameMode->Round != EGameRound::FightForTerritory)
 				{
 					TargetTile->TileWasClicked(EKeys::LeftMouseButton, GameMode->Round, BM_PlayerState);
 					BM_PlayerState->SetPlayerTurn(false);

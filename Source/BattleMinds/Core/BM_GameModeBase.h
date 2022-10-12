@@ -10,7 +10,9 @@
 #include "BM_GameModeBase.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogBM_GameMode, Display, All);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAnswerSentSignature, int32, PlayerID);
+
 UCLASS()
 class BATTLEMINDS_API ABM_GameModeBase : public AGameModeBase
 {
@@ -105,6 +107,6 @@ protected:
 	FTimerDelegate QuestionDelegate;
 	float CurrentTurnTimer;
 	int32 NumberOfTotalTurns;
-	bool bShotQuestionIsNeeded =false;
+	bool bShotQuestionIsNeeded = false;
 	int32 NumberOfSentAnswers = 0;
 };

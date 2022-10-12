@@ -178,6 +178,79 @@ struct FGameModeDescription : public FTableRowBase
 	TArray<FGameModeAvailableSettings> AvailableSettings;
 };
 
+USTRUCT(BlueprintType)
+struct FPlayerConnectionInfo
+{
+	GENERATED_BODY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Connection Info")
+	bool bIsHost;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Connection Info")
+	bool bIsReady;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Connection Info")
+	int32 PlayerID;
+};
+
+USTRUCT(BlueprintType)
+struct FPlayerProfile
+{
+	GENERATED_BODY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Profile Info")
+	FString Nickname;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Profile Info")
+	TObjectPtr<UTexture2D> Avatar;
+};
+
+USTRUCT(BlueprintType)
+struct FPlayerCastle
+{
+	GENERATED_BODY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Castle Info")
+	FString Name;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Castle Info")
+	TObjectPtr<UStaticMesh> Mesh;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Castle Info")
+	TObjectPtr<UTexture2D> Icon;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Castle Info")
+	int32 CastleID;
+};
+
+USTRUCT(BlueprintType)
+struct FPlayerKnight
+{
+	GENERATED_BODY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Knight Info")
+	FString Name;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Knight Info")
+	TObjectPtr<UStaticMesh> Mesh;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Knight Info")
+	TObjectPtr<UTexture2D> Icon;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Knight Info")
+	int32 KnightID;
+};
+
+USTRUCT(BlueprintType)
+struct FPlayerFigures
+{
+	GENERATED_BODY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Figures Info")
+	FPlayerCastle Castle;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Figures Info")
+	FPlayerKnight Knight;
+};
+
+USTRUCT(BlueprintType)
+struct FConnectedPlayer
+{
+	GENERATED_BODY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Info")
+	FPlayerConnectionInfo ConnectionInfo;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Info")
+	FPlayerProfile Profile;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Info")
+	FPlayerFigures Figures;
+};
+
+
 UCLASS()
 class BATTLEMINDS_API UBM_Types : public UBlueprintFunctionLibrary
 {
