@@ -97,7 +97,7 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Questions")
 	TArray<UDataTable*> QuestionTablesShot;
-
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Tiles")
 	TArray<AActor*> Tiles;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Players settings")

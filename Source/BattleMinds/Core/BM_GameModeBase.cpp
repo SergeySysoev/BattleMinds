@@ -85,6 +85,7 @@ void ABM_GameModeBase::OpenQuestion(EQuestionType QuestionType)
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 		{
 			PlayerController->CC_OpenQuestionWidget(RowNames[QuestionIndex], AnsweringPlayers);
+			//TO DO: Move camera to a specific scene for different type of questions
 			//PlayerController->OpenQuestionWidget(QuestionType ,RowNames[QuestionIndex]);
 		}
 	}
@@ -199,7 +200,7 @@ void ABM_GameModeBase::ShowCorrectAnswers()
 				{
 					if (AnsweredQuestion.Answers[i].bWasChosen)
 					{
-						PlayersChoices.Add(FPlayerChoice::FPlayerChoice(AnsweredQuestion.PlayerID, i, AnsweredQuestion.ElapsedTime));
+						PlayersChoices.Add(FPlayerChoice(AnsweredQuestion.PlayerID, i, AnsweredQuestion.ElapsedTime));
 					}
 				}
 			}
@@ -209,7 +210,7 @@ void ABM_GameModeBase::ShowCorrectAnswers()
 		{
 			for (const auto AnsweredQuestion: CurrentAnsweredQuestions)
 			{
-				PlayersChoices.Add(FPlayerChoice::FPlayerChoice(AnsweredQuestion.PlayerID ,AnsweredQuestion.AnswerShot.PlayerAnswer, AnsweredQuestion.ElapsedTime));
+				PlayersChoices.Add(FPlayerChoice(AnsweredQuestion.PlayerID ,AnsweredQuestion.AnswerShot.PlayerAnswer, AnsweredQuestion.ElapsedTime));
 			}
 			break;
 		}
