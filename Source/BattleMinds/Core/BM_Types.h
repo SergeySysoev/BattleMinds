@@ -9,7 +9,20 @@
 
 /**
  * 
- */
+*/
+UENUM(BlueprintType)
+enum class EQuestionCategories : uint8
+{
+	Science UMETA(DisplayedName = "Science"),
+	History UMETA(DisplayedName = "History"),
+	Literature UMETA(DisplayedName = "Literature"),
+	Sports UMETA(DisplayedName = "Sports"),
+	Movies UMETA(DisplayedName = "Movies"),
+	ComputerGames UMETA(DisplayedName = "Computer Games"),
+	Music UMETA(DisplayedName = "Music"),
+	Technologies UMETA(DisplayedName = "Technologies"),
+	TwentyFirstCentury UMETA(DisplayedName = "XXI century")
+};
 UENUM(BlueprintType)
 enum class EAnswerType : uint8
 {
@@ -80,12 +93,27 @@ struct FPlayerChoice
 };
 
 USTRUCT(BlueprintType)
+struct FCategory
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Category settings")
+	EQuestionCategories Name;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Category settings")
+	FText DisplayableName;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Category settings")
+	TObjectPtr<UTexture2D> Thumbnail;
+};
+
+USTRUCT(BlueprintType)
 struct FQuestion : public FTableRowBase
 {
 	GENERATED_BODY()
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Question settings")
 	FText Question;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Question settings")
+	FCategory Category;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Question settings")
 	EQuestionType Type;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Question settings", meta = (EditCondition = "Type == EQuestionType::Choose"))
