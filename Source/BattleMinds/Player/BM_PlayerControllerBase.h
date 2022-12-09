@@ -33,6 +33,8 @@ public:
 	UBM_UWResults* ResultsWidget;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "User Widgets")
 	TSubclassOf<UUserWidget> ResultsWidgetClass;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "User Widgets")
+	UUserWidget* PlayerHUD;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "Tiles")
 	ABM_TileBase* CurrentClickedTile = nullptr;
 	UFUNCTION(BlueprintImplementableEvent)

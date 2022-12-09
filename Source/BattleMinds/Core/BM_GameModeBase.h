@@ -5,6 +5,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "Core/BM_Types.h"
 #include "TimerManager.h"
+#include "ActorFactories/ActorFactoryCameraActor.h"
 #include "Player/BM_PlayerPawn.h"
 #include "Tiles/BM_TileBase.h"
 #include "BM_GameModeBase.generated.h"
@@ -54,6 +55,10 @@ public:
 	TArray<FQuestion> CurrentAnsweredQuestions;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Tiles")
 	TArray<ABM_TileBase*> CurrentPlayerAvailableTiles;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game settings | Cameras")
+	TObjectPtr<ACameraActor> ChooseQuestionCamera;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game settings | Cameras")
+	TObjectPtr<ACameraActor> ShotQuestionCamera;
 	UPROPERTY(BlueprintReadWrite)
 	int32 DefendingPlayerID;
 	UPROPERTY(BlueprintAssignable, BlueprintReadOnly, BlueprintCallable)
@@ -88,7 +93,7 @@ public:
 	void CountResults();
 protected:
 	virtual void PostLogin(APlayerController* NewPlayer) override;
-
+	virtual void BeginPlay() override;
 	UPROPERTY(BlueprintReadWrite, Category = "Questions")
 	TMap<FName, FQuestion> UsedQuestions;
 

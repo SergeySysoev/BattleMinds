@@ -6,6 +6,7 @@
 #include "BattleMinds/Tiles/BM_TileBase.h"
 #include "BattleMinds/Player/BM_PlayerState.h"
 #include "Blueprint/UserWidget.h"
+#include "Blueprint/WidgetLayoutLibrary.h"
 #include "Core/BM_GameModeBase.h"
 #include "Core/BM_GameStateBase.h"
 #include "Core/Classic/BM_GameModeClassic.h"
@@ -56,10 +57,19 @@ void ABM_PlayerControllerBase::CC_RemoveQuestionWidget_Implementation()
 	{
 		QuestionWidget->RemoveFromViewport();
 	}
+	if (PlayerHUD)
+	{
+		PlayerHUD->AddToViewport();
+		SetViewTarget(GetPawn());
+	}
 }
 
 void ABM_PlayerControllerBase::CC_OpenQuestionWidget_Implementation(FName QuestionRowName, const TArray<int32>& AnsweringPlayers)
 {
+	if(PlayerHUD)
+	{
+		PlayerHUD->RemoveFromViewport();
+	}
 	if (QuestionRowName.ToString().Contains("CHS"))
 	{
 		QuestionWidget = CreateWidget<UBM_UWQuestion>(this, ChooseQuestionWidgetClass);

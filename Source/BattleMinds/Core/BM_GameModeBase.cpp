@@ -2,9 +2,10 @@
 
 
 #include "BM_GameModeBase.h"
-
 #include "BM_GameInstance.h"
 #include "BM_GameStateBase.h"
+#include "ToolBuilderUtil.h"
+#include "Camera/CameraActor.h"
 #include "Kismet/DataTableFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "Player/BM_PlayerControllerBase.h"
@@ -84,9 +85,17 @@ void ABM_GameModeBase::OpenQuestion(EQuestionType QuestionType)
 	{
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 		{
+			switch (QuestionType)
+			{
+				case EQuestionType::Choose:
+					PlayerController->SetViewTarget(ChooseQuestionCamera);
+					break;
+				case EQuestionType::Shot:
+					PlayerController->SetViewTarget(ShotQuestionCamera);
+					break;
+				default: break;
+			}
 			PlayerController->CC_OpenQuestionWidget(RowNames[QuestionIndex], AnsweringPlayers);
-			//TO DO: Move camera to a specific scene for different type of questions
-			//PlayerController->OpenQuestionWidget(QuestionType ,RowNames[QuestionIndex]);
 		}
 	}
 	NumberOfSentAnswers = 0;
@@ -104,8 +113,7 @@ void ABM_GameModeBase::ResetQuestionTimer(int32 LastSentPlayer)
 	NumberOfSentAnswers++;
 	for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
 	{
-		ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController());
-		if (PlayerController)
+		if (ABM_PlayerControllerBase* PlayerController= Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 		{
 			PlayerController->CC_MarkAnsweredPlayers(LastSentPlayer);
 		}
@@ -139,6 +147,8 @@ void ABM_GameModeBase::ResetQuestionTimer(int32 LastSentPlayer)
 			}
 			break;
 		}
+		default:
+			break;
 	}
 	
 }
@@ -341,8 +351,7 @@ void ABM_GameModeBase::VerifyAnswers()
 				OpenQuestion(EQuestionType::Shot);
 				break;
 			}
-			ABM_PlayerState* AttackingPlayer = Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID]);
-			if(AttackingPlayer)
+			if(ABM_PlayerState* AttackingPlayer = Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID]))
 			{
 				AttackingPlayer->NumberOfTurns--;
 			}
@@ -713,6 +722,20 @@ void ABM_GameModeBase::PostLogin(APlayerController* NewPlayer)
 	InitPlayer(NewPlayer);
 	NumberOfActivePlayers++;
 }
+void ABM_GameModeBase::BeginPlay()
+{
+	Super::BeginPlay();
+	TArray<TObjectPtr<AActor>> FoundCameras;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACameraActor::StaticClass() ,FoundCameras);
+	for (auto Camera:FoundCameras)
+	{
+		if(Camera->ActorHasTag(TEXT("ChooseQuestion")))
+			ChooseQuestionCamera = Cast<ACameraActor>(Camera);
+		if(Camera->ActorHasTag(TEXT("ShotQuestion")))
+			ShotQuestionCamera = Cast<ACameraActor>(Camera);
+	}
+}
+
 
 void ABM_GameModeBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
