@@ -60,7 +60,7 @@ void ABM_PlayerControllerBase::CC_RemoveQuestionWidget_Implementation()
 	if (PlayerHUD)
 	{
 		PlayerHUD->AddToViewport();
-		SetViewTarget(GetPawn());
+		SetViewTargetWithBlend(GetPawn(), 0.5);
 	}
 }
 

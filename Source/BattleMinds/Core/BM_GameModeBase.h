@@ -35,6 +35,8 @@ public:
 	int32 NumberOfActivePlayers = 0;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game settings")
 	int32 NumberOfPlayerTurns = 6;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game settings")
+	int32 NumberOfTerritoryTurns = 3;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Players settings")
 	TMap<int32, UMaterialInterface*> MaterialMap;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Players settings")
@@ -65,6 +67,7 @@ public:
 	FAnswerSentSignature OnAnswerSent;
 	UFUNCTION(BlueprintCallable)
 	void InitPlayer(APlayerController* NewPlayer);
+	
 	UFUNCTION(BlueprintCallable)
 	void OpenQuestion(EQuestionType QuestionType);
 	UFUNCTION(BlueprintCallable)
@@ -82,7 +85,7 @@ public:
 	UFUNCTION()
 	void VerifyShotAnswers();
 	UFUNCTION()
-	EGameRound NextGameRound();
+	EGameRound NextGameRound() const;
 	UFUNCTION(BlueprintCallable)
 	void StartPlayerTurnTimer(int32 PlayerID);
 	UFUNCTION(BlueprintCallable)
@@ -94,6 +97,15 @@ public:
 protected:
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void BeginPlay() override;
+	// Find row in the corresponding Question table
+	UFUNCTION()
+	void FindNextQuestion(EQuestionType Question, int32 INT32, TArray<FName> Array, int32 QuestionIndex, FString& ContextString);
+	UFUNCTION()
+	void AssignAnsweringPlayers();
+	// Move Players Cameras to Question Location
+	UFUNCTION()
+	void SetViewTargetForQuestion(EQuestionType QuestionType, TArray<FName> RowNames, int32 QuestionIndex) const;
+
 	UPROPERTY(BlueprintReadWrite, Category = "Questions")
 	TMap<FName, FQuestion> UsedQuestions;
 

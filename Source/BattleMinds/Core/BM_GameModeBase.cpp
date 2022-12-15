@@ -36,39 +36,36 @@ void ABM_GameModeBase::InitPlayer(APlayerController* NewPlayer)
 		NewPlayer->Possess(SpawnedPawn);
 	}
 }
-void ABM_GameModeBase::OpenQuestion(EQuestionType QuestionType)
+
+void ABM_GameModeBase::FindNextQuestion(EQuestionType Question, int32 INT32, TArray<FName> Array, int32 QuestionIndex, FString& ContextString)
 {
-	GetWorld()->GetTimerManager().ClearTimer(PauseHandle);
-	QuestionsCount++;
-	int32 TableIndex = -1;
-	TArray<FName> RowNames;
-	int32 QuestionIndex = -1;
-	FString ContextString;
-	FTableRowBase OutRow;
-	switch (QuestionType)
+	switch (Question)
 	{
 		case EQuestionType::Choose:
-			TableIndex = FMath::RandRange(0, QuestionTablesChoose.Num()-1);
+			INT32 = FMath::RandRange(0, QuestionTablesChoose.Num()-1);
 			ContextString = FString("Question Choose");
-			RowNames.Append(QuestionTablesChoose[TableIndex]->GetRowNames());
-			QuestionIndex = FMath::RandRange(0, RowNames.Num()-1);
-			LastQuestion = std::ref(*QuestionTablesChoose[TableIndex]->FindRow<FQuestion>(RowNames[QuestionIndex],ContextString));
-			if (!UsedQuestions.Contains(RowNames[QuestionIndex]))
-				UsedQuestions.Add(RowNames[QuestionIndex], LastQuestion);
+			Array.Append(QuestionTablesChoose[INT32]->GetRowNames());
+			QuestionIndex = FMath::RandRange(0, Array.Num()-1);
+			LastQuestion = std::ref(*QuestionTablesChoose[INT32]->FindRow<FQuestion>(Array[QuestionIndex],ContextString));
+			if (!UsedQuestions.Contains(Array[QuestionIndex]))
+				UsedQuestions.Add(Array[QuestionIndex], LastQuestion);
 			break;
 		case EQuestionType::Shot:
-			TableIndex = FMath::RandRange(0, QuestionTablesShot.Num()-1);
+			INT32 = FMath::RandRange(0, QuestionTablesShot.Num()-1);
 			ContextString = FString("Question Shot");
-			RowNames.Append(QuestionTablesShot[TableIndex]->GetRowNames());
-			QuestionIndex = FMath::RandRange(0, RowNames.Num()-1);
-			LastQuestion = std::ref(*QuestionTablesShot[TableIndex]->FindRow<FQuestion>(RowNames[QuestionIndex],ContextString));
-			if (!UsedQuestions.Contains(RowNames[QuestionIndex]))
-				UsedQuestions.Add(RowNames[QuestionIndex], LastQuestion);
+			Array.Append(QuestionTablesShot[INT32]->GetRowNames());
+			QuestionIndex = FMath::RandRange(0, Array.Num()-1);
+			LastQuestion = std::ref(*QuestionTablesShot[INT32]->FindRow<FQuestion>(Array[QuestionIndex],ContextString));
+			if (!UsedQuestions.Contains(Array[QuestionIndex]))
+				UsedQuestions.Add(Array[QuestionIndex], LastQuestion);
 			break;
 		default:
 			break;
 	}
-	AnsweringPlayers.Empty();
+}
+
+void ABM_GameModeBase::AssignAnsweringPlayers()
+{
 	if(Round != EGameRound::FightForTerritory)
 	{
 		for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
@@ -81,6 +78,10 @@ void ABM_GameModeBase::OpenQuestion(EQuestionType QuestionType)
 		AnsweringPlayers.Add(CurrentPlayerID);
 		AnsweringPlayers.Add(DefendingPlayerID);
 	}
+}
+
+void ABM_GameModeBase::SetViewTargetForQuestion(EQuestionType QuestionType, TArray<FName> RowNames, int32 QuestionIndex) const
+{
 	for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
 	{
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
@@ -88,21 +89,39 @@ void ABM_GameModeBase::OpenQuestion(EQuestionType QuestionType)
 			switch (QuestionType)
 			{
 				case EQuestionType::Choose:
-					PlayerController->SetViewTarget(ChooseQuestionCamera);
+					PlayerController->SetViewTargetWithBlend(ChooseQuestionCamera, 0.5);
+					UE_LOG(LogBM_GameMode, Display, TEXT("Camera: %s, ViewTarget: %s"), *ChooseQuestionCamera->GetName(),*PlayerController->GetViewTarget()->GetName());
 					break;
 				case EQuestionType::Shot:
-					PlayerController->SetViewTarget(ShotQuestionCamera);
+					PlayerController->SetViewTargetWithBlend(ShotQuestionCamera, 0.5);
+					UE_LOG(LogBM_GameMode, Display, TEXT("Camera: %s, ViewTarget: %s"), *ShotQuestionCamera->GetName(),*PlayerController->GetViewTarget()->GetName());
 					break;
 				default: break;
 			}
 			PlayerController->CC_OpenQuestionWidget(RowNames[QuestionIndex], AnsweringPlayers);
 		}
 	}
+}
+
+void ABM_GameModeBase::OpenQuestion(EQuestionType QuestionType)
+{
+	GetWorld()->GetTimerManager().ClearTimer(PauseHandle);
+	QuestionsCount++;
+	int32 TableIndex = -1;
+	TArray<FName> RowNames;
+	int32 QuestionIndex = -1;
+	FString ContextString;
+	FTableRowBase OutRow;
+	FindNextQuestion(QuestionType, TableIndex, RowNames, QuestionIndex, ContextString);
+	AnsweringPlayers.Empty();
+	AssignAnsweringPlayers();
+	SetViewTargetForQuestion(QuestionType, RowNames, QuestionIndex);
 	NumberOfSentAnswers = 0;
 	if (!OnAnswerSent.IsBound())
 		OnAnswerSent.AddDynamic(this, &ABM_GameModeBase::ResetQuestionTimer);
 	StartQuestionTimer();
 }
+
 void ABM_GameModeBase::StartQuestionTimer()
 {
 	GetWorld()->GetTimerManager().SetTimer(QuestionTimerHandle, this, &ABM_GameModeBase::GatherPlayersAnswers, QuestionTimer, false);
@@ -512,7 +531,7 @@ void ABM_GameModeBase::VerifyShotAnswers()
 	}
 }
 
-EGameRound ABM_GameModeBase::NextGameRound()
+EGameRound ABM_GameModeBase::NextGameRound() const
 {
 	if(Round == EGameRound::ChooseCastle)
 		return EGameRound::SetTerritory;
@@ -722,6 +741,7 @@ void ABM_GameModeBase::PostLogin(APlayerController* NewPlayer)
 	InitPlayer(NewPlayer);
 	NumberOfActivePlayers++;
 }
+
 void ABM_GameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
@@ -735,7 +755,6 @@ void ABM_GameModeBase::BeginPlay()
 			ShotQuestionCamera = Cast<ACameraActor>(Camera);
 	}
 }
-
 
 void ABM_GameModeBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
