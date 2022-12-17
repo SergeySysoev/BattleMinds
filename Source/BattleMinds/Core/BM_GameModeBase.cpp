@@ -37,31 +37,36 @@ void ABM_GameModeBase::InitPlayer(APlayerController* NewPlayer)
 	}
 }
 
-void ABM_GameModeBase::FindNextQuestion(EQuestionType Question, int32 INT32, TArray<FName> Array, int32 QuestionIndex, FString& ContextString)
+int32 ABM_GameModeBase::FindNextQuestion(EQuestionType Question, TArray<FName> Array, FString& ContextString)
 {
+	int32 TableIndex = -1;
+	int32 QuestionIndex = -1;
 	switch (Question)
 	{
 		case EQuestionType::Choose:
-			INT32 = FMath::RandRange(0, QuestionTablesChoose.Num()-1);
+			TableIndex = FMath::RandRange(0, QuestionTablesChoose.Num()-1);
 			ContextString = FString("Question Choose");
-			Array.Append(QuestionTablesChoose[INT32]->GetRowNames());
+			Array.Append(QuestionTablesChoose[TableIndex]->GetRowNames());
 			QuestionIndex = FMath::RandRange(0, Array.Num()-1);
-			LastQuestion = std::ref(*QuestionTablesChoose[INT32]->FindRow<FQuestion>(Array[QuestionIndex],ContextString));
+			LastQuestion = std::ref(*QuestionTablesChoose[TableIndex]->FindRow<FQuestion>(Array[QuestionIndex],ContextString));
 			if (!UsedQuestions.Contains(Array[QuestionIndex]))
 				UsedQuestions.Add(Array[QuestionIndex], LastQuestion);
 			break;
 		case EQuestionType::Shot:
-			INT32 = FMath::RandRange(0, QuestionTablesShot.Num()-1);
+			TableIndex = FMath::RandRange(0, QuestionTablesShot.Num()-1);
 			ContextString = FString("Question Shot");
-			Array.Append(QuestionTablesShot[INT32]->GetRowNames());
+			Array.Append(QuestionTablesShot[TableIndex]->GetRowNames());
 			QuestionIndex = FMath::RandRange(0, Array.Num()-1);
-			LastQuestion = std::ref(*QuestionTablesShot[INT32]->FindRow<FQuestion>(Array[QuestionIndex],ContextString));
+			LastQuestion = std::ref(*QuestionTablesShot[TableIndex]->FindRow<FQuestion>(Array[QuestionIndex],ContextString));
 			if (!UsedQuestions.Contains(Array[QuestionIndex]))
 				UsedQuestions.Add(Array[QuestionIndex], LastQuestion);
 			break;
 		default:
 			break;
 	}
+	if (QuestionIndex < 0)
+		QuestionIndex = 0;
+	return QuestionIndex;
 }
 
 void ABM_GameModeBase::AssignAnsweringPlayers()
@@ -98,7 +103,7 @@ void ABM_GameModeBase::SetViewTargetForQuestion(EQuestionType QuestionType, TArr
 					break;
 				default: break;
 			}
-			PlayerController->CC_OpenQuestionWidget(RowNames[QuestionIndex], AnsweringPlayers);
+			PlayerController->CC_OpenQuestionWidget(LastQuestion, AnsweringPlayers);
 		}
 	}
 }
@@ -107,12 +112,10 @@ void ABM_GameModeBase::OpenQuestion(EQuestionType QuestionType)
 {
 	GetWorld()->GetTimerManager().ClearTimer(PauseHandle);
 	QuestionsCount++;
-	int32 TableIndex = -1;
 	TArray<FName> RowNames;
-	int32 QuestionIndex = -1;
-	FString ContextString;
+	FString ContextString = "OpenQuestion";
+	int32 QuestionIndex = FindNextQuestion(QuestionType, RowNames, ContextString);
 	FTableRowBase OutRow;
-	FindNextQuestion(QuestionType, TableIndex, RowNames, QuestionIndex, ContextString);
 	AnsweringPlayers.Empty();
 	AssignAnsweringPlayers();
 	SetViewTargetForQuestion(QuestionType, RowNames, QuestionIndex);
@@ -260,7 +263,7 @@ void ABM_GameModeBase::SetNextGameRound() {
 	// check if there are available tiles and their amount == NumberOfActivePlayers%
 	// if yes, Continue SetTerritory round
 	// if no, Start Battle Mode for the rest of the tiles
-	// If GameRound == FightForTerritory, TODO: check how many Player Turns are left
+	// If GameRound == FightForTerritory, check how many Player Turns are left
 	switch (Round)
 	{
 		case EGameRound::SetTerritory:
@@ -761,4 +764,5 @@ void ABM_GameModeBase::BeginPlay()
 void ABM_GameModeBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	DOREPLIFETIME(ABM_GameModeBase, Round);
+	DOREPLIFETIME(ABM_GameModeBase, LastQuestion);
 }

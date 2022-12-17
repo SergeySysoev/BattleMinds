@@ -27,7 +27,7 @@ public:
 	float QuestionTimer;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Game settings")
 	int32 QuestionsCount = 0;
-	UPROPERTY(BlueprintReadWrite, Category="Game settings")
+	UPROPERTY(Replicated, BlueprintReadWrite, Category="Game settings")
 	FQuestion LastQuestion;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game settings")
 	float TurnTimer;
@@ -100,7 +100,7 @@ protected:
 	virtual void BeginPlay() override;
 	// Find row in the corresponding Question table
 	UFUNCTION()
-	void FindNextQuestion(EQuestionType Question, int32 INT32, TArray<FName> Array, int32 QuestionIndex, FString& ContextString);
+	int32 FindNextQuestion(EQuestionType Question, TArray<FName> Array, FString& ContextString);
 	UFUNCTION()
 	void AssignAnsweringPlayers();
 	// Move Players Cameras to Question Location

@@ -42,7 +42,7 @@ public:
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_RequestToOpenQuestion();
 	UFUNCTION(Client, Reliable, BlueprintCallable)
-	void CC_OpenQuestionWidget(FName QuestionRowName, const TArray<int32>& AnsweringPlayers);
+	void CC_OpenQuestionWidget(FQuestion LastQuestion, const TArray<int32>& AnsweringPlayers);
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateCurrentPlayerNickname(const FString& CurrentPlayerNickname);
 	UFUNCTION(Client, Reliable, BlueprintCallable)

@@ -64,21 +64,24 @@ void ABM_PlayerControllerBase::CC_RemoveQuestionWidget_Implementation()
 	}
 }
 
-void ABM_PlayerControllerBase::CC_OpenQuestionWidget_Implementation(FName QuestionRowName, const TArray<int32>& AnsweringPlayers)
+void ABM_PlayerControllerBase::CC_OpenQuestionWidget_Implementation(FQuestion LastQuestion, const TArray<int32>& AnsweringPlayers)
 {
 	if(PlayerHUD)
 	{
 		PlayerHUD->RemoveFromViewport();
 	}
-	if (QuestionRowName.ToString().Contains("CHS"))
+	//if (QuestionRowName.ToString().Contains("CHS"))
+	if (LastQuestion.Type == EQuestionType::Choose)
 	{
 		QuestionWidget = CreateWidget<UBM_UWQuestion>(this, ChooseQuestionWidgetClass);
 	}
-	if (QuestionRowName.ToString().Contains("SHT"))
+	//if (QuestionRowName.ToString().Contains("SHT"))
+	if (LastQuestion.Type == EQuestionType::Shot)
 	{
 		QuestionWidget = CreateWidget<UBM_UWQuestion>(this, ShotQuestionWidgetClass);
 	}
-	QuestionWidget->QuestionName = QuestionRowName;
+	//QuestionWidget->QuestionName = QuestionRowName;
+	QuestionWidget->LastQuestion = LastQuestion;
 	QuestionWidget->AnsweringPlayers.Empty();
 	QuestionWidget->AnsweringPlayers.Append(AnsweringPlayers);
 	if (QuestionWidget)

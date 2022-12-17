@@ -18,6 +18,8 @@ class BATTLEMINDS_API UBM_UWQuestion : public UUserWidget, public IBM_QuestionIn
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Question settings")
+	FQuestion LastQuestion;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Question settings")
 	FName QuestionName;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Question settings")
 	TArray<int32> AnsweringPlayers;
