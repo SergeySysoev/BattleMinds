@@ -59,7 +59,8 @@ void ABM_PlayerControllerBase::CC_RemoveQuestionWidget_Implementation()
 	}
 	if (PlayerHUD)
 	{
-		PlayerHUD->AddToViewport();
+		//PlayerHUD->AddToViewport();
+		PlayerHUD->SetVisibility(ESlateVisibility::Visible);
 		SetViewTargetWithBlend(GetPawn(), 0.5);
 	}
 }
@@ -68,7 +69,8 @@ void ABM_PlayerControllerBase::CC_OpenQuestionWidget_Implementation(FQuestion La
 {
 	if(PlayerHUD)
 	{
-		PlayerHUD->RemoveFromViewport();
+		PlayerHUD->SetVisibility(ESlateVisibility::Collapsed);
+		//PlayerHUD->RemoveFromViewport();
 	}
 	//if (QuestionRowName.ToString().Contains("CHS"))
 	if (LastQuestion.Type == EQuestionType::Choose)
