@@ -169,7 +169,6 @@ void ABM_GameModeBase::ResetQuestionTimer(int32 LastSentPlayer)
 		default:
 			break;
 	}
-	
 }
 
 void ABM_GameModeBase::GatherPlayersAnswers()
@@ -256,38 +255,12 @@ void ABM_GameModeBase::ShowCorrectAnswers()
 	GetWorld()->GetTimerManager().SetTimer(PauseHandle,this,&ABM_GameModeBase::VerifyAnswers, 2.0f, false);
 }
 
-void ABM_GameModeBase::VerifyAnswers()
-{
-	bShotQuestionIsNeeded = false;
-	for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
-	{
-		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
-		{
-			PlayerController->CC_RemoveQuestionWidget();
-		}
-	}
-	//Verify Players answers:
-	switch (LastQuestion.Type)
-	{
-		case EQuestionType::Choose:
-		{
-			VerifyChooseAnswers();
-			break;
-		}
-		case EQuestionType::Shot:
-		{
-			VerifyShotAnswers();
-			break;
-		}
-		default:
-			break;
-	}
-	
+void ABM_GameModeBase::SetNextGameRound() {
 	//If GameRound == SetTerritory,
 	// check if there are available tiles and their amount == NumberOfActivePlayers%
 	// if yes, Continue SetTerritory round
 	// if no, Start Battle Mode for the rest of the tiles
-	// If GameRound == FightForTerritory, check how many
+	// If GameRound == FightForTerritory, TODO: check how many Player Turns are left
 	switch (Round)
 	{
 		case EGameRound::SetTerritory:
@@ -392,6 +365,35 @@ void ABM_GameModeBase::VerifyAnswers()
 	}
 }
 
+void ABM_GameModeBase::VerifyAnswers()
+{
+	bShotQuestionIsNeeded = false;
+	for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
+	{
+		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
+		{
+			PlayerController->CC_RemoveQuestionWidget();
+		}
+	}
+	//Verify Players answers:
+	switch (LastQuestion.Type)
+	{
+		case EQuestionType::Choose:
+		{
+			VerifyChooseAnswers();
+			break;
+		}
+		case EQuestionType::Shot:
+		{
+			VerifyShotAnswers();
+			break;
+		}
+		default:
+			break;
+	}
+	SetNextGameRound();
+}
+
 void ABM_GameModeBase::VerifyChooseAnswers()
 {
 	switch (Round)
@@ -411,13 +413,13 @@ void ABM_GameModeBase::VerifyChooseAnswers()
 				else
 				{
 					CurrentPlayerController->CurrentClickedTile->AddTileToPlayerTerritory(CurrentPlayerState);
-					
 				}
 			}
 			break;
 		}
 		case EGameRound::FightForTerritory:
 		{
+			// if both Players answered their Choose Question, we need a Shot round
 			if (CurrentAnsweredQuestions[0].bWasAnswered && CurrentAnsweredQuestions[1].bWasAnswered)
 			{
 				bShotQuestionIsNeeded = true;
@@ -436,8 +438,8 @@ void ABM_GameModeBase::VerifyChooseAnswers()
 						if(AnsweredQuestion.PlayerID == CurrentPlayerID)
 						{
 							// attacking player was right
-							AttackingPlayer->CurrentClickedTile->AddTileToPlayerTerritory(AttackingPlayerState);
 							DefendingPlayer->CurrentClickedTile->RemoveTileFromPlayerTerritory(DefendingPlayerState);
+							AttackingPlayer->CurrentClickedTile->AddTileToPlayerTerritory(AttackingPlayerState);
 						}
 						else
 						{

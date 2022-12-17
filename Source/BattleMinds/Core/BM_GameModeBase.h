@@ -78,6 +78,7 @@ public:
 	void GatherPlayersAnswers();
 	UFUNCTION(BlueprintCallable)
 	void ShowCorrectAnswers();
+	void SetNextGameRound();
 	UFUNCTION(BlueprintCallable)
 	void VerifyAnswers();
 	UFUNCTION()
