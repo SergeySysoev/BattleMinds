@@ -292,7 +292,7 @@ void ABM_GameModeBase::SetNextGameRound() {
 					GetWorld()->GetTimerManager().ClearTimer(PlayerTurnHandle);
 					CurrentPlayerID = NumberOfActivePlayers;
 					StartPlayerTurnTimer(CurrentPlayerID);
-					UE_LOG(LogBM_GameMode, Display, TEXT("Switch to Fight for Last Tiles round"));
+					UE_LOG(LogBM_GameMode, Display, TEXT("Switch to Fight for the Rest Tiles round"));
 				}
 			}
 			else
@@ -462,77 +462,65 @@ void ABM_GameModeBase::VerifyChooseAnswers()
 void ABM_GameModeBase::VerifyShotAnswers()
 {
 	bool HasExactAnswer = false;
-	TMap<int32, bool> ExactAnswersMap;
+	TArray<int32> AnswerIDsToRemove;
 	// Find Exact answer
 	for (int32 i = 0; i < CurrentAnsweredQuestions.Num(); i++)
 	{
 		if(CurrentAnsweredQuestions[i].bExactAnswer)
 		{
 			HasExactAnswer = true;
-			ExactAnswersMap.Add(i, true);
 		}
 		else
 		{
-			ExactAnswersMap.Add(i, false);
+			AnswerIDsToRemove.Add(i);
 		}
 	}
 	// If there are exact answers, remove the ones that are not exact
 	if(HasExactAnswer)
 	{
-		for(const auto Answer : ExactAnswersMap)
+		for(int i = AnswerIDsToRemove.Num()-1; i >= 0; i--)
 		{
-			if(Answer.Value == false)
+			const ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->
+				PlayerArray[CurrentAnsweredQuestions[AnswerIDsToRemove[i]].PlayerID]->GetPlayerController());
+			if (PlayerController && PlayerController->CurrentClickedTile)
 			{
-				if (CurrentAnsweredQuestions.IsValidIndex(Answer.Key))
-					CurrentAnsweredQuestions.RemoveAtSwap(Answer.Key);
-				if (Round == EGameRound::FightForTerritory)
-				{
-					const ABM_PlayerControllerBase* CurrentPlayerController = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[Answer.Key]->GetPlayerController());
-					if(CurrentPlayerController)
-					{
-						CurrentPlayerController->CurrentClickedTile->CancelAttack();
-						break;
-					}
-				}
+				PlayerController->CurrentClickedTile->CancelAttack();
 			}
+			CurrentAnsweredQuestions.RemoveAtSwap(AnswerIDsToRemove[i]);
 		}
 	}
-	else
-	// If there are no exact answers at all, find the one who is the closest to the correct answer
+	// Sort left answers by Answer Difference with Correct answer and by Elapsed Time
+	if (CurrentAnsweredQuestions.Num() > 1)
 	{
-		TArray<int32> AnswersToDelete;
-		int32 MinDifference = CurrentAnsweredQuestions[0].AnswerShot.Difference;
-		AnswersToDelete.Add(0);
-		bool bIsCloserThenFirst = false;
-		for (int32 i = 1; i < CurrentAnsweredQuestions.Num(); i++)
-		{
-			if (MinDifference >= CurrentAnsweredQuestions[i].AnswerShot.Difference)
-			{
-				bIsCloserThenFirst = true;
-				MinDifference = CurrentAnsweredQuestions[i].AnswerShot.Difference;
-			}
-			else
-			{
-				AnswersToDelete.Add(i);
-			}
-		}
-		if(!bIsCloserThenFirst)
-		{
-			AnswersToDelete.RemoveAt(0);
-		}
-		// Remove all answers that are bigger than the minimum delta
-		for (int32 i = 0; i < AnswersToDelete.Num(); i++)
-		{
-			if(CurrentAnsweredQuestions.IsValidIndex(AnswersToDelete[i]))
-				CurrentAnsweredQuestions.RemoveAt(AnswersToDelete[i]);
-		}
+		CurrentAnsweredQuestions.Sort();
 	}
-	// Sort left Answers by ElapsedTime to find the quickest;
-	CurrentAnsweredQuestions.Sort();
 	const ABM_PlayerControllerBase* WinnerPlayerController = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentAnsweredQuestions[0].PlayerID]->GetPlayerController());
-	if(WinnerPlayerController)
+	if (Round == EGameRound::FightForTheRestTiles)
 	{
-		WinnerPlayerController->CurrentClickedTile->AddTileToPlayerTerritory(WinnerPlayerController->GetPlayerState<ABM_PlayerState>());
+		for (int i =1; i < CurrentAnsweredQuestions.Num(); i++)
+		{
+			const ABM_PlayerControllerBase* LoserPlayerController = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentAnsweredQuestions[i].PlayerID]->GetPlayerController());
+			if (LoserPlayerController && LoserPlayerController->CurrentClickedTile)
+			{
+				LoserPlayerController->CurrentClickedTile->CancelAttack();
+			}
+		}
+		if(WinnerPlayerController && WinnerPlayerController->CurrentClickedTile)
+		{
+			WinnerPlayerController->CurrentClickedTile->AddTileToPlayerTerritory(WinnerPlayerController->GetPlayerState<ABM_PlayerState>());
+		}
+	}
+	if (Round == EGameRound::FightForTerritory)
+	{
+		const ABM_PlayerControllerBase* LoserPlayerController = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentAnsweredQuestions[DefendingPlayerID].PlayerID]->GetPlayerController());
+		if (LoserPlayerController && LoserPlayerController->CurrentClickedTile)
+		{
+			LoserPlayerController->CurrentClickedTile->RemoveTileFromPlayerTerritory(Cast<ABM_PlayerState>(LoserPlayerController->PlayerState));
+		}
+		if(WinnerPlayerController && WinnerPlayerController->CurrentClickedTile)
+		{
+			WinnerPlayerController->CurrentClickedTile->AddTileToPlayerTerritory(WinnerPlayerController->GetPlayerState<ABM_PlayerState>());
+		}
 	}
 }
 
@@ -588,7 +576,7 @@ void ABM_GameModeBase::StartPlayerTurnTimer(int32 PlayerID)
 					ABM_TileBase* BMTile = Cast<ABM_TileBase>(Tile);
 					if (BMTile->GetStatus() == ETileStatus::NotOwned)
 					{
-						bool NeighborsAvailable = true;;
+						bool NeighborsAvailable = true;
 						for (const auto Neighbor: BMTile->NeighbourTiles)
 						{
 							if(Neighbor->GetStatus() != ETileStatus::NotOwned)

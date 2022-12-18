@@ -133,7 +133,16 @@ public:
 
 	FORCEINLINE bool operator<(const FQuestion &Other) const
 	{
-		return ElapsedTime < Other.ElapsedTime;
+		if(AnswerShot.Difference < Other.AnswerShot.Difference) return true;
+		if(AnswerShot.Difference > Other.AnswerShot.Difference) return false;
+		if (AnswerShot.Difference == Other.AnswerShot.Difference)
+		{
+			if(ElapsedTime < Other.ElapsedTime)
+				return true;
+			if (ElapsedTime >= Other.ElapsedTime)
+				return false;
+		}
+		return false;
 	}
 };
 
