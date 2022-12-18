@@ -59,7 +59,6 @@ void ABM_PlayerControllerBase::CC_RemoveQuestionWidget_Implementation()
 	}
 	if (PlayerHUD)
 	{
-		//PlayerHUD->AddToViewport();
 		PlayerHUD->SetVisibility(ESlateVisibility::Visible);
 		SetViewTargetWithBlend(GetPawn(), 0.5);
 	}
@@ -70,19 +69,15 @@ void ABM_PlayerControllerBase::CC_OpenQuestionWidget_Implementation(FQuestion La
 	if(PlayerHUD)
 	{
 		PlayerHUD->SetVisibility(ESlateVisibility::Collapsed);
-		//PlayerHUD->RemoveFromViewport();
 	}
-	//if (QuestionRowName.ToString().Contains("CHS"))
 	if (LastQuestion.Type == EQuestionType::Choose)
 	{
 		QuestionWidget = CreateWidget<UBM_UWQuestion>(this, ChooseQuestionWidgetClass);
 	}
-	//if (QuestionRowName.ToString().Contains("SHT"))
 	if (LastQuestion.Type == EQuestionType::Shot)
 	{
 		QuestionWidget = CreateWidget<UBM_UWQuestion>(this, ShotQuestionWidgetClass);
 	}
-	//QuestionWidget->QuestionName = QuestionRowName;
 	QuestionWidget->LastQuestion = LastQuestion;
 	QuestionWidget->AnsweringPlayers.Empty();
 	QuestionWidget->AnsweringPlayers.Append(AnsweringPlayers);
@@ -132,6 +127,7 @@ void ABM_PlayerControllerBase::SC_TryClickTheTile_Implementation(ABM_TileBase* T
 			else
 			{
 				//TODO: add option to attack any tile once per game
+				//TODO: add Widget notification about inability to attack selected tile
 				UE_LOG(LogBM_PlayerController, Warning, TEXT("This tile is not available"));
 			}
 		}
