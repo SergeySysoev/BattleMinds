@@ -461,38 +461,15 @@ void ABM_GameModeBase::VerifyChooseAnswers()
 
 void ABM_GameModeBase::VerifyShotAnswers()
 {
-	bool HasExactAnswer = false;
-	TArray<int32> AnswerIDsToRemove;
-	// Find Exact answer
-	for (int32 i = 0; i < CurrentAnsweredQuestions.Num(); i++)
-	{
-		if(CurrentAnsweredQuestions[i].bExactAnswer)
-		{
-			HasExactAnswer = true;
-		}
-		else
-		{
-			AnswerIDsToRemove.Add(i);
-		}
-	}
-	// If there are exact answers, remove the ones that are not exact
-	if(HasExactAnswer)
-	{
-		for(int i = AnswerIDsToRemove.Num()-1; i >= 0; i--)
-		{
-			const ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->
-				PlayerArray[CurrentAnsweredQuestions[AnswerIDsToRemove[i]].PlayerID]->GetPlayerController());
-			if (PlayerController && PlayerController->CurrentClickedTile)
-			{
-				PlayerController->CurrentClickedTile->CancelAttack();
-			}
-			CurrentAnsweredQuestions.RemoveAtSwap(AnswerIDsToRemove[i]);
-		}
-	}
-	// Sort left answers by Answer Difference with Correct answer and by Elapsed Time
+	// Sort Answers by Difference and ElapsedTime (overriden < operator in FQuestion)
 	if (CurrentAnsweredQuestions.Num() > 1)
 	{
 		CurrentAnsweredQuestions.Sort();
+	}
+	for (const auto Answer:CurrentAnsweredQuestions)
+	{
+		UE_LOG(LogBM_GameMode, Display, TEXT("Player: %d, Has Exact Answer = %s, Difference = %d, Elapsed time = %d.%d"),
+			Answer.PlayerID, (Answer.bExactAnswer ? TEXT("true"):TEXT("false")), Answer.AnswerShot.Difference, Answer.ElapsedTime.GetSeconds(),Answer.ElapsedTime.GetFractionMilli());
 	}
 	const ABM_PlayerControllerBase* WinnerPlayerController = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentAnsweredQuestions[0].PlayerID]->GetPlayerController());
 	if (Round == EGameRound::FightForTheRestTiles)
