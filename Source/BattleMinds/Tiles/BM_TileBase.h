@@ -56,7 +56,9 @@ public:
 	void AddTileToPlayerTerritory(ABM_PlayerState* PlayerState);
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void RemoveTileFromPlayerTerritory(ABM_PlayerState* PlayerState);
-
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void DecreaseCastleHP();
+	
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void CancelAttack();
 	
@@ -65,6 +67,7 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	FString GetOwningPlayerNickname(){ return OwnerPlayerNickname; };
+	
 	UFUNCTION(BlueprintCallable)
 	int32 GetOwningPlayerID(){return OwnerPlayerID;};
 	
@@ -101,6 +104,9 @@ protected:
 	bool bIsArtillery;
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Territory")
 	bool bIsFortified;
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Territory")
+	int32 TileHP = 1;
+	
 	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_TileMeshChanged, BlueprintReadWrite, Category = "Visuals")
 	TObjectPtr<UMaterialInterface> CurrentMaterial;
 	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_FlagMeshChanged, BlueprintReadWrite, Category = "Visuals")

@@ -21,6 +21,25 @@ ABM_PlayerControllerBase::ABM_PlayerControllerBase()
 	bEnableMouseOverEvents = true;
 }
 
+void ABM_PlayerControllerBase::CC_InitPlayerHUD_Implementation(const TArray<APlayerState*>& PlayerArray)
+{
+	ABM_GameStateBase* GameState = GetWorld() != NULL ? GetWorld()->GetGameState<ABM_GameStateBase>() : NULL;
+	if(GameState)
+	{
+		UE_LOG(LogBM_PlayerController, Display, TEXT("Client %s copy of GameState: %s"), *this->GetName(),*GameState->GetName());
+	}
+	else
+	{
+		UE_LOG(LogBM_PlayerController, Display, TEXT("No GameState copy is available at this client %s"), *this->GetName());
+	}
+	PlayerHUD = CreateWidget<UBM_UWPlayerHUD>(this, PlayerHUDClass);
+	if(PlayerHUD)
+	{
+		PlayerHUD->AddToViewport();
+		PlayerHUD->UpdatePlayersInfo(PlayerArray);
+	}
+}
+
 void ABM_PlayerControllerBase::CC_MarkAnsweredPlayers_Implementation(int32 LastSentPlayer)
 {
 	if (QuestionWidget)

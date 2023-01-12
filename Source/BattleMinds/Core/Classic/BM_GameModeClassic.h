@@ -16,4 +16,8 @@ class BATTLEMINDS_API ABM_GameModeClassic : public ABM_GameModeBase
 public:
 	UFUNCTION(BlueprintCallable)
 	void PostLogin(APlayerController* NewPlayer) override;
+	UFUNCTION()
+	void StartGame();
+private:
+	FTimerHandle StartGameTimer;
 };

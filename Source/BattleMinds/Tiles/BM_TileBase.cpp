@@ -55,6 +55,11 @@ void ABM_TileBase::OnRep_CastleMeshChanged()
 	CastleMesh->SetMaterial(0, MaterialCastle);
 }
 
+void ABM_TileBase::DecreaseCastleHP_Implementation()
+{
+	TileHP--;
+}
+
 void ABM_TileBase::RemoveTileFromPlayerTerritory_Implementation(ABM_PlayerState* PlayerState)
 {
 	bIsAttacked = false;
@@ -161,6 +166,7 @@ void ABM_TileBase::TileWasChosen_Implementation(ABM_PlayerState* PlayerState, EG
 			if (!bIsFortified)
 			{
 				bIsFortified = true;
+				TileHP++;
 				UE_LOG(LogBM_Tile, Display, TEXT("Tile was fortified"));
 			}
 		}
@@ -217,5 +223,6 @@ void ABM_TileBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME(ABM_TileBase, StaticMesh);
 	DOREPLIFETIME(ABM_TileBase, bIsFortified);
 	DOREPLIFETIME(ABM_TileBase, bIsAttacked);
+	DOREPLIFETIME(ABM_TileBase, TileHP);
 	DOREPLIFETIME(ABM_TileBase, OwnerPlayerID);
 }
