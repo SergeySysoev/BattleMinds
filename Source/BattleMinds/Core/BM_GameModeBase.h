@@ -67,7 +67,8 @@ public:
 	FAnswerSentSignature OnAnswerSent;
 	UFUNCTION(BlueprintCallable)
 	void InitPlayer(APlayerController* NewPlayer);
-	
+	UFUNCTION(BlueprintCallable)
+	void UpdatePlayersHUD();
 	UFUNCTION(BlueprintCallable)
 	void OpenQuestion(EQuestionType QuestionType);
 	UFUNCTION(BlueprintCallable)

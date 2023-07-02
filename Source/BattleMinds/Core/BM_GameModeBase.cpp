@@ -37,6 +37,17 @@ void ABM_GameModeBase::InitPlayer(APlayerController* NewPlayer)
 	}
 }
 
+void ABM_GameModeBase::UpdatePlayersHUD()
+{
+	for (const auto PlayerState: GetGameState<ABM_GameStateBase>()->PlayerArray)
+	{
+		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
+		{
+			PlayerController->CC_UpdatePlayerHUD(GetGameState<ABM_GameStateBase>()->PlayerArray);
+		}
+	}
+}
+
 int32 ABM_GameModeBase::FindNextQuestion(EQuestionType Question, TArray<FName> Array, FString& ContextString)
 {
 	int32 TableIndex = -1;
@@ -394,6 +405,7 @@ void ABM_GameModeBase::VerifyAnswers()
 		default:
 			break;
 	}
+	UpdatePlayersHUD();
 	SetNextGameRound();
 }
 

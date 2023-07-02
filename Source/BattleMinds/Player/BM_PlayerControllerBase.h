@@ -64,5 +64,7 @@ public:
 	void SC_TryClickTheTile(ABM_TileBase* TargetTile);
 	UFUNCTION(Client, Reliable, BlueprintCallable)
 	void CC_InitPlayerHUD(const TArray<APlayerState*>& PlayerArray);
+	UFUNCTION(Client, Reliable, BlueprintCallable)
+	void CC_UpdatePlayerHUD(const TArray<APlayerState*>& PlayerArray);
 	
 };

@@ -16,5 +16,7 @@ class BATTLEMINDS_API UBM_UWPlayerInfo : public UCommonUserWidget
 
 public:
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	void Init();
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void UpdatePlayerPoints(float NewPoints);
 };
