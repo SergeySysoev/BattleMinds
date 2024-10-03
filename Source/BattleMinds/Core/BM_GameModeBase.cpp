@@ -628,7 +628,7 @@ void ABM_GameModeBase::StartPlayerTurnTimer(int32 PlayerID)
 				break;
 			}
 		}
-		GetWorld()->GetTimerManager().SetTimer(PlayerTurnHandle, this, &ABM_GameModeBase::UpdatePlayerTurnTimers, 1.0, true, 1.0f);
+		GetWorld()->GetTimerManager().SetTimer(PlayerTurnHandle, this, &ABM_GameModeBase::UpdatePlayerTurnTimers, 1.0, true, 0.0f);
 	}
 	else
 	{
@@ -683,14 +683,6 @@ void ABM_GameModeBase::ChooseFirstAvailableTileForPlayer(int32 PlayerID)
 
 void ABM_GameModeBase::UpdatePlayerTurnTimers()
 {
-	for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
-	{
-		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
-		{
-			PlayerController->UpdateTurnTimer(Round);
-		}
-	}
-	CurrentTurnTimer--;
 	if(CurrentTurnTimer == 0)
 	{
 		GetWorld()->GetTimerManager().ClearTimer(PlayerTurnHandle);
@@ -702,6 +694,17 @@ void ABM_GameModeBase::UpdatePlayerTurnTimers()
 				PlayerController->ResetTurnTimer(Round);
 			}
 		}
+	}
+	else
+	{
+		for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
+		{
+			if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
+			{
+				PlayerController->UpdateTurnTimer(Round);
+			}
+		}
+		CurrentTurnTimer--;
 	}
 }
 

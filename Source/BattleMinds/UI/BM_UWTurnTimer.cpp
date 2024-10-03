@@ -10,11 +10,17 @@ void UBM_UWTurnTimer::StartTimer()
 }
 void UBM_UWTurnTimer::ResetTimer()
 {
-	TimerMaterialDynamic->SetScalarParameterValue(FName(TEXT("Percent")), 0.0);
-	TimerCurrent = 0.0;
+	if (IsValid(TimerMaterialDynamic))
+	{
+		TimerMaterialDynamic->SetScalarParameterValue(FName(TEXT("Percent")), 0.0);
+	}
+	TimerCurrent = 0.0;	
 }
 void UBM_UWTurnTimer::UpdateTimer()
 {
+	if (IsValid(TimerMaterialDynamic))
+	{
+		TimerMaterialDynamic->SetScalarParameterValue(FName(TEXT("Percent")), TimerCurrent);
+	}
 	TimerCurrent += TimerTotal/100.0;
-	TimerMaterialDynamic->SetScalarParameterValue(FName(TEXT("Percent")), TimerCurrent);
 }
