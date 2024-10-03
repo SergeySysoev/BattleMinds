@@ -3,6 +3,7 @@
 
 #include "BM_TileBase.h"
 #include "BattleMinds/Player/BM_PlayerState.h"
+#include "Core/BM_GameModeBase.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -53,6 +54,18 @@ void ABM_TileBase::OnRep_FlagMeshChanged()
 void ABM_TileBase::OnRep_CastleMeshChanged()
 {
 	CastleMesh->SetMaterial(0, MaterialCastle);
+}
+
+void ABM_TileBase::MC_TryUpdatePlayersHUD_Implementation()
+{
+	if (HasAuthority())
+	{
+		ABM_GameModeBase* LGameMode = Cast<ABM_GameModeBase>(GetWorld()->GetAuthGameMode());
+		if (IsValid(LGameMode))
+		{
+			LGameMode->UpdatePlayersHUD();
+		}
+	}
 }
 
 void ABM_TileBase::DecreaseCastleHP_Implementation()
@@ -113,7 +126,8 @@ void ABM_TileBase::AddTileToPlayerTerritory_Implementation(ABM_PlayerState* Play
 	StaticMesh->SetMaterial(0, CurrentMaterial);
 	PlayerState->OwnedTiles.Add(this);
 	OwnerPlayerID = PlayerState->BMPlayerID;
-	PlayerState->SetPointsInWidget();
+	//PlayerState->SetPointsInWidget();
+	//MC_TryUpdatePlayersHUD();
 	MC_RemoveSelection();
 	MC_ShowEdges(false, FColor::Black);
 }

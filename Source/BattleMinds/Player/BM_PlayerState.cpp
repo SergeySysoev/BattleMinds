@@ -3,6 +3,9 @@
 
 #include "BattleMinds/Player/BM_PlayerState.h"
 
+#include "Core/BM_GameModeBase.h"
+#include "Core/BM_GameStateBase.h"
+
 void ABM_PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	DOREPLIFETIME(ABM_PlayerState, BMPlayerID);
@@ -39,10 +42,9 @@ float ABM_PlayerState::GetPoints()
 	return Points;
 }
 
-void ABM_PlayerState::AddPoints(int32 inPoints)
+void ABM_PlayerState::AddPoints_Implementation(int32 inPoints)
 {
 	Points += inPoints;
-	SetPointsInWidget();
 }
 
 bool ABM_PlayerState::IsPlayerTurn()
@@ -83,6 +85,15 @@ int32 ABM_PlayerState::GetWrongAnswersNumber()
 		}
 	}
 	return  Count;
+}
+
+void ABM_PlayerState::SetPointsInWidget_Implementation()
+{
+	ABM_PlayerControllerBase* LOwningPC = Cast<ABM_PlayerControllerBase>(GetOwningController());
+	if (IsValid(LOwningPC))
+	{
+		LOwningPC->SC_RequestToUpdateHUD();
+	}
 }
 
 TSet<ABM_TileBase*> ABM_PlayerState::GetNeighbors()

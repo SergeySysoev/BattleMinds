@@ -50,7 +50,7 @@ public:
 	TSet<ABM_TileBase*> GetAllCurrentNeighbours();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetPoints();
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void AddPoints(int32 inPoints);
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsPlayerTurn();
@@ -62,7 +62,7 @@ public:
 	int32 GetCorrectAnswersNumber();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int32 GetWrongAnswersNumber();
-	UFUNCTION(BlueprintImplementableEvent)
+	UFUNCTION(BlueprintNativeEvent)
 	void SetPointsInWidget();
 	UFUNCTION()
 	TSet<ABM_TileBase*> GetNeighbors();

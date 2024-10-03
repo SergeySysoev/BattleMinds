@@ -17,6 +17,6 @@ class BATTLEMINDS_API UBM_UWPlayerHUD : public UCommonUserWidget
 public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void InitPlayersInfo(const TArray<APlayerState*>& Players);
-	UFUNCTION(BlueprintImplementableEvent)
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void UpdatePlayersInfo(const TArray<APlayerState*>& Players);
 };

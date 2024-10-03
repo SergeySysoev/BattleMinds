@@ -44,6 +44,8 @@ public:
 	void OpenQuestion();
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_RequestToOpenQuestion();
+	UFUNCTION(Server,Reliable)
+	void SC_RequestToUpdateHUD();
 	UFUNCTION(Client, Reliable, BlueprintCallable)
 	void CC_OpenQuestionWidget(FQuestion LastQuestion, const TArray<int32>& AnsweringPlayers);
 	UFUNCTION(BlueprintImplementableEvent)
@@ -65,6 +67,6 @@ public:
 	UFUNCTION(Client, Reliable, BlueprintCallable)
 	void CC_InitPlayerHUD(const TArray<APlayerState*>& PlayerArray);
 	UFUNCTION(Client, Reliable, BlueprintCallable)
-	void CC_UpdatePlayerHUD(const TArray<APlayerState*>& PlayerArray);
+	void CC_UpdatePlayerHUD();
 	
 };

@@ -5,7 +5,6 @@
 #include "GameFramework/GameModeBase.h"
 #include "Core/BM_Types.h"
 #include "TimerManager.h"
-#include "ActorFactories/ActorFactoryCameraActor.h"
 #include "Player/BM_PlayerPawn.h"
 #include "Tiles/BM_TileBase.h"
 #include "BM_GameModeBase.generated.h"

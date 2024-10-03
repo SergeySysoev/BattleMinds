@@ -21,7 +21,15 @@ ABM_PlayerControllerBase::ABM_PlayerControllerBase()
 	bEnableMouseOverEvents = true;
 }
 
-void ABM_PlayerControllerBase::CC_UpdatePlayerHUD_Implementation(const TArray<APlayerState*>& PlayerArray)
+void ABM_PlayerControllerBase::SC_RequestToUpdateHUD_Implementation()
+{
+	if(ABM_GameModeBase* LGameMode = Cast<ABM_GameModeBase>(GetWorld()->GetAuthGameMode()))
+	{
+		LGameMode->UpdatePlayersHUD();
+	}
+}
+
+void ABM_PlayerControllerBase::CC_UpdatePlayerHUD_Implementation()
 {
 	ABM_GameStateBase* GameState = GetWorld() != NULL ? GetWorld()->GetGameState<ABM_GameStateBase>() : NULL;
 	if(GameState)
@@ -30,11 +38,11 @@ void ABM_PlayerControllerBase::CC_UpdatePlayerHUD_Implementation(const TArray<AP
 	}
 	else
 	{
-		UE_LOG(LogBM_PlayerController, Display, TEXT("No GameState copy is available at this client %s"), *this->GetName());
+		UE_LOG(LogBM_PlayerController, Warning, TEXT("No GameState copy is available at this client %s"), *this->GetName());
 	}
 	if(PlayerHUD)
 	{
-		PlayerHUD->UpdatePlayersInfo(PlayerArray);
+		PlayerHUD->UpdatePlayersInfo(GameState->PlayerArray);
 	}
 }
 
@@ -91,7 +99,7 @@ void ABM_PlayerControllerBase::CC_RemoveQuestionWidget_Implementation()
 {
 	if (QuestionWidget)
 	{
-		QuestionWidget->RemoveFromViewport();
+		QuestionWidget->RemoveFromParent();
 	}
 	if (PlayerHUD)
 	{

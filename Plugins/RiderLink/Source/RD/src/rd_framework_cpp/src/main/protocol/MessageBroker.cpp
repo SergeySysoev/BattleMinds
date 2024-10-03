@@ -1,5 +1,6 @@
 #include "protocol/MessageBroker.h"
 
+#include "base/RdReactiveBase.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 
 namespace rd
@@ -13,7 +14,7 @@ static void execute(const IRdReactive* that, Buffer msg)
 	that->on_wire_received(std::move(msg));
 }
 
-void MessageBroker::invoke(const IRdReactive* that, Buffer msg, bool sync) const
+void MessageBroker::invoke(const RdReactiveBase* that, Buffer msg, bool sync) const
 {
 	if (sync)
 	{
@@ -25,7 +26,7 @@ void MessageBroker::invoke(const IRdReactive* that, Buffer msg, bool sync) const
 			bool exists_id = false;
 			{
 				std::lock_guard<decltype(lock)> guard(lock);
-				exists_id = subscriptions.count(that->rdid) > 0;
+				exists_id = subscriptions.count(that->get_id()) > 0;
 			}
 			if (exists_id)
 			{
@@ -33,7 +34,7 @@ void MessageBroker::invoke(const IRdReactive* that, Buffer msg, bool sync) const
 			}
 			else
 			{
-				logger->trace("Disappeared Handler for Reactive entities with id: {}", to_string(that->rdid));
+				logger->trace("Disappeared Handler for Reactive entities with id: {}", to_string(that->get_id()));
 			}
 		};
 		std::function<void()> function = util::make_shared_function(std::move(action));
@@ -51,7 +52,7 @@ void MessageBroker::dispatch(RdId id, Buffer message) const
 
 	{	 // synchronized recursively
 		std::lock_guard<decltype(lock)> guard(lock);
-		IRdReactive const* s = subscriptions[id];
+		RdReactiveBase const* s = subscriptions[id];
 		if (s == nullptr)
 		{
 			auto it = broker.find(id);
@@ -64,7 +65,7 @@ void MessageBroker::dispatch(RdId id, Buffer message) const
 
 			auto action = [this, it, id]() mutable {
 				auto& current = it->second;
-				IRdReactive const* subscription = subscriptions[id];
+				RdReactiveBase const* subscription = subscriptions[id];
 
 				optional<Buffer> message;
 				{
@@ -127,9 +128,9 @@ void MessageBroker::dispatch(RdId id, Buffer message) const
 	//        }
 }
 
-void MessageBroker::advise_on(Lifetime lifetime, IRdReactive const* entity) const
+void MessageBroker::advise_on(Lifetime lifetime, RdReactiveBase const* entity) const
 {
-	RD_ASSERT_MSG(!entity->rdid.isNull(), ("id is null for entities: " + std::string(typeid(*entity).name())))
+	RD_ASSERT_MSG(!entity->get_id().isNull(), ("id is null for entities: " + std::string(typeid(*entity).name())))
 
 	// advise MUST happen under default scheduler, not custom
 	default_scheduler->assert_thread();
@@ -137,9 +138,8 @@ void MessageBroker::advise_on(Lifetime lifetime, IRdReactive const* entity) cons
 	std::lock_guard<decltype(lock)> guard(lock);
 	if (!lifetime->is_terminated())
 	{
-		auto key = entity->rdid;
-		IRdReactive const* value = entity;
-		subscriptions[key] = value;
+		auto key = entity->get_id();
+		subscriptions[key] = entity;
 		lifetime->add_action([this, key]() { subscriptions.erase(key); });
 	}
 }

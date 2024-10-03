@@ -4,7 +4,6 @@
 #include "BM_GameModeBase.h"
 #include "BM_GameInstance.h"
 #include "BM_GameStateBase.h"
-#include "ToolBuilderUtil.h"
 #include "Camera/CameraActor.h"
 #include "Kismet/DataTableFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
@@ -43,7 +42,7 @@ void ABM_GameModeBase::UpdatePlayersHUD()
 	{
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 		{
-			PlayerController->CC_UpdatePlayerHUD(GetGameState<ABM_GameStateBase>()->PlayerArray);
+			PlayerController->CC_UpdatePlayerHUD();
 		}
 	}
 }
