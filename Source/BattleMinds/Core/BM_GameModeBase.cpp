@@ -528,7 +528,7 @@ void ABM_GameModeBase::StartPlayerTurnTimer(int32 PlayerID)
 	GetWorld()->GetTimerManager().ClearTimer(PlayerTurnHandle);
 	CurrentPlayerAvailableTiles.Empty();
 	UE_LOG(LogTemp, Warning, TEXT("Current PlayerID %d"), PlayerID);
-	CurrentTurnTimer = TurnTimer;
+	CurrentTurnTimer = TurnTimer+1; // to be able to see all timer widget fades away
 	for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
 	{
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))

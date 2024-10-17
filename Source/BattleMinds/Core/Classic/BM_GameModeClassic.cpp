@@ -35,5 +35,5 @@ void ABM_GameModeClassic::StartGame()
 			PlayerController->CC_InitPlayerHUD(GetGameState<ABM_GameStateBase>()->PlayerArray);
 		}
 	}
-		StartPlayerTurnTimer(0);
+	//StartPlayerTurnTimer(0);
 }

@@ -21,6 +21,14 @@ ABM_PlayerControllerBase::ABM_PlayerControllerBase()
 	bEnableMouseOverEvents = true;
 }
 
+void ABM_PlayerControllerBase::CC_ShowWarningPopup_Implementation(const FText& InText)
+{
+	if (IsValid(PlayerHUD))
+	{
+		PlayerHUD->ShowWarningPopup(InText);
+	}
+}
+
 void ABM_PlayerControllerBase::SC_RequestToUpdateHUD_Implementation()
 {
 	if(ABM_GameModeBase* LGameMode = Cast<ABM_GameModeBase>(GetWorld()->GetAuthGameMode()))
@@ -177,7 +185,11 @@ void ABM_PlayerControllerBase::SC_TryClickTheTile_Implementation(ABM_TileBase* T
 		}
 	}
 	else
+	{
 		UE_LOG(LogBM_PlayerController, Warning, TEXT("It's not your turn"));
+		CC_ShowWarningPopup(FText::FromString("It's not your turn"));
+	}
+	
 }
 
 bool ABM_PlayerControllerBase::SC_TryClickTheTile_Validate(ABM_TileBase* TargetTile)

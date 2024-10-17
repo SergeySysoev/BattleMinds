@@ -3,14 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AdvancedFriendsGameInstance.h"
 #include "Engine/GameInstance.h"
 #include "BM_GameInstance.generated.h"
 
-/**
- * 
- */
 UCLASS()
-class BATTLEMINDS_API UBM_GameInstance : public UGameInstance
+class BATTLEMINDS_API UBM_GameInstance : public UAdvancedFriendsGameInstance
 {
 	GENERATED_BODY()
 	
