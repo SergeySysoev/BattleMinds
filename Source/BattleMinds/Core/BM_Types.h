@@ -7,9 +7,6 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "BM_Types.generated.h"
 
-/**
- * 
-*/
 UENUM(BlueprintType)
 enum class EQuestionCategories : uint8
 {
