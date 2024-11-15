@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "InstancedStruct.h"
 #include "BM_Types.generated.h"
 
 UENUM(BlueprintType)

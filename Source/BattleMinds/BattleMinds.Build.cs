@@ -10,7 +10,7 @@ public class BattleMinds : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore"});
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "AdvancedSessions", "OnlineSubsystemSteam" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "AdvancedSessions", "OnlineSubsystemSteam", "StructUtils" });
 
 		PublicIncludePaths.AddRange(new string[]
 		{
