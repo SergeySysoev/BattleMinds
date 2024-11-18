@@ -371,7 +371,8 @@ void ABM_GameModeBase::SetNextGameRound() {
 			if (NumberOfActivePlayers < 2 || NumberOfTotalTurns == 0)
 			{
 				Round = NextGameRound();
-				CountResults();
+				FTimerHandle LCountResultsHandle;
+				GetWorld()->GetTimerManager().SetTimer(LCountResultsHandle,this,&ABM_GameModeBase::CountResults, 3.0f, false);
 			}
 			else
 			{
