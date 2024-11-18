@@ -14,15 +14,18 @@ class BATTLEMINDS_API UBM_UWQuestion : public UUserWidget, public IBM_QuestionIn
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Question settings")
-	FQuestion LastQuestion;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Question settings", meta=(BaseStruct = "Question"))
+	FInstancedStruct LastQuestion;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Question settings")
 	TArray<int32> AnsweringPlayers;
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void GatherAnswers();
+	
 	UFUNCTION(BlueprintNativeEvent)
-	void ShowCorrectAnswers(const TArray<FPlayerChoice> &PlayersChoices);
+	void ShowCorrectAnswers(const TArray<FInstancedStruct>& PlayersChoices);
+	
 	UFUNCTION(BlueprintImplementableEvent)
 	void MarkAnsweredPlayers(int32 AnsweredPlayerID);
 };

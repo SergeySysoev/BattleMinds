@@ -21,6 +21,7 @@ enum class EQuestionCategories : uint8
 	Technologies UMETA(DisplayedName = "Technologies"),
 	TwentyFirstCentury UMETA(DisplayedName = "XXI century")
 };
+
 UENUM(BlueprintType)
 enum class EAnswerType : uint8
 {
@@ -29,6 +30,7 @@ enum class EAnswerType : uint8
 	ChooseNumeric UMETA(DisplayName = "Choose Numeric"),
 	Shot UMETA(DisplayName = "Shot")
 };
+
 UENUM(BlueprintType)
 enum class EQuestionType : uint8
 {
@@ -43,17 +45,23 @@ struct FAnswer
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Answer settings")
 	EAnswerType AnswerType = EAnswerType::ChooseText;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Answer settings", meta=(EditCondition = "AnswerType == EAnswerType::ChooseText"))
 	FText AnswerText;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Answer settings", meta=(EditCondition = "AnswerType == EAnswerType::ChooseImage"))
 	TObjectPtr<UTexture2D> AnswerPicture = nullptr;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Answer settings", meta=(EditCondition = "AnswerType == EAnswerType::ChooseNumeric || AnswerType == EAnswerType::Shot"))
 	float AnswerNumber = 0;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Answer settings")
 	bool IsCorrect = false;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Answer settings")
 	bool bWasChosen = false;
 };
+
 USTRUCT(BlueprintType)
 struct FAnswerShot
 {
@@ -61,32 +69,117 @@ struct FAnswerShot
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Answer settings")
 	int32 CorrectAnswer = 0;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Answer settings")
 	int32 PlayerAnswer = 0;
+	
 	UPROPERTY(BlueprintReadWrite, Category="Answer settings")
 	int32 Difference = MAX_int32;
 };
-USTRUCT(BlueprintType)
+
+USTRUCT(Blueprintable)
 struct FPlayerChoice
 {
 	GENERATED_BODY()
+
+	/* BMPlayerID of the player whose choice this is*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Choice settings")
+	int32 PlayerID = 0;
+
+	/* Index of the Question in UsedQuestion set located in GameMode*/
+	UPROPERTY(BlueprintReadWrite, Category="Choice setting")
+	int32 QuestionID = 0;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Answer settings")
-	int32 PlayerID;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Answer settings")
-	int32 AnswerID;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Answer settings")
-	FTimespan ElapsedTime;
-	FPlayerChoice()
-	{
-		PlayerID=0;
-		AnswerID=0;
-	};
-	FPlayerChoice(int32 inPlayerID, int32 inAnswerID, FTimespan inElapsedTime)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Choice settings")
+	FTimespan ElapsedTime = FTimespan::Zero();
+
+	FPlayerChoice() {}
+	FPlayerChoice(int32 inPlayerID, FTimespan inElapsedTime)
 	{
 		PlayerID = inPlayerID;
-		AnswerID = inAnswerID;
 		ElapsedTime = inElapsedTime;
+	}
+
+	FORCEINLINE bool operator<(const FPlayerChoice &Other) const
+	{
+		if(ElapsedTime < Other.ElapsedTime)
+		{
+			return true;	
+		}
+		return false;
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FPlayerChoiceChoose: public FPlayerChoice
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, Category="Choose choice")
+	int32 AnswerID = -1;
+
+	FPlayerChoiceChoose() {}
+	
+	FPlayerChoiceChoose(int32 inPlayerID, FTimespan inElapsedTime, int32 inAnswerID)
+	{
+		FPlayerChoice(inPlayerID, inElapsedTime);
+		AnswerID = inAnswerID;
+		
+	}
+	
+	FORCEINLINE bool operator<(const FPlayerChoice &Other) const
+	{
+		if(ElapsedTime < Other.ElapsedTime)
+		{
+			return true;	
+		}
+		return false;
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FPlayerChoiceShot: public FPlayerChoice
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, Category="Shot choice")
+	int32 Answer = 0;
+
+	UPROPERTY(BlueprintReadWrite, Category="Shot choice")
+	int32 Difference = 0;
+	
+	FPlayerChoiceShot() {}
+
+	FPlayerChoiceShot(int32 inPlayerID, FTimespan inElapsedTime, int32 inAnswer)
+	{
+		FPlayerChoice(inPlayerID, inElapsedTime);
+		Answer = inAnswer;
+	}
+	
+	FORCEINLINE bool operator<(const FPlayerChoiceShot &Other) const
+	{
+		if(Difference < Other.Difference)
+		{
+			return true;
+		}
+		
+		if(Difference > Other.Difference)
+		{
+			return false;
+		}
+		
+		if (Difference == Other.Difference)
+		{
+			if(ElapsedTime < Other.ElapsedTime)
+			{
+				return true;
+			}
+			if (ElapsedTime >= Other.ElapsedTime)
+			{
+				return false;
+			}
+		}
+		return false;
 	}
 };
 
@@ -103,45 +196,61 @@ public:
 	TObjectPtr<UTexture2D> Thumbnail;
 };
 
-USTRUCT(BlueprintType)
+USTRUCT(Blueprintable, BlueprintType)
 struct FQuestion : public FTableRowBase
 {
 	GENERATED_BODY()
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Question settings")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="General Question")
 	FText Question;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Question settings")
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="General Question")
 	FCategory Category;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Question settings")
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="General Question")
 	EQuestionType Type;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Question settings", meta = (EditCondition = "Type == EQuestionType::Choose"))
-	TArray<FAnswer> Answers;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Question settings", meta = (EditCondition = "Type == EQuestionType::Shot"))
-	FAnswerShot AnswerShot;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Question settings")
-	int32 PointsModifier = 0;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Question settings", meta = (EditCondition = "Type == EQuestionType::Choose"))
-	bool bWasAnswered;
-	UPROPERTY(BlueprintReadWrite, Category="Question settings")
-	int32 PlayerID;
-	UPROPERTY(BlueprintReadWrite, Category="Question settings|Shot")
-	bool bExactAnswer;
-	UPROPERTY(BlueprintReadWrite, Category="Question settings|Shot")
-	FTimespan ElapsedTime;
 
-	FORCEINLINE bool operator<(const FQuestion &Other) const
-	{
-		if(AnswerShot.Difference < Other.AnswerShot.Difference) return true;
-		if(AnswerShot.Difference > Other.AnswerShot.Difference) return false;
-		if (AnswerShot.Difference == Other.AnswerShot.Difference)
-		{
-			if(ElapsedTime < Other.ElapsedTime)
-				return true;
-			if (ElapsedTime >= Other.ElapsedTime)
-				return false;
-		}
-		return false;
-	}
+	/* Additional multiplicative modifier for this specific question*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="General Question")
+	int32 PointsModifier = 1;
+
+	UPROPERTY(BlueprintReadOnly, Category="General Question")
+	int32 QuestionID = MAX_int32;
+
+	FORCEINLINE FText GetQuestionText() const { return Question;}
+	FORCEINLINE FCategory GetCategory() const { return Category;}
+	FORCEINLINE EQuestionType GetType() const { return Type;}
+	FORCEINLINE int32 GetPointsModifier() const { return PointsModifier;}
+};
+
+USTRUCT(BlueprintType)
+struct FQuestionChooseText: public FQuestion
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Choose Text Question")
+	TArray<FText> Answers;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Choose Text Question")
+	int32 RightAnswer;
+};
+
+USTRUCT(BlueprintType)
+struct FQuestionChooseImage: public FQuestion
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Choose Image Question")
+	TArray<UTexture2D*> Answers;
+};
+
+USTRUCT(BlueprintType)
+struct FQuestionShot: public FQuestion
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Shot Question")
+	int32 Answer;
 };
 
 UENUM(BlueprintType)
@@ -162,6 +271,7 @@ enum class EClassicRound : uint8
 	FightForTerritory,
 	CountResults
 };
+
 USTRUCT(BlueprintType)
 struct FTooltip
 {
@@ -176,6 +286,7 @@ struct FTooltip
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tooltip Settings")
 	FText Description;
 };
+
 USTRUCT(BlueprintType)
 struct FGameModeAvailableSettings : public FTableRowBase
 {
@@ -188,6 +299,7 @@ struct FGameModeAvailableSettings : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game Mode Settings")
 	FTooltip Tooltip;
 };
+
 USTRUCT(BlueprintType)
 struct FGameModeSetting : public FTableRowBase
 {
@@ -198,6 +310,7 @@ struct FGameModeSetting : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game Mode Setting")
 	FString Option;
 };
+
 USTRUCT(BlueprintType)
 struct FGameModeDescription : public FTableRowBase
 {

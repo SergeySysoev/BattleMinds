@@ -20,6 +20,7 @@ void ABM_GameModeBase::InitPlayer(APlayerController* NewPlayer)
 	{
 		PlayerState->BMPlayerID = NumberOfActivePlayers;
 		PlayerState->MaterialTile = MaterialMap.FindRef(NumberOfActivePlayers);
+		//TODO: get this info from Steam info (loaded into Save game UserProfile)
 		PlayerState->Nickname = NicknameMap.FindRef(NumberOfActivePlayers);
 		PlayerState->MaterialCastle = CastleMaterialMap.FindRef(NumberOfActivePlayers);
 		PlayerState->MaterialAttack = MaterialAttackMap.FindRef(NumberOfActivePlayers);
@@ -51,6 +52,8 @@ int32 ABM_GameModeBase::FindNextQuestion(EQuestionType Question, TArray<FName> A
 {
 	int32 TableIndex = -1;
 	int32 QuestionIndex = -1;
+	FQuestionChooseText LFoundRowChoose;
+	FQuestionShot LFoundRowShot;
 	switch (Question)
 	{
 		case EQuestionType::Choose:
@@ -58,24 +61,31 @@ int32 ABM_GameModeBase::FindNextQuestion(EQuestionType Question, TArray<FName> A
 			ContextString = FString("Question Choose");
 			Array.Append(QuestionTablesChoose[TableIndex]->GetRowNames());
 			QuestionIndex = FMath::RandRange(0, Array.Num()-1);
-			LastQuestion = std::ref(*QuestionTablesChoose[TableIndex]->FindRow<FQuestion>(Array[QuestionIndex],ContextString));
-			if (!UsedQuestions.Contains(Array[QuestionIndex]))
-				UsedQuestions.Add(Array[QuestionIndex], LastQuestion);
+			LFoundRowChoose = std::ref(*QuestionTablesChoose[TableIndex]->FindRow<FQuestionChooseText>(Array[QuestionIndex],ContextString));
+			LFoundRowChoose.QuestionID = UsedQuestions.Num();
+			LastQuestion = FInstancedStruct::Make(LFoundRowChoose);
+			UsedQuestions.Add(LastQuestion);
 			break;
+		
 		case EQuestionType::Shot:
 			TableIndex = FMath::RandRange(0, QuestionTablesShot.Num()-1);
 			ContextString = FString("Question Shot");
 			Array.Append(QuestionTablesShot[TableIndex]->GetRowNames());
 			QuestionIndex = FMath::RandRange(0, Array.Num()-1);
-			LastQuestion = std::ref(*QuestionTablesShot[TableIndex]->FindRow<FQuestion>(Array[QuestionIndex],ContextString));
-			if (!UsedQuestions.Contains(Array[QuestionIndex]))
-				UsedQuestions.Add(Array[QuestionIndex], LastQuestion);
+			LFoundRowShot = std::ref(*QuestionTablesShot[TableIndex]->FindRow<FQuestionShot>(Array[QuestionIndex],ContextString));
+			LFoundRowShot.QuestionID = UsedQuestions.Num();
+			LastQuestion = FInstancedStruct::Make(LFoundRowShot);
+			UsedQuestions.Add(LastQuestion);
 			break;
 		default:
 			break;
 	}
+	
 	if (QuestionIndex < 0)
+	{
 		QuestionIndex = 0;
+	}
+	
 	return QuestionIndex;
 }
 
@@ -131,7 +141,9 @@ void ABM_GameModeBase::OpenQuestion(EQuestionType QuestionType)
 	SetViewTargetForQuestion(QuestionType, RowNames, QuestionIndex);
 	NumberOfSentAnswers = 0;
 	if (!OnAnswerSent.IsBound())
+	{
 		OnAnswerSent.AddDynamic(this, &ABM_GameModeBase::ResetQuestionTimer);
+	}
 	StartQuestionTimer();
 }
 
@@ -186,43 +198,65 @@ void ABM_GameModeBase::ResetQuestionTimer(int32 LastSentPlayer)
 
 void ABM_GameModeBase::GatherPlayersAnswers()
 {
-	CurrentAnsweredQuestions.Empty();
+	PlayersCurrentChoices.Empty();
 	//Remove Question Widget and add Player's answer to the CurrentAnswers array
 	if (Round != EGameRound::FightForTerritory)
 	{
 		for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
 		{
+			const auto LPlayerState = Cast<ABM_PlayerState>(PlayerState);
 			// Answers may not be pushed by the Player manually
-			if(Cast<ABM_PlayerState>(PlayerState)->CurrentQuestionAnswerSent == false)
+			if (!IsValid(LPlayerState))
 			{
-				switch (LastQuestion.Type)
+				continue;
+			}
+			
+			if(LPlayerState->CurrentQuestionAnswerSent == false)
+			{
+				switch (LastQuestion.GetPtr<FQuestion>()->GetType())
 				{
 					case EQuestionType::Choose:
 					{
-						Cast<ABM_PlayerState>(PlayerState)->AnsweredQuestions.Add(LastQuestion);
+						// Generate auto choice Choose
+						FInstancedStruct LAutoChoice = FInstancedStruct::Make(FPlayerChoiceChoose());
+						LAutoChoice.GetMutable<FPlayerChoiceChoose>().PlayerID = LPlayerState->BMPlayerID;
+						LAutoChoice.GetMutable<FPlayerChoiceChoose>().AnswerID = -1;
+						Cast<ABM_PlayerState>(PlayerState)->AnsweredQuestions.Add(LAutoChoice);
 						break;
 					}
 					case EQuestionType::Shot:
 					{
-						Cast<ABM_PlayerState>(PlayerState)->AnsweredQuestions.Add(LastQuestion);
+						// Generate auto choice Shot
+						FInstancedStruct LAutoChoice = FInstancedStruct::Make(FPlayerChoiceShot());
+						LAutoChoice.GetMutable<FPlayerChoiceShot>().PlayerID = LPlayerState->BMPlayerID;
+						LAutoChoice.GetMutable<FPlayerChoiceShot>().Answer = -1;
+						Cast<ABM_PlayerState>(PlayerState)->AnsweredQuestions.Add(LAutoChoice);
 						break;
 					}
 					default: break;
 				}
 			}
-			CurrentAnsweredQuestions.Add(Cast<ABM_PlayerState>(PlayerState)->AnsweredQuestions.Last());
+			PlayersCurrentChoices.Add(LPlayerState->AnsweredQuestions.Last());
 		}
 	}
 	else
 	{
 		ABM_PlayerState* AttackingPlayerState = Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID]);
 		ABM_PlayerState* DefendingPlayerState = Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[DefendingPlayerID]);
-		if(AttackingPlayerState && AttackingPlayerState->CurrentQuestionAnswerSent == false)
-			AttackingPlayerState->AnsweredQuestions.Add(LastQuestion);
-		if (DefendingPlayerState && DefendingPlayerState->CurrentQuestionAnswerSent == false)
-			DefendingPlayerState->AnsweredQuestions.Add(LastQuestion);
-		CurrentAnsweredQuestions.Add(Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID])->AnsweredQuestions.Last());
-		CurrentAnsweredQuestions.Add(Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[DefendingPlayerID])->AnsweredQuestions.Last());
+
+		if (IsValid(AttackingPlayerState) && IsValid(DefendingPlayerState))
+		{
+			if(AttackingPlayerState->CurrentQuestionAnswerSent == false)
+			{
+				AttackingPlayerState->AnsweredQuestions.Add(LastQuestion);
+			}
+			if (DefendingPlayerState->CurrentQuestionAnswerSent == false)
+			{
+				DefendingPlayerState->AnsweredQuestions.Add(LastQuestion);
+			}
+			PlayersCurrentChoices.Add(AttackingPlayerState->AnsweredQuestions.Last());
+			PlayersCurrentChoices.Add(DefendingPlayerState->AnsweredQuestions.Last());
+		}
 	}
 	GetWorld()->GetTimerManager().ClearTimer(PauseHandle);
 	GetWorld()->GetTimerManager().SetTimer(PauseHandle,this,&ABM_GameModeBase::ShowCorrectAnswers, 1.0f, false);
@@ -230,38 +264,11 @@ void ABM_GameModeBase::GatherPlayersAnswers()
 
 void ABM_GameModeBase::ShowCorrectAnswers()
 {
-	TArray<FPlayerChoice> PlayersChoices;
-	switch (LastQuestion.Type)
-	{
-		case EQuestionType::Choose:
-		{
-			for (const auto AnsweredQuestion: CurrentAnsweredQuestions)
-			{
-				for (int i=0; i < AnsweredQuestion.Answers.Num(); i++)
-				{
-					if (AnsweredQuestion.Answers[i].bWasChosen)
-					{
-						PlayersChoices.Add(FPlayerChoice(AnsweredQuestion.PlayerID, i, AnsweredQuestion.ElapsedTime));
-					}
-				}
-			}
-			break;
-		}
-		case EQuestionType::Shot:
-		{
-			for (const auto AnsweredQuestion: CurrentAnsweredQuestions)
-			{
-				PlayersChoices.Add(FPlayerChoice(AnsweredQuestion.PlayerID ,AnsweredQuestion.AnswerShot.PlayerAnswer, AnsweredQuestion.ElapsedTime));
-			}
-			break;
-		}
-	}
-	
 	for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
 	{
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 		{
-			PlayerController->CC_ShowCorrectAnswers(PlayersChoices);
+			PlayerController->CC_ShowCorrectAnswers(PlayersCurrentChoices);
 		}
 	}
 	GetWorld()->GetTimerManager().ClearTimer(PauseHandle);
@@ -375,6 +382,8 @@ void ABM_GameModeBase::SetNextGameRound() {
 			}
 			break;
 		}
+		default:
+			break;
 	}
 }
 
@@ -389,7 +398,7 @@ void ABM_GameModeBase::VerifyAnswers()
 		}
 	}
 	//Verify Players answers:
-	switch (LastQuestion.Type)
+	switch (LastQuestion.GetPtr<FQuestion>()->Type)
 	{
 		case EQuestionType::Choose:
 		{
@@ -410,16 +419,23 @@ void ABM_GameModeBase::VerifyAnswers()
 
 void ABM_GameModeBase::VerifyChooseAnswers()
 {
+	const auto LGameState = GetGameState<ABM_GameStateBase>();
+	if (!IsValid(LGameState))
+	{
+		return;
+	}
+	const auto LRightAnswer = LastQuestion.GetPtr<FQuestionChooseText>()->RightAnswer;
 	switch (Round)
 	{
 		case EGameRound::SetTerritory:
 		{
-			for (int i = 0; i < CurrentAnsweredQuestions.Num(); i++)
+			for (const auto LPlayerChoice : PlayersCurrentChoices)
 			{
-				const ABM_PlayerControllerBase* CurrentPlayerController = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[i]->GetPlayerController());
-				ABM_PlayerState* CurrentPlayerState = Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[i]);
+				const auto LPlayerID =  LPlayerChoice.GetPtr<FPlayerChoice>()->PlayerID;
+				const ABM_PlayerControllerBase* CurrentPlayerController = Cast<ABM_PlayerControllerBase>(LGameState->PlayerArray[LPlayerID]->GetPlayerController());
+				ABM_PlayerState* CurrentPlayerState = Cast<ABM_PlayerState>(LGameState->PlayerArray[LPlayerID]);
 				CurrentPlayerController->CurrentClickedTile->MC_RemoveSelection();
-				if (CurrentAnsweredQuestions[i].bWasAnswered == false)
+				if (LPlayerChoice.GetPtr<FPlayerChoiceChoose>()->AnswerID != LRightAnswer)
 				{
 					//Set Tile color back to default
 					CurrentPlayerController->CurrentClickedTile->CancelAttack();
@@ -433,23 +449,25 @@ void ABM_GameModeBase::VerifyChooseAnswers()
 		}
 		case EGameRound::FightForTerritory:
 		{
+			ABM_PlayerControllerBase* AttackingPlayer = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID]->GetPlayerController());
+			ABM_PlayerState* AttackingPlayerState = Cast<ABM_PlayerState>(AttackingPlayer->PlayerState);
+			ABM_PlayerControllerBase* DefendingPlayer = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[DefendingPlayerID]->GetPlayerController());
+			ABM_PlayerState* DefendingPlayerState = Cast<ABM_PlayerState>(DefendingPlayer->PlayerState);
+			
 			// if both Players answered their Choose Question, we need a Shot round
-			if (CurrentAnsweredQuestions[0].bWasAnswered && CurrentAnsweredQuestions[1].bWasAnswered)
+			if (PlayersCurrentChoices[0].GetPtr<FPlayerChoiceChoose>()->AnswerID == LRightAnswer
+				&& PlayersCurrentChoices[1].GetPtr<FPlayerChoiceChoose>()->AnswerID == LRightAnswer)
 			{
 				bShotQuestionIsNeeded = true;
 			}
 			else
 			{
-				ABM_PlayerControllerBase* AttackingPlayer = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID]->GetPlayerController());
-				ABM_PlayerState* AttackingPlayerState = Cast<ABM_PlayerState>(AttackingPlayer->PlayerState);
-				ABM_PlayerControllerBase* DefendingPlayer = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[DefendingPlayerID]->GetPlayerController());
-				ABM_PlayerState* DefendingPlayerState = Cast<ABM_PlayerState>(DefendingPlayer->PlayerState);
-				for (const auto AnsweredQuestion : CurrentAnsweredQuestions)
+				for (const auto AnsweredQuestion : PlayersCurrentChoices)
 				{
-					if(AnsweredQuestion.bWasAnswered)
+					if(AnsweredQuestion.GetPtr<FPlayerChoiceChoose>()->AnswerID == LRightAnswer)
 					{
 						// correct answer
-						if(AnsweredQuestion.PlayerID == CurrentPlayerID)
+						if(AnsweredQuestion.GetPtr<FPlayerChoiceChoose>()->PlayerID == CurrentPlayerID)
 						{
 							// attacking player was right
 							DefendingPlayer->CurrentClickedTile->RemoveTileFromPlayerTerritory(DefendingPlayerState);
@@ -467,27 +485,40 @@ void ABM_GameModeBase::VerifyChooseAnswers()
 			}
 			break;
 		}
+		default:
+			break;
 	}
 }
 
 void ABM_GameModeBase::VerifyShotAnswers()
 {
-	// Sort Answers by Difference and ElapsedTime (overriden < operator in FQuestion)
-	if (CurrentAnsweredQuestions.Num() > 1)
+	const auto LGameState = GetGameState<ABM_GameStateBase>();
+	if (!IsValid(LGameState))
 	{
-		CurrentAnsweredQuestions.Sort();
+		return;
 	}
-	for (const auto Answer:CurrentAnsweredQuestions)
+	
+	TArray<FPlayerChoiceShot> ShotChoices;
+	for (const auto LPlayerChoice : PlayersCurrentChoices)
+	{
+		ShotChoices.Add(LPlayerChoice.Get<FPlayerChoiceShot>());
+	}
+	// Sort Answers by Difference and ElapsedTime (overriden < operator in FPlayerChoiceShot)
+	if (ShotChoices.Num() > 1)
+	{
+		ShotChoices.Sort();
+	}
+	/*for (const auto Answer:PlayersCurrentChoices)
 	{
 		UE_LOG(LogBM_GameMode, Display, TEXT("Player: %d, Has Exact Answer = %s, Difference = %d, Elapsed time = %d.%d"),
 			Answer.PlayerID, (Answer.bExactAnswer ? TEXT("true"):TEXT("false")), Answer.AnswerShot.Difference, Answer.ElapsedTime.GetSeconds(),Answer.ElapsedTime.GetFractionMilli());
-	}
-	const ABM_PlayerControllerBase* WinnerPlayerController = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentAnsweredQuestions[0].PlayerID]->GetPlayerController());
+	}*/
+	const ABM_PlayerControllerBase* WinnerPlayerController = Cast<ABM_PlayerControllerBase>(LGameState->PlayerArray[ShotChoices[0].PlayerID]->GetPlayerController());
 	if (Round == EGameRound::FightForTheRestTiles)
 	{
-		for (int i =1; i < CurrentAnsweredQuestions.Num(); i++)
+		for (int i =1; i < ShotChoices.Num(); i++)
 		{
-			const ABM_PlayerControllerBase* LoserPlayerController = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentAnsweredQuestions[i].PlayerID]->GetPlayerController());
+			const ABM_PlayerControllerBase* LoserPlayerController = Cast<ABM_PlayerControllerBase>(LGameState->PlayerArray[ShotChoices[i].PlayerID]->GetPlayerController());
 			if (LoserPlayerController && LoserPlayerController->CurrentClickedTile)
 			{
 				LoserPlayerController->CurrentClickedTile->CancelAttack();
@@ -500,7 +531,7 @@ void ABM_GameModeBase::VerifyShotAnswers()
 	}
 	if (Round == EGameRound::FightForTerritory)
 	{
-		const ABM_PlayerControllerBase* LoserPlayerController = Cast<ABM_PlayerControllerBase>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentAnsweredQuestions[DefendingPlayerID].PlayerID]->GetPlayerController());
+		const ABM_PlayerControllerBase* LoserPlayerController = Cast<ABM_PlayerControllerBase>(LGameState->PlayerArray[ShotChoices[DefendingPlayerID].PlayerID]->GetPlayerController());
 		if (LoserPlayerController && LoserPlayerController->CurrentClickedTile)
 		{
 			LoserPlayerController->CurrentClickedTile->RemoveTileFromPlayerTerritory(Cast<ABM_PlayerState>(LoserPlayerController->PlayerState));
@@ -534,7 +565,9 @@ void ABM_GameModeBase::StartPlayerTurnTimer(int32 PlayerID)
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 		{
 			if (PlayerID < NumberOfActivePlayers)
+			{
 				PlayerController->UpdateCurrentPlayerNickname(Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[PlayerID])->Nickname);
+			}
 			Cast<ABM_PlayerState>(PlayerState)->CurrentQuestionAnswerSent = false;
 			PlayerController->ResetTurnTimer(Round);
 			if(Cast<ABM_PlayerState>(PlayerState)->BMPlayerID == PlayerID)
@@ -627,6 +660,8 @@ void ABM_GameModeBase::StartPlayerTurnTimer(int32 PlayerID)
 				}
 				break;
 			}
+			default:
+				break;
 		}
 		GetWorld()->GetTimerManager().SetTimer(PlayerTurnHandle, this, &ABM_GameModeBase::UpdatePlayerTurnTimers, 1.0, true, 0.0f);
 	}

@@ -64,26 +64,26 @@ bool ABM_PlayerState::HasArtillery()
 int32 ABM_PlayerState::GetCorrectAnswersNumber()
 {
 	int32 Count = 0;
-	for (const auto Questions : AnsweredQuestions)
+	/*for (const auto Questions : AnsweredQuestions)
 	{
 		if (Questions.bWasAnswered)
 		{
 			Count++;
 		}
-	}
-	return  Count;
+	}*/
+	return Count;
 }
 
 int32 ABM_PlayerState::GetWrongAnswersNumber()
 {
 	int32 Count = 0;
-	for (const auto Questions : AnsweredQuestions)
+	/*for (const auto Questions : AnsweredQuestions)
 	{
 		if (!Questions.bWasAnswered)
 		{
 			Count++;
 		}
-	}
+	}*/
 	return  Count;
 }
 

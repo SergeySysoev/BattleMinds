@@ -25,7 +25,7 @@ class BATTLEMINDS_API ABM_PlayerControllerBase : public APlayerController
 public:
 	ABM_PlayerControllerBase();
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "User Widgets")
-	UBM_UWQuestion* QuestionWidget;
+	UBM_UWQuestion* QuestionWidget = nullptr;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "User Widgets")
 	TSubclassOf<UBM_UWQuestion> ChooseQuestionWidgetClass;
@@ -34,13 +34,13 @@ public:
 	TSubclassOf<UBM_UWQuestion> ShotQuestionWidgetClass;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "User Widgets")
-	UBM_UWResults* ResultsWidget;
+	UBM_UWResults* ResultsWidget = nullptr;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "User Widgets")
 	TSubclassOf<UUserWidget> ResultsWidgetClass;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "User Widgets")
-	UBM_UWPlayerHUD* PlayerHUD;
+	UBM_UWPlayerHUD* PlayerHUD = nullptr;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "User Widgets")
 	TSubclassOf<UBM_UWPlayerHUD> PlayerHUDClass;
@@ -53,12 +53,15 @@ public:
 	
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_RequestToOpenQuestion();
+
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void SC_AddAnsweredQuestionChoice(FInstancedStruct InPlayerChoice);
 	
 	UFUNCTION(Server,Reliable)
 	void SC_RequestToUpdateHUD();
 	
 	UFUNCTION(Client, Reliable, BlueprintCallable)
-	void CC_OpenQuestionWidget(FQuestion LastQuestion, const TArray<int32>& AnsweringPlayers);
+	void CC_OpenQuestionWidget(FInstancedStruct LastQuestion, const TArray<int32>& AnsweringPlayers);
 	
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateCurrentPlayerNickname(const FString& CurrentPlayerNickname);
@@ -73,7 +76,7 @@ public:
 	void CC_ShowResultsWidget(const TArray<APlayerState*>& PlayerArray);
 	
 	UFUNCTION(Client, Reliable, BlueprintCallable)
-	void CC_ShowCorrectAnswers(const TArray<FPlayerChoice>& PlayersChoices);
+	void CC_ShowCorrectAnswers(const TArray<FInstancedStruct>& PlayersChoices);
 	
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateTurnTimer(EGameRound GameRound);

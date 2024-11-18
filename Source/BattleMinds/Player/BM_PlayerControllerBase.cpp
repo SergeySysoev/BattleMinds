@@ -21,6 +21,21 @@ ABM_PlayerControllerBase::ABM_PlayerControllerBase()
 	bEnableMouseOverEvents = true;
 }
 
+void ABM_PlayerControllerBase::SC_AddAnsweredQuestionChoice_Implementation(FInstancedStruct InPlayerChoice)
+{
+	ABM_PlayerState* BM_PlayerState = Cast<ABM_PlayerState>(PlayerState);
+	if (!IsValid(BM_PlayerState))
+	{
+		return;
+	}
+	BM_PlayerState->CurrentQuestionAnswerSent = true;
+	BM_PlayerState->AnsweredQuestions.Add(InPlayerChoice);
+	if(ABM_GameModeBase* LGameMode = Cast<ABM_GameModeBase>(GetWorld()->GetAuthGameMode()))
+	{
+		LGameMode->OnAnswerSent.Broadcast(BM_PlayerState->BMPlayerID);
+	}
+}
+
 void ABM_PlayerControllerBase::CC_ShowWarningPopup_Implementation(const FText& InText)
 {
 	if (IsValid(PlayerHUD))
@@ -39,7 +54,7 @@ void ABM_PlayerControllerBase::SC_RequestToUpdateHUD_Implementation()
 
 void ABM_PlayerControllerBase::CC_UpdatePlayerHUD_Implementation()
 {
-	ABM_GameStateBase* GameState = GetWorld() != NULL ? GetWorld()->GetGameState<ABM_GameStateBase>() : NULL;
+	ABM_GameStateBase* GameState = GetWorld() != nullptr ? GetWorld()->GetGameState<ABM_GameStateBase>() : nullptr;
 	if(GameState)
 	{
 		UE_LOG(LogBM_PlayerController, Display, TEXT("Client %s copy of GameState: %s"), *this->GetName(),*GameState->GetName());
@@ -56,7 +71,7 @@ void ABM_PlayerControllerBase::CC_UpdatePlayerHUD_Implementation()
 
 void ABM_PlayerControllerBase::CC_InitPlayerHUD_Implementation(const TArray<APlayerState*>& PlayerArray)
 {
-	ABM_GameStateBase* GameState = GetWorld() != NULL ? GetWorld()->GetGameState<ABM_GameStateBase>() : NULL;
+	ABM_GameStateBase* GameState = GetWorld() != nullptr ? GetWorld()->GetGameState<ABM_GameStateBase>() : nullptr;
 	if(GameState)
 	{
 		UE_LOG(LogBM_PlayerController, Display, TEXT("Client %s copy of GameState: %s"), *this->GetName(),*GameState->GetName());
@@ -95,7 +110,7 @@ void ABM_PlayerControllerBase::CC_ShowResultsWidget_Implementation(const TArray<
 	}
 }
 
-void ABM_PlayerControllerBase::CC_ShowCorrectAnswers_Implementation(const TArray<FPlayerChoice>& PlayersChoices)
+void ABM_PlayerControllerBase::CC_ShowCorrectAnswers_Implementation(const TArray<FInstancedStruct>& PlayersChoices)
 {
 	if (QuestionWidget)
 	{
@@ -116,17 +131,21 @@ void ABM_PlayerControllerBase::CC_RemoveQuestionWidget_Implementation()
 	}
 }
 
-void ABM_PlayerControllerBase::CC_OpenQuestionWidget_Implementation(FQuestion LastQuestion, const TArray<int32>& AnsweringPlayers)
+void ABM_PlayerControllerBase::CC_OpenQuestionWidget_Implementation(FInstancedStruct LastQuestion, const TArray<int32>& AnsweringPlayers)
 {
+	if (!LastQuestion.GetPtr<FQuestion>())
+	{
+		return;
+	}
 	if(PlayerHUD)
 	{
 		PlayerHUD->SetVisibility(ESlateVisibility::Collapsed);
 	}
-	if (LastQuestion.Type == EQuestionType::Choose)
+	if (LastQuestion.GetPtr<FQuestion>()->Type == EQuestionType::Choose)
 	{
 		QuestionWidget = CreateWidget<UBM_UWQuestion>(this, ChooseQuestionWidgetClass);
 	}
-	if (LastQuestion.Type == EQuestionType::Shot)
+	if (LastQuestion.GetPtr<FQuestion>()->Type == EQuestionType::Shot)
 	{
 		QuestionWidget = CreateWidget<UBM_UWQuestion>(this, ShotQuestionWidgetClass);
 	}
