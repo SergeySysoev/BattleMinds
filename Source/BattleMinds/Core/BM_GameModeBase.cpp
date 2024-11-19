@@ -111,19 +111,20 @@ void ABM_GameModeBase::SetViewTargetForQuestion(EQuestionType QuestionType, TArr
 	{
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 		{
+			TObjectPtr<AActor> LNewViewTarget = nullptr;
 			switch (QuestionType)
 			{
 				case EQuestionType::Choose:
-					PlayerController->SetViewTargetWithBlend(ChooseQuestionCamera, 0.5);
+					LNewViewTarget = ChooseQuestionCamera;
 					UE_LOG(LogBM_GameMode, Display, TEXT("Camera: %s, ViewTarget: %s"), *ChooseQuestionCamera->GetName(),*PlayerController->GetViewTarget()->GetName());
 					break;
 				case EQuestionType::Shot:
-					PlayerController->SetViewTargetWithBlend(ShotQuestionCamera, 0.5);
+					LNewViewTarget = ShotQuestionCamera;
 					UE_LOG(LogBM_GameMode, Display, TEXT("Camera: %s, ViewTarget: %s"), *ShotQuestionCamera->GetName(),*PlayerController->GetViewTarget()->GetName());
 					break;
 				default: break;
 			}
-			PlayerController->CC_OpenQuestionWidget(LastQuestion, AnsweringPlayers);
+			PlayerController->CC_OpenQuestionWidget(LastQuestion, AnsweringPlayers, LNewViewTarget);
 		}
 	}
 }

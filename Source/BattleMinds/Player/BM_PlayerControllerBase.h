@@ -61,7 +61,7 @@ public:
 	void SC_RequestToUpdateHUD();
 	
 	UFUNCTION(Client, Reliable, BlueprintCallable)
-	void CC_OpenQuestionWidget(FInstancedStruct LastQuestion, const TArray<int32>& AnsweringPlayers);
+	void CC_OpenQuestionWidget(FInstancedStruct LastQuestion, const TArray<int32>& AnsweringPlayers, AActor* NewViewTarget);
 	
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateCurrentPlayerNickname(const FString& CurrentPlayerNickname);

@@ -131,7 +131,7 @@ void ABM_PlayerControllerBase::CC_RemoveQuestionWidget_Implementation()
 	}
 }
 
-void ABM_PlayerControllerBase::CC_OpenQuestionWidget_Implementation(FInstancedStruct LastQuestion, const TArray<int32>& AnsweringPlayers)
+void ABM_PlayerControllerBase::CC_OpenQuestionWidget_Implementation(FInstancedStruct LastQuestion, const TArray<int32>& AnsweringPlayers, AActor* NewViewTarget)
 {
 	if (!LastQuestion.GetPtr<FQuestion>())
 	{
@@ -140,6 +140,10 @@ void ABM_PlayerControllerBase::CC_OpenQuestionWidget_Implementation(FInstancedSt
 	if(PlayerHUD)
 	{
 		PlayerHUD->SetVisibility(ESlateVisibility::Collapsed);
+	}
+	if (IsValid(NewViewTarget))
+	{
+		SetViewTargetWithBlend(NewViewTarget, 0.5);	
 	}
 	if (LastQuestion.GetPtr<FQuestion>()->Type == EQuestionType::Choose)
 	{
