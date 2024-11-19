@@ -115,7 +115,8 @@ public:
 	
 	UFUNCTION()
 	void ResetQuestionTimer(int32 LastSentPlayer);
-	
+	void GenerateAutoPlayerChoice(ABM_PlayerState* PlayerState);
+
 	UFUNCTION(BlueprintCallable)
 	void GatherPlayersAnswers();
 	
@@ -136,7 +137,8 @@ public:
 	
 	UFUNCTION()
 	EGameRound NextGameRound() const;
-	
+	void ResetPlayersTurns(int32 PlayerID);
+
 	UFUNCTION(BlueprintCallable)
 	void StartPlayerTurnTimer(int32 PlayerID);
 	

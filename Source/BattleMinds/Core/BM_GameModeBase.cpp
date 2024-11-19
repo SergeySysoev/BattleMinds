@@ -197,6 +197,32 @@ void ABM_GameModeBase::ResetQuestionTimer(int32 LastSentPlayer)
 	}
 }
 
+void ABM_GameModeBase::GenerateAutoPlayerChoice(ABM_PlayerState* const PlayerState)
+{
+	switch (LastQuestion.GetPtr<FQuestion>()->GetType())
+	{
+		case EQuestionType::Choose:
+		{
+			// Generate auto choice Choose
+			FInstancedStruct LAutoChoice = FInstancedStruct::Make(FPlayerChoiceChoose());
+			LAutoChoice.GetMutable<FPlayerChoiceChoose>().PlayerID = PlayerState->BMPlayerID;
+			LAutoChoice.GetMutable<FPlayerChoiceChoose>().AnswerID = -1;
+			PlayerState->AnsweredQuestions.Add(LAutoChoice);
+			break;
+		}
+		case EQuestionType::Shot:
+		{
+			// Generate auto choice Shot
+			FInstancedStruct LAutoChoice = FInstancedStruct::Make(FPlayerChoiceShot());
+			LAutoChoice.GetMutable<FPlayerChoiceShot>().PlayerID = PlayerState->BMPlayerID;
+			LAutoChoice.GetMutable<FPlayerChoiceShot>().Answer = -1;
+			PlayerState->AnsweredQuestions.Add(LAutoChoice);
+			break;
+		}
+		default: break;
+	}
+}
+
 void ABM_GameModeBase::GatherPlayersAnswers()
 {
 	PlayersCurrentChoices.Empty();
@@ -214,28 +240,7 @@ void ABM_GameModeBase::GatherPlayersAnswers()
 			
 			if(LPlayerState->CurrentQuestionAnswerSent == false)
 			{
-				switch (LastQuestion.GetPtr<FQuestion>()->GetType())
-				{
-					case EQuestionType::Choose:
-					{
-						// Generate auto choice Choose
-						FInstancedStruct LAutoChoice = FInstancedStruct::Make(FPlayerChoiceChoose());
-						LAutoChoice.GetMutable<FPlayerChoiceChoose>().PlayerID = LPlayerState->BMPlayerID;
-						LAutoChoice.GetMutable<FPlayerChoiceChoose>().AnswerID = -1;
-						Cast<ABM_PlayerState>(PlayerState)->AnsweredQuestions.Add(LAutoChoice);
-						break;
-					}
-					case EQuestionType::Shot:
-					{
-						// Generate auto choice Shot
-						FInstancedStruct LAutoChoice = FInstancedStruct::Make(FPlayerChoiceShot());
-						LAutoChoice.GetMutable<FPlayerChoiceShot>().PlayerID = LPlayerState->BMPlayerID;
-						LAutoChoice.GetMutable<FPlayerChoiceShot>().Answer = -1;
-						Cast<ABM_PlayerState>(PlayerState)->AnsweredQuestions.Add(LAutoChoice);
-						break;
-					}
-					default: break;
-				}
+				GenerateAutoPlayerChoice(LPlayerState);
 			}
 			PlayersCurrentChoices.Add(LPlayerState->AnsweredQuestions.Last());
 		}
@@ -249,11 +254,11 @@ void ABM_GameModeBase::GatherPlayersAnswers()
 		{
 			if(AttackingPlayerState->CurrentQuestionAnswerSent == false)
 			{
-				AttackingPlayerState->AnsweredQuestions.Add(LastQuestion);
+				GenerateAutoPlayerChoice(AttackingPlayerState);
 			}
 			if (DefendingPlayerState->CurrentQuestionAnswerSent == false)
 			{
-				DefendingPlayerState->AnsweredQuestions.Add(LastQuestion);
+				GenerateAutoPlayerChoice(DefendingPlayerState);
 			}
 			PlayersCurrentChoices.Add(AttackingPlayerState->AnsweredQuestions.Last());
 			PlayersCurrentChoices.Add(DefendingPlayerState->AnsweredQuestions.Last());
@@ -556,12 +561,8 @@ EGameRound ABM_GameModeBase::NextGameRound() const
 	return EGameRound::End;
 }
 
-void ABM_GameModeBase::StartPlayerTurnTimer(int32 PlayerID)
+void ABM_GameModeBase::ResetPlayersTurns(int32 PlayerID)
 {
-	GetWorld()->GetTimerManager().ClearTimer(PlayerTurnHandle);
-	CurrentPlayerAvailableTiles.Empty();
-	UE_LOG(LogTemp, Warning, TEXT("Current PlayerID %d"), PlayerID);
-	CurrentTurnTimer = TurnTimer+1; // to be able to see all timer widget fades away
 	for (const auto PlayerState : GetGameState<ABM_GameStateBase>()->PlayerArray)
 	{
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
@@ -582,12 +583,24 @@ void ABM_GameModeBase::StartPlayerTurnTimer(int32 PlayerID)
 			}
 		}
 	}
+}
+
+void ABM_GameModeBase::StartPlayerTurnTimer(int32 PlayerID)
+{
+	GetWorld()->GetTimerManager().ClearTimer(PlayerTurnHandle);
+	CurrentPlayerAvailableTiles.Empty();
+	
+	UE_LOG(LogTemp, Warning, TEXT("Current PlayerID %d"), PlayerID);
+	CurrentTurnTimer = TurnTimer+1; // to be able to see timer widget fades away
+	ResetPlayersTurns(PlayerID);
+	
 	for (const auto Tile : Tiles)
 	{
 		ABM_TileBase* BMTile = Cast<ABM_TileBase>(Tile);
 		BMTile->MC_RemoveHighlighting();
 		BMTile->MC_ShowEdges(false, FColor::Black);
 	}
+	
 	if (CurrentPlayerID < NumberOfActivePlayers)
 	{
 		switch (Round)
@@ -611,7 +624,6 @@ void ABM_GameModeBase::StartPlayerTurnTimer(int32 PlayerID)
 						if(NeighborsAvailable)
 						{
 							const ABM_PlayerState* PlayerState = Cast<ABM_PlayerState>(GetGameState<ABM_GameStateBase>()->PlayerArray[CurrentPlayerID]);
-							//BMTile->TurnOnHighlight(PlayerState->MaterialNeighbour);
 							BMTile->MC_ShowEdges(true, PlayerState->PlayerColor);
 							CurrentPlayerAvailableTiles.Add(BMTile);
 						}
@@ -627,11 +639,11 @@ void ABM_GameModeBase::StartPlayerTurnTimer(int32 PlayerID)
 					if (NeighborTile->GetStatus() == ETileStatus::NotOwned && !NeighborTile->bIsAttacked)
 					{
 						UE_LOG(LogBM_GameMode, Display, TEXT("Neighbor tile: %s"), *NeighborTile->GetActorNameOrLabel());
-						//NeighborTile->TurnOnHighlight(CurrentPlayerState->MaterialNeighbour);
 						NeighborTile->MC_ShowEdges(true, CurrentPlayerState->PlayerColor);
 						CurrentPlayerAvailableTiles.Add(NeighborTile);
 					}
 				}
+				// If there are no neighbour tiles, check other tiles and suggest them for attack
 				if(CurrentPlayerAvailableTiles.Num()==0)
 				{
 					for (const auto Tile : Tiles)
@@ -655,7 +667,6 @@ void ABM_GameModeBase::StartPlayerTurnTimer(int32 PlayerID)
 					if (!CurrentPlayerState->OwnedTiles.Contains(NeighborTile))
 					{
 						UE_LOG(LogBM_GameMode, Display, TEXT("Neighbor tile: %s"), *NeighborTile->GetActorNameOrLabel());
-						//NeighborTile->TurnOnHighlight(CurrentPlayerState->MaterialNeighbour);
 						NeighborTile->MC_ShowEdges(true, CurrentPlayerState->PlayerColor);
 						CurrentPlayerAvailableTiles.Add(NeighborTile);
 					}
@@ -669,12 +680,15 @@ void ABM_GameModeBase::StartPlayerTurnTimer(int32 PlayerID)
 	}
 	else
 	{
+		FTimerDelegate LNextRound;
 		switch (Round)
 		{
 			case EGameRound::ChooseCastle:
+				//All players set their castles, continue to SetTerritory round with 1 sec delay
 				CurrentPlayerID = 0;
 				Round = NextGameRound();
-				StartPlayerTurnTimer(CurrentPlayerID);
+				LNextRound.BindUObject(this, &ThisClass::StartPlayerTurnTimer, CurrentPlayerID);
+				GetWorld()->GetTimerManager().SetTimer(PauseHandle, LNextRound, 2.0, false, 0.0);
 				break;
 			case EGameRound::SetTerritory:
 				//All players have chosen their tiles, open Choose Question with 2sec delay
@@ -682,7 +696,7 @@ void ABM_GameModeBase::StartPlayerTurnTimer(int32 PlayerID)
 				GetWorld()->GetTimerManager().SetTimer(PauseHandle, QuestionDelegate, 1.0, false, 2.0);
 				break;
 			case EGameRound::FightForTheRestTiles:
-				//Start Shot question for an available Tile
+				//Start Shot question for the rest tiles
 				//Find first not owned tile
 				for (auto Tile: Tiles)
 				{
