@@ -64,6 +64,10 @@ public:
 	/* Array of Player choices*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info", meta=(BaseStruct="PlayerChoice"))
 	TArray<FInstancedStruct> AnsweredQuestions;
+
+	/* Array of Player Question Results*/
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
+	TArray<FQuestionResult> QuestionResults;
 	
 	UFUNCTION(BlueprintCallable)
 	TSet<ABM_TileBase*> GetAllCurrentNeighbours();

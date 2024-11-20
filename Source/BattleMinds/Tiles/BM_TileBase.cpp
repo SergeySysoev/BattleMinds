@@ -195,8 +195,6 @@ void ABM_TileBase::TileWasClicked_Implementation(FKey ButtonPressed, EGameRound 
 			break;
 		case EGameRound::FightForTerritory:
 			TileWasChosen(PlayerState, GameRound);
-			/*const auto PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController());
-			PlayerController->OpenQuestion();*/
 			break;
 	}
 }

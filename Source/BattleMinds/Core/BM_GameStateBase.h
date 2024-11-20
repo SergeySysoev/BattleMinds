@@ -136,7 +136,7 @@ protected:
 	void GatherPlayersAnswers();
 
 	UFUNCTION(BlueprintCallable)
-	void ConstructQuestionResult(APlayerState* InPlayerState, FInstancedStruct InQuestion, TArray<FInstancedStruct> InPlayerChoices, int32 InReceivedPoints);
+	void ConstructQuestionResult(ABM_PlayerState* InPlayerState, int32 InQuestionNumber, FInstancedStruct InQuestion, TArray<FInstancedStruct> InPlayerChoices, int32 InReceivedPoints, bool InWasAnswered);
 	
 	UFUNCTION(BlueprintCallable)
 	void ShowCorrectAnswers();

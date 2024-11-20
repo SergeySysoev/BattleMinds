@@ -22,6 +22,7 @@ void ABM_PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(ABM_PlayerState, CurrentQuestionAnswerSent);
 	DOREPLIFETIME(ABM_PlayerState, NumberOfTurns);
 	DOREPLIFETIME(ABM_PlayerState, WinnerPosition);
+	DOREPLIFETIME(ABM_PlayerState, QuestionResults);
 }
 
 TSet<ABM_TileBase*> ABM_PlayerState::GetAllCurrentNeighbours()

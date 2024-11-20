@@ -274,11 +274,11 @@ struct FQuestionResult
 	UPROPERTY(BlueprintReadWrite, meta=(BaseStruct = "Question"))
 	FInstancedStruct Question;
 
-	UPROPERTY(BlueprintReadWrite)
-	int32 CorrectAnswer = -1;
-
 	UPROPERTY(BlueprintReadWrite, meta=(BaseStruct = "PlayerChoice"))
 	TArray<FInstancedStruct> PlayerChoices;
+
+	UPROPERTY(BlueprintReadWrite)
+	bool bWasAnswered = false;
 	
 	UPROPERTY(BlueprintReadWrite)
 	int32 ReceivedPoints = 0;
