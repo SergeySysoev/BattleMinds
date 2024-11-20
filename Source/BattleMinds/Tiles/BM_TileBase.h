@@ -82,12 +82,13 @@ public:
 
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category="Visuals")
 	void TurnOnHighlight(UMaterialInterface* NeighborMaterial);
+	
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category="Visuals")
 	void TurnOffHighlight();
+	
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable, Category="Visuals")
 	void MC_ShowEdges(bool bVisibility, FColor PlayerColor);
-	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
-	void MC_TryUpdatePlayersHUD();
+
 
 protected:
 	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_TileMeshChanged, BlueprintReadWrite, Category = "Components")

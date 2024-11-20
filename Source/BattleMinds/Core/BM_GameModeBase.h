@@ -12,8 +12,6 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogBM_GameMode, Display, All);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAnswerSentSignature, int32, PlayerID);
-
 /*
  *	General game loop:
  *	1) Choose game round: Set Castle, Set Territory, Fight For Territory, Count Results
@@ -30,21 +28,38 @@ UCLASS()
 class BATTLEMINDS_API ABM_GameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
+
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category="Game settings")
-	EGameRound Round;
+
+	UFUNCTION(BlueprintPure)
+	ACameraActor* GetQuestionCamera(EQuestionType QuestionType) const;
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE float GetQuestionTimer() const { return QuestionTimer;}
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE float GetTurnTimer() const { return TurnTimer;}
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE int32 GetNumberOfPlayerTurns() const { return NumberOfPlayerTurns;}
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE int32 GetNumberOfActivePlayers() const { return NumberOfActivePlayers;}
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE int32 GetNumberOfTotalTurns() const { return NumberOfTotalTurns;}
+
+	UFUNCTION(BlueprintPure)
+	UDataTable* GetQuestionsDataTable(EQuestionType QuestionType) const;
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Game settings")
-	FTimerHandle QuestionTimerHandle;
+protected:
+	
+	virtual void PostLogin(APlayerController* NewPlayer) override;
+	
+	virtual void BeginPlay() override;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game settings")
 	float QuestionTimer;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Game settings")
-	int32 QuestionsCount = 0;
-	
-	UPROPERTY(Replicated, EditDefaultsOnly, BlueprintReadWrite, Category="Game settings", meta=(BaseStruct = "Question"))
-	FInstancedStruct LastQuestion;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game settings")
 	float TurnTimer;
@@ -76,120 +91,24 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Players settings")
 	TMap<int32, FString> NicknameMap;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Players settings")
-	int32 CurrentPlayerID = 0;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Game settings")
-	FTimerHandle PlayerTurnHandle;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game settings | Questions")
+	TArray<UDataTable*> QuestionTablesChoose;
 
-	/* Player choices sent (or auto generated) to the LastQuestion */
-	UPROPERTY(BlueprintReadWrite, Category="Players settings", meta=(BaseStruct="PlayerChoice"))
-	TArray<FInstancedStruct> PlayersCurrentChoices;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game settings | Questions")
+	TArray<UDataTable*> QuestionTablesShot;
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Tiles")
-	TArray<ABM_TileBase*> CurrentPlayerAvailableTiles;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Players settings")
+	TSubclassOf<ABM_PlayerPawn> PawnClass;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game settings | Cameras")
 	TObjectPtr<ACameraActor> ChooseQuestionCamera;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game settings | Cameras")
 	TObjectPtr<ACameraActor> ShotQuestionCamera;
-	
-	UPROPERTY(BlueprintReadWrite)
-	int32 DefendingPlayerID;
-	
-	UPROPERTY(BlueprintAssignable, BlueprintReadOnly, BlueprintCallable)
-	FAnswerSentSignature OnAnswerSent;
+
+	UPROPERTY()
+	int32 NumberOfTotalTurns = 0;
 	
 	UFUNCTION(BlueprintCallable)
 	void InitPlayer(APlayerController* NewPlayer);
-	
-	UFUNCTION(BlueprintCallable)
-	void UpdatePlayersHUD();
-	
-	UFUNCTION(BlueprintCallable)
-	void OpenQuestion(EQuestionType QuestionType);
-	
-	UFUNCTION(BlueprintCallable)
-	void StartQuestionTimer();
-	
-	UFUNCTION()
-	void ResetQuestionTimer(int32 LastSentPlayer);
-	void GenerateAutoPlayerChoice(ABM_PlayerState* PlayerState);
-
-	UFUNCTION(BlueprintCallable)
-	void GatherPlayersAnswers();
-	
-	UFUNCTION(BlueprintCallable)
-	void ShowCorrectAnswers();
-
-	UFUNCTION()
-	void SetNextGameRound();
-	
-	UFUNCTION(BlueprintCallable)
-	void VerifyAnswers();
-	
-	UFUNCTION()
-	void VerifyChooseAnswers();
-	
-	UFUNCTION()
-	void VerifyShotAnswers();
-	
-	UFUNCTION()
-	EGameRound NextGameRound() const;
-	void ResetPlayersTurns(int32 PlayerID);
-
-	UFUNCTION(BlueprintCallable)
-	void StartPlayerTurnTimer(int32 PlayerID);
-	
-	UFUNCTION(BlueprintCallable)
-	void ChooseFirstAvailableTileForPlayer(int32 PlayerID);
-	
-	UFUNCTION(BlueprintCallable)
-	void UpdatePlayerTurnTimers();
-	
-	UFUNCTION(BlueprintCallable)
-	void CountResults();
-	
-protected:
-	virtual void PostLogin(APlayerController* NewPlayer) override;
-	virtual void BeginPlay() override;
-	// Find row in the corresponding Question table
-	UFUNCTION()
-	int32 FindNextQuestion(EQuestionType Question, TArray<FName> Array, FString& ContextString);
-	UFUNCTION()
-	void AssignAnsweringPlayers();
-	// Move Players Cameras to Question Location
-	UFUNCTION()
-	void SetViewTargetForQuestion(EQuestionType QuestionType, TArray<FName> RowNames, int32 QuestionIndex) const;
-
-	UPROPERTY(BlueprintReadWrite, Category = "Questions", meta=(BaseStruct = "Question"))
-	TArray<FInstancedStruct> UsedQuestions;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Questions")
-	TArray<UDataTable*> QuestionTablesChoose;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Questions")
-	TArray<UDataTable*> QuestionTablesShot;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Tiles")
-	TArray<AActor*> Tiles;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Players settings")
-	TSubclassOf<ABM_PlayerPawn> PawnClass;
-
-	UPROPERTY()
-	TArray<int32> AnsweringPlayers;
-	
-	FTimerHandle PauseHandle;
-	
-	FTimerDelegate QuestionDelegate;
-
-	UPROPERTY()
-	float CurrentTurnTimer;
-	
-	int32 NumberOfTotalTurns;
-	
-	bool bShotQuestionIsNeeded = false;
-	
-	int32 NumberOfSentAnswers = 0;
 };

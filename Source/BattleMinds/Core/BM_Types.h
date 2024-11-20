@@ -3,9 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "InstancedStruct.h"
 #include "Engine/DataTable.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
-#include "InstancedStruct.h"
 #include "BM_Types.generated.h"
 
 UENUM(BlueprintType)
@@ -251,6 +251,37 @@ struct FQuestionShot: public FQuestion
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Shot Question")
 	int32 Answer;
+};
+
+USTRUCT(BlueprintType)
+struct FQuestionResult
+{
+	GENERATED_BODY()
+
+	/*
+	 * 1) Question number
+	 * 2) Question category
+	 * 3) Question text
+	 * 4) Player's answer
+	 * 5) Other players answers
+	 * 6) Correct answer
+	 * 7) received points
+	 */
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 QuestionNumber = -1;
+
+	UPROPERTY(BlueprintReadWrite, meta=(BaseStruct = "Question"))
+	FInstancedStruct Question;
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 CorrectAnswer = -1;
+
+	UPROPERTY(BlueprintReadWrite, meta=(BaseStruct = "PlayerChoice"))
+	TArray<FInstancedStruct> PlayerChoices;
+	
+	UPROPERTY(BlueprintReadWrite)
+	int32 ReceivedPoints = 0;
 };
 
 UENUM(BlueprintType)

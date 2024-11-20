@@ -94,6 +94,9 @@ public:
 	
 	UFUNCTION()
 	TSet<ABM_TileBase*> GetNeighbors();
+
+	UFUNCTION(BlueprintCallable)
+	void ConstructGameQuestions();
 	
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing=SetPointsInWidget, Category = "Player Info")

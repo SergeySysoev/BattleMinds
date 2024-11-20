@@ -6,10 +6,8 @@
 #include "BattleMinds/Tiles/BM_TileBase.h"
 #include "BattleMinds/Player/BM_PlayerState.h"
 #include "Blueprint/UserWidget.h"
-#include "Blueprint/WidgetLayoutLibrary.h"
 #include "Core/BM_GameModeBase.h"
 #include "Core/BM_GameStateBase.h"
-#include "Core/Classic/BM_GameModeClassic.h"
 #include "UI/BM_UWResults.h"
 
 DEFINE_LOG_CATEGORY(LogBM_PlayerController);
@@ -30,9 +28,9 @@ void ABM_PlayerControllerBase::SC_AddAnsweredQuestionChoice_Implementation(FInst
 	}
 	BM_PlayerState->CurrentQuestionAnswerSent = true;
 	BM_PlayerState->AnsweredQuestions.Add(InPlayerChoice);
-	if(ABM_GameModeBase* LGameMode = Cast<ABM_GameModeBase>(GetWorld()->GetAuthGameMode()))
+	if(ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState()))
 	{
-		LGameMode->OnAnswerSent.Broadcast(BM_PlayerState->BMPlayerID);
+		LGameState->OnAnswerSent.Broadcast(BM_PlayerState->BMPlayerID);
 	}
 }
 
@@ -46,9 +44,9 @@ void ABM_PlayerControllerBase::CC_ShowWarningPopup_Implementation(const FText& I
 
 void ABM_PlayerControllerBase::SC_RequestToUpdateHUD_Implementation()
 {
-	if(ABM_GameModeBase* LGameMode = Cast<ABM_GameModeBase>(GetWorld()->GetAuthGameMode()))
+	if(ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState()))
 	{
-		LGameMode->UpdatePlayersHUD();
+		LGameState->UpdatePlayersHUD();
 	}
 }
 
@@ -162,41 +160,44 @@ void ABM_PlayerControllerBase::CC_OpenQuestionWidget_Implementation(FInstancedSt
 	}
 }
 
-void ABM_PlayerControllerBase::SC_RequestToOpenQuestion_Implementation()
+void ABM_PlayerControllerBase::SC_RequestToOpenQuestion_Implementation(EQuestionType QuestionType)
 {
-	if (ABM_GameModeBase* GameMode = Cast<ABM_GameModeBase>(GetWorld()->GetAuthGameMode()))
+	if(ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState()))
 	{
-		//GameMode->OpenQuestion();
-		GetWorldTimerManager().ClearTimer(GameMode->PlayerTurnHandle);
+		LGameState->RequestToOpenQuestion(QuestionType);
 	}
 }
 
 void ABM_PlayerControllerBase::SC_TryClickTheTile_Implementation(ABM_TileBase* TargetTile)
 {
 	ABM_PlayerState* BM_PlayerState = Cast<ABM_PlayerState>(this->PlayerState);
-	ABM_GameModeBase* GameMode = Cast<ABM_GameModeBase>(GetWorld()->GetAuthGameMode());
+	ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState());
 	CurrentClickedTile = TargetTile;
-	if (GameMode->CurrentPlayerID == BM_PlayerState->BMPlayerID)
+	if (LGameState->GetCurrentPlayerID() == BM_PlayerState->BMPlayerID)
 	{
 		BM_PlayerState->SetPlayerTurn(true);
 		if (BM_PlayerState->IsPlayerTurn())
 		{
-			if (GameMode->CurrentPlayerAvailableTiles.Contains(CurrentClickedTile))
+			if (LGameState->GetCurrentPlayerAvailableTiles().Contains(CurrentClickedTile))
 			{
-				if (GameMode->Round != EGameRound::FightForTerritory)
+				if (LGameState->GetCurrentRound() != EGameRound::FightForTerritory)
 				{
-					TargetTile->TileWasClicked(EKeys::LeftMouseButton, GameMode->Round, BM_PlayerState);
+					TargetTile->TileWasClicked(EKeys::LeftMouseButton, LGameState->GetCurrentRound(), BM_PlayerState);
 					BM_PlayerState->SetPlayerTurn(false);
-					GameMode->CurrentPlayerID++;
-					GameMode->StartPlayerTurnTimer(GameMode->CurrentPlayerID);
+					LGameState->PassTurnToTheNextPlayer();
 				}
 				else
 				{
-					TargetTile->TileWasClicked(EKeys::LeftMouseButton, GameMode->Round, BM_PlayerState);
+					TargetTile->TileWasClicked(EKeys::LeftMouseButton, LGameState->GetCurrentRound(), BM_PlayerState);
 					BM_PlayerState->SetPlayerTurn(false);
-					GameMode->DefendingPlayerID = CurrentClickedTile->GetOwningPlayerID();
-					GameMode->OpenQuestion(EQuestionType::Choose);
-					Cast<ABM_PlayerControllerBase>(GameMode->GetGameState<ABM_GameStateBase>()->PlayerArray[GameMode->DefendingPlayerID]->GetPlayerController())->CurrentClickedTile = CurrentClickedTile;
+					LGameState->SetDefendingPlayerID(CurrentClickedTile->GetOwningPlayerID());
+					//LGameState->RequestToClearPlayerTurnTimer();
+					//LGameState->OpenQuestion(EQuestionType::Choose);
+					SC_RequestToOpenQuestion(EQuestionType::Choose);
+					if(const auto LDefendingPlayerController = LGameState->GetPlayerController(CurrentClickedTile->GetOwningPlayerID()))
+					{
+						LDefendingPlayerController->CurrentClickedTile = CurrentClickedTile;
+					}
 				}
 			}
 			else

@@ -56,18 +56,6 @@ void ABM_TileBase::OnRep_CastleMeshChanged()
 	CastleMesh->SetMaterial(0, MaterialCastle);
 }
 
-void ABM_TileBase::MC_TryUpdatePlayersHUD_Implementation()
-{
-	if (HasAuthority())
-	{
-		ABM_GameModeBase* LGameMode = Cast<ABM_GameModeBase>(GetWorld()->GetAuthGameMode());
-		if (IsValid(LGameMode))
-		{
-			LGameMode->UpdatePlayersHUD();
-		}
-	}
-}
-
 void ABM_TileBase::DecreaseCastleHP_Implementation()
 {
 	TileHP--;
@@ -207,8 +195,8 @@ void ABM_TileBase::TileWasClicked_Implementation(FKey ButtonPressed, EGameRound 
 			break;
 		case EGameRound::FightForTerritory:
 			TileWasChosen(PlayerState, GameRound);
-			const auto PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController());
-			PlayerController->OpenQuestion();
+			/*const auto PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController());
+			PlayerController->OpenQuestion();*/
 			break;
 	}
 }

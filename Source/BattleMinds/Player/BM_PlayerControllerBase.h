@@ -52,7 +52,7 @@ public:
 	void OpenQuestion();
 	
 	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void SC_RequestToOpenQuestion();
+	void SC_RequestToOpenQuestion(EQuestionType QuestionType);
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_AddAnsweredQuestionChoice(FInstancedStruct InPlayerChoice);

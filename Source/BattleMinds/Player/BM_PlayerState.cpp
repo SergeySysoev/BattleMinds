@@ -106,3 +106,34 @@ TSet<ABM_TileBase*> ABM_PlayerState::GetNeighbors()
 	}
 	return Neighbors;
 }
+
+void ABM_PlayerState::ConstructGameQuestions()
+{
+	/*
+	 * construct array for the End game widget with results:
+	 * 1) Question number
+	 * 2) Question category
+	 * 3) Question text
+	 * 4) Player's answer
+	 * 5) Other players answers
+	 * 6) Correct answer
+	 * 7) received points
+	 */
+	TArray<FInstancedStruct> GameQuestions;
+	for (const auto LChoice : AnsweredQuestions)
+	{
+		if (LChoice.GetPtr<FPlayerChoice>())
+		{
+			const auto LQuestion = GameQuestions[LChoice.GetPtr<FPlayerChoice>()->QuestionID];
+			if (LQuestion.GetPtr<FQuestionChooseText>())
+			{
+				
+			}
+			else if (LQuestion.GetPtr<FQuestionShot>())
+			{
+				
+			}
+		}
+		
+	}
+}
