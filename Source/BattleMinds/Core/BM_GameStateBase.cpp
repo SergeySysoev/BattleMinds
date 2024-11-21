@@ -844,10 +844,16 @@ void ABM_GameStateBase::UpdatePlayerTurnTimers()
 
 void ABM_GameStateBase::CountResults()
 {
+	GetWorld()->GetTimerManager().ClearTimer(PauseHandle);
+	GetWorld()->GetTimerManager().ClearTimer(PlayerTurnHandle);
+	GetWorld()->GetTimerManager().ClearTimer(QuestionTimerHandle);
+	
 	for (const auto PlayerState : PlayerArray)
 	{
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 		{
+			PlayerController->bEnableClickEvents = false;
+			PlayerController->bEnableTouchEvents = false;
 			PlayerController->CC_ShowResultsWidget(PlayerArray);
 		}
 	}

@@ -124,7 +124,6 @@ struct FPlayerChoiceChoose: public FPlayerChoice
 	{
 		FPlayerChoice(inPlayerID, inElapsedTime);
 		AnswerID = inAnswerID;
-		
 	}
 	
 	FORCEINLINE bool operator<(const FPlayerChoice &Other) const
