@@ -594,9 +594,7 @@ void ABM_GameStateBase::VerifyShotAnswers()
 	{
 		ShotChoices.Sort();
 	}
-	//TODO: REFACTOR THIS
-	// because autoanswer sets -1 and automatically sorts to the first position
-	if (ShotChoices[0].Answer < 0)
+	if (ShotChoices[0].Answer < 0 && ShotChoices.Last().Answer < 0)
 	{
 		// No players have sent their answers
 		for (const auto LShotChoice: ShotChoices)
@@ -610,7 +608,15 @@ void ABM_GameStateBase::VerifyShotAnswers()
 		}
 		return;
 	}
-	const ABM_PlayerControllerBase* WinnerPlayerController = Cast<ABM_PlayerControllerBase>(PlayerArray[ShotChoices[0].PlayerID]->GetPlayerController());
+	const ABM_PlayerControllerBase* WinnerPlayerController = nullptr;
+	for (const auto LShotChoice: ShotChoices)
+	{
+		if (LShotChoice.Answer > 0)
+		{
+			WinnerPlayerController = Cast<ABM_PlayerControllerBase>(PlayerArray[ShotChoices[0].PlayerID]->GetPlayerController());
+			break;
+		}
+	}
 	if (Round == EGameRound::FightForTheRestTiles)
 	{
 		for (int i =1; i < ShotChoices.Num(); i++)
