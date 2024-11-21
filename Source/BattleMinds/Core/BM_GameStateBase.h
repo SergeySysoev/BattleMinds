@@ -178,5 +178,8 @@ protected:
 	UFUNCTION()
 	void AssignAnsweringPlayers();
 
+	UFUNCTION()
+	void StopAllTimers();
+
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

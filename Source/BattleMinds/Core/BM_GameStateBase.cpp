@@ -163,6 +163,13 @@ void ABM_GameStateBase::AssignAnsweringPlayers()
 	}
 }
 
+void ABM_GameStateBase::StopAllTimers()
+{
+	GetWorld()->GetTimerManager().ClearTimer(PauseHandle);
+	GetWorld()->GetTimerManager().ClearTimer(PlayerTurnHandle);
+	GetWorld()->GetTimerManager().ClearTimer(QuestionTimerHandle);
+}
+
 void ABM_GameStateBase::OpenQuestion(EQuestionType QuestionType)
 {
 	GetWorld()->GetTimerManager().ClearTimer(PauseHandle);
@@ -527,11 +534,19 @@ void ABM_GameStateBase::VerifyChooseAnswers()
 			ABM_PlayerControllerBase* DefendingPlayer = Cast<ABM_PlayerControllerBase>(PlayerArray[DefendingPlayerID]->GetPlayerController());
 			ABM_PlayerState* DefendingPlayerState = Cast<ABM_PlayerState>(DefendingPlayer->PlayerState);
 			
-			// if both Players answered their Choose Question, we need a Shot round
 			if (PlayersCurrentChoices[0].GetPtr<FPlayerChoiceChoose>()->AnswerID == LRightAnswer
 				&& PlayersCurrentChoices[1].GetPtr<FPlayerChoiceChoose>()->AnswerID == LRightAnswer)
 			{
+				// if both Players answered their Choose Question, we need a Shot round
 				bShotQuestionIsNeeded = true;
+			}
+			else if (PlayersCurrentChoices[0].GetPtr<FPlayerChoiceChoose>()->AnswerID != LRightAnswer
+				&& PlayersCurrentChoices[1].GetPtr<FPlayerChoiceChoose>()->AnswerID != LRightAnswer)
+			{
+				// both Players gave wrong answer, cancel attack for Attacking, and don't give points to Defending
+				ConstructQuestionResult(DefendingPlayerState, UsedQuestions.Num(), LastQuestion, PlayersCurrentChoices, 0, false);
+				ConstructQuestionResult(AttackingPlayerState, UsedQuestions.Num(), LastQuestion, PlayersCurrentChoices, 0, false);
+				AttackingPlayer->CurrentClickedTile->CancelAttack();
 			}
 			else
 			{
@@ -548,7 +563,7 @@ void ABM_GameStateBase::VerifyChooseAnswers()
 							DefendingPlayer->CurrentClickedTile->RemoveTileFromPlayerTerritory(DefendingPlayerState);
 							AttackingPlayer->CurrentClickedTile->AddTileToPlayerTerritory(AttackingPlayerState);
 						}
-						else
+						else 
 						{
 							// defending player was right
 							ConstructQuestionResult(DefendingPlayerState, UsedQuestions.Num(), LastQuestion, PlayersCurrentChoices, 100, true);
@@ -579,12 +594,8 @@ void ABM_GameStateBase::VerifyShotAnswers()
 	{
 		ShotChoices.Sort();
 	}
-	/*for (const auto Answer:PlayersCurrentChoices)
-	{
-		UE_LOG(LogBM_GameMode, Display, TEXT("Player: %d, Has Exact Answer = %s, Difference = %d, Elapsed time = %d.%d"),
-			Answer.PlayerID, (Answer.bExactAnswer ? TEXT("true"):TEXT("false")), Answer.AnswerShot.Difference, Answer.ElapsedTime.GetSeconds(),Answer.ElapsedTime.GetFractionMilli());
-	}*/
-	
+	//TODO: REFACTOR THIS
+	// because autoanswer sets -1 and automatically sorts to the first position
 	if (ShotChoices[0].Answer < 0)
 	{
 		// No players have sent their answers
@@ -844,10 +855,7 @@ void ABM_GameStateBase::UpdatePlayerTurnTimers()
 
 void ABM_GameStateBase::CountResults()
 {
-	GetWorld()->GetTimerManager().ClearTimer(PauseHandle);
-	GetWorld()->GetTimerManager().ClearTimer(PlayerTurnHandle);
-	GetWorld()->GetTimerManager().ClearTimer(QuestionTimerHandle);
-	
+	StopAllTimers();
 	for (const auto PlayerState : PlayerArray)
 	{
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))

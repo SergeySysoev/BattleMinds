@@ -114,6 +114,7 @@ void ABM_TileBase::AddTileToPlayerTerritory_Implementation(ABM_PlayerState* Play
 	StaticMesh->SetMaterial(0, CurrentMaterial);
 	PlayerState->OwnedTiles.Add(this);
 	OwnerPlayerID = PlayerState->BMPlayerID;
+	OwnerPlayerNickname = PlayerState->Nickname;
 	//PlayerState->SetPointsInWidget();
 	//MC_TryUpdatePlayersHUD();
 	MC_RemoveSelection();
@@ -122,7 +123,6 @@ void ABM_TileBase::AddTileToPlayerTerritory_Implementation(ABM_PlayerState* Play
 
 void ABM_TileBase::CancelAttack_Implementation()
 {
-	ChangeStatus(ETileStatus::NotOwned);
 	bIsAttacked = false;
 	MC_RemoveSelection();
 	MC_ShowEdges(false, FColor::Black);
@@ -133,7 +133,7 @@ void ABM_TileBase::TileWasChosen_Implementation(ABM_PlayerState* PlayerState, EG
 	switch (Status)
 	{
 	case ETileStatus::NotOwned:
-		if (PlayerState)
+		if (IsValid(PlayerState))
 		{
 			if (GameRound == EGameRound::ChooseCastle)
 			{
@@ -149,7 +149,7 @@ void ABM_TileBase::TileWasChosen_Implementation(ABM_PlayerState* PlayerState, EG
 				AddTileToPlayerTerritory(PlayerState);
 				//PlayerState->OwnedTiles.Add(this);
 			}
-			else //Attacking the tile or setting the territory
+			else //Set the territory
 			{
 				bIsAttacked = true;
 				//OriginalMaterial = Material;
@@ -174,7 +174,14 @@ void ABM_TileBase::TileWasChosen_Implementation(ABM_PlayerState* PlayerState, EG
 		}
 		else
 		{
-			UE_LOG(LogBM_Tile, Display, TEXT("Tile was fortified"));
+			bIsAttacked = true;
+			//OriginalMaterial = Material;
+			MaterialAttacked = PlayerState->MaterialAttack;
+			StaticMesh->SetMaterial(0 , MaterialOwned);
+			MC_RemoveHighlighting();
+			MC_ShowEdges(false, FColor::Black);
+			FlagMesh->SetVisibility(true);
+			FlagMesh->SetMaterial(0, MaterialAttacked);
 		}
 	case ETileStatus::Castle:
 		break;

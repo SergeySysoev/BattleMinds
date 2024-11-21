@@ -39,6 +39,7 @@ public:
 	
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void ChangeStatus(ETileStatus NewStatus);
+	
 	UFUNCTION()
 	void OnRep_TileMeshChanged();
 	UFUNCTION()
@@ -54,8 +55,10 @@ public:
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void AddTileToPlayerTerritory(ABM_PlayerState* PlayerState);
+	
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void RemoveTileFromPlayerTerritory(ABM_PlayerState* PlayerState);
+	
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void DecreaseCastleHP();
 	
