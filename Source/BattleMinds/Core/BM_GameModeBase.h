@@ -47,7 +47,7 @@ public:
 	FORCEINLINE int32 GetNumberOfActivePlayers() const { return NumberOfActivePlayers;}
 
 	UFUNCTION(BlueprintPure)
-	FORCEINLINE int32 GetNumberOfTotalTurns() const { return NumberOfTotalTurns;}
+	FORCEINLINE int32 GetTotalSetTerritoryTurns() const { return TotalSetTerritoryTurns;}
 
 	UFUNCTION(BlueprintPure)
 	UDataTable* GetQuestionsDataTable(EQuestionType QuestionType) const;
@@ -107,7 +107,7 @@ protected:
 	TObjectPtr<ACameraActor> ShotQuestionCamera;
 
 	UPROPERTY()
-	int32 NumberOfTotalTurns = 0;
+	int32 TotalSetTerritoryTurns = 0;
 	
 	UFUNCTION(BlueprintCallable)
 	void InitPlayer(APlayerController* NewPlayer);

@@ -25,7 +25,7 @@ void ABM_GameModeBase::InitPlayer(APlayerController* NewPlayer)
 		PlayerState->MaterialNeighbour = MaterialNeighborMap.FindRef(NumberOfActivePlayers);
 		PlayerState->PlayerColor = ColorMap.FindRef(NumberOfActivePlayers);
 		PlayerState->NumberOfTurns = NumberOfPlayerTurns;
-		NumberOfTotalTurns += NumberOfPlayerTurns;
+		TotalSetTerritoryTurns += NumberOfPlayerTurns;
 		const auto AvailablePlayerStart = FindPlayerStart(NewPlayer, TEXT(""));
 		const FVector Location = AvailablePlayerStart->GetActorLocation();
 		const FRotator Rotation = AvailablePlayerStart->GetActorRotation();

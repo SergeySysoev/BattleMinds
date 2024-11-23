@@ -4,10 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "BattleMinds/Player/BM_PlayerControllerBase.h"
 #include "Components/BoxComponent.h"
 #include "Core/BM_Types.h"
-#include "Net/UnrealNetwork.h"
 #include "BM_TileBase.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogBM_Tile, Display, All);
@@ -34,6 +32,7 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category="Status")
 	bool bIsAttacked = false;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category="Neighbours")
 	TArray<TObjectPtr<ABM_TileBase>> NeighbourTiles;
 	
@@ -54,16 +53,13 @@ public:
 	void TileWasClicked(FKey ButtonPressed, EGameRound GameRound, ABM_PlayerState* PlayerState);
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void AddTileToPlayerTerritory(ABM_PlayerState* PlayerState);
-	
+	void SC_SiegeTile(UMaterialInterface* InMaterialTile);
+
 	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void RemoveTileFromPlayerTerritory(ABM_PlayerState* PlayerState);
+	void SC_SetDisputedAppearance();
 	
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void DecreaseCastleHP();
-	
-	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void CancelAttack();
 	
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
 	void MC_RemoveHighlighting();
@@ -92,37 +88,62 @@ public:
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable, Category="Visuals")
 	void MC_ShowEdges(bool bVisibility, FColor PlayerColor);
 
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void CancelAttack();
 
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void AddTileToPlayerTerritory(ETileStatus InStatus, int32 InPlayerID, const FString& InPlayerNickname, UMaterialInterface* InMaterialTile);
+	
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void RemoveTileFromPlayerTerritory();
+	
 protected:
+	
 	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_TileMeshChanged, BlueprintReadWrite, Category = "Components")
 	UStaticMeshComponent* StaticMesh;
+	
 	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_FlagMeshChanged, BlueprintReadWrite, Category = "Components")
     UStaticMeshComponent* FlagMesh;
+	
     UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_CastleMeshChanged, BlueprintReadWrite, Category = "Components")
     UStaticMeshComponent* CastleMesh;
+	
 	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_CastleMeshChanged, BlueprintReadWrite, Category = "Components")
 	UBoxComponent* EdgesBox;
+	
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Points")
 	float Points = 200.0f;
+	
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Territory")
-	ETileStatus Status;
+	ETileStatus Status = ETileStatus::NotOwned;
+	
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Territory")
 	bool bIsArtillery;
+	
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Territory")
 	bool bIsFortified;
+	
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Territory")
 	int32 TileHP = 1;
 	
 	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_TileMeshChanged, BlueprintReadWrite, Category = "Visuals")
 	TObjectPtr<UMaterialInterface> CurrentMaterial;
-	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_FlagMeshChanged, BlueprintReadWrite, Category = "Visuals")
+	
+	UPROPERTY(ReplicatedUsing = OnRep_FlagMeshChanged, BlueprintReadWrite, Category = "Visuals")
 	TObjectPtr<UMaterialInterface> MaterialAttacked;
+
+	UPROPERTY(EditDefaultsOnly, ReplicatedUsing = OnRep_FlagMeshChanged, BlueprintReadWrite, Category = "Visuals")
+	TObjectPtr<UMaterialInterface> DisputedTerritoryMaterial;
+	
 	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_TileMeshChanged, BlueprintReadWrite, Category = "Visuals")
 	TObjectPtr<UMaterialInterface> MaterialOwned;
+	
 	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_CastleMeshChanged, BlueprintReadWrite, Category = "Visuals")
 	TObjectPtr<UMaterialInterface> MaterialCastle;
+	
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Player")
 	FString OwnerPlayerNickname;
+	
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Player")
 	int32 OwnerPlayerID;
 

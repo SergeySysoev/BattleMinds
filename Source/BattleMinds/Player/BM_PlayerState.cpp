@@ -3,6 +3,7 @@
 
 #include "BattleMinds/Player/BM_PlayerState.h"
 
+#include "BM_PlayerControllerBase.h"
 #include "Core/BM_GameModeBase.h"
 #include "Core/BM_GameStateBase.h"
 
@@ -14,7 +15,7 @@ void ABM_PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(ABM_PlayerState, MaterialTile);
 	DOREPLIFETIME(ABM_PlayerState, bHasArtillery);
 	DOREPLIFETIME(ABM_PlayerState, bHasTurn);
-	DOREPLIFETIME(ABM_PlayerState, AnsweredQuestions);
+	DOREPLIFETIME(ABM_PlayerState, QuestionChoices);
 	DOREPLIFETIME(ABM_PlayerState, MaterialCastle);
 	DOREPLIFETIME(ABM_PlayerState, MaterialAttack);
 	DOREPLIFETIME(ABM_PlayerState, MaterialNeighbour);
@@ -25,20 +26,7 @@ void ABM_PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(ABM_PlayerState, QuestionResults);
 }
 
-TSet<ABM_TileBase*> ABM_PlayerState::GetAllCurrentNeighbours()
-{
-	TSet<ABM_TileBase*> AllNeighbours;
-	for (const auto Tile: OwnedTiles)
-	{
-		for (const auto Neighbour: Tile->NeighbourTiles)
-		{
-			AllNeighbours.Add(Neighbour);
-		}
-	}
-	return AllNeighbours;
-}
-
-float ABM_PlayerState::GetPoints()
+float ABM_PlayerState::GetPoints() const
 {
 	return Points;
 }
@@ -46,6 +34,26 @@ float ABM_PlayerState::GetPoints()
 void ABM_PlayerState::AddPoints_Implementation(int32 inPoints)
 {
 	Points += inPoints;
+}
+
+void ABM_PlayerState::SC_AddTileToTerritory_Implementation(ABM_TileBase* InTile, ETileStatus InTileStatus)
+{
+	if (IsValid(InTile))
+	{
+		InTile->AddTileToPlayerTerritory(InTileStatus, BMPlayerID, Nickname, MaterialTile);
+		AddPoints(InTile->GetPoints());
+		OwnedTiles.Add(InTile);	
+	}
+}
+
+void ABM_PlayerState::SC_RemoveTileFromTerritory_Implementation(ABM_TileBase* InTile)
+{
+	if (IsValid(InTile))
+	{
+		InTile->RemoveTileFromPlayerTerritory();
+		AddPoints(-1 * Points);
+		OwnedTiles.RemoveSwap(InTile, true);
+	}
 }
 
 bool ABM_PlayerState::IsPlayerTurn()
@@ -62,30 +70,31 @@ bool ABM_PlayerState::HasArtillery()
 {
 	return bHasArtillery;
 }
+
 int32 ABM_PlayerState::GetCorrectAnswersNumber()
 {
-	int32 Count = 0;
-	/*for (const auto Questions : AnsweredQuestions)
+	int32 LCount = 0;
+	for (const FQuestionResult LQuestionResult : QuestionResults)
 	{
-		if (Questions.bWasAnswered)
+		if (LQuestionResult.bWasAnswered)
 		{
-			Count++;
+			LCount++;
 		}
-	}*/
-	return Count;
+	}
+	return LCount;
 }
 
 int32 ABM_PlayerState::GetWrongAnswersNumber()
 {
-	int32 Count = 0;
-	/*for (const auto Questions : AnsweredQuestions)
+	int32 LCount = 0;
+	for (const FQuestionResult LQuestionResult : QuestionResults)
 	{
-		if (!Questions.bWasAnswered)
+		if (!LQuestionResult.bWasAnswered)
 		{
-			Count++;
+			LCount++;
 		}
-	}*/
-	return  Count;
+	}
+	return LCount;
 }
 
 void ABM_PlayerState::SetPointsInWidget_Implementation()
@@ -106,35 +115,4 @@ TSet<ABM_TileBase*> ABM_PlayerState::GetNeighbors()
 			Neighbors.Add(Neighbor);
 	}
 	return Neighbors;
-}
-
-void ABM_PlayerState::ConstructGameQuestions()
-{
-	/*
-	 * construct array for the End game widget with results:
-	 * 1) Question number
-	 * 2) Question category
-	 * 3) Question text
-	 * 4) Player's answer
-	 * 5) Other players answers
-	 * 6) Correct answer
-	 * 7) received points
-	 */
-	TArray<FInstancedStruct> GameQuestions;
-	for (const auto LChoice : AnsweredQuestions)
-	{
-		if (LChoice.GetPtr<FPlayerChoice>())
-		{
-			const auto LQuestion = GameQuestions[LChoice.GetPtr<FPlayerChoice>()->QuestionID];
-			if (LQuestion.GetPtr<FQuestionChooseText>())
-			{
-				
-			}
-			else if (LQuestion.GetPtr<FQuestionShot>())
-			{
-				
-			}
-		}
-		
-	}
 }

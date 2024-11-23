@@ -34,7 +34,17 @@ ABM_TileBase::ABM_TileBase()
 void ABM_TileBase::ChangeStatus_Implementation(ETileStatus NewStatus)
 {
 	Status = NewStatus;
-	UE_LOG(LogBM_Tile, Warning, TEXT("New owner: %s"), *OwnerPlayerNickname);
+	switch (Status)
+	{
+		case ETileStatus::Castle:
+			CastleMesh->SetMaterial(0, MaterialCastle);
+			CastleMesh->SetVisibility(true);
+			break;
+		case ETileStatus::Controlled:
+			break;
+		default: break;
+	}
+	UE_LOG(LogBM_Tile, Warning, TEXT("Tile %s, New owner: %s"), *GetName(), *OwnerPlayerNickname);
 }
 
 bool ABM_TileBase::ChangeStatus_Validate(ETileStatus NewStatus)
@@ -56,16 +66,46 @@ void ABM_TileBase::OnRep_CastleMeshChanged()
 	CastleMesh->SetMaterial(0, MaterialCastle);
 }
 
+void ABM_TileBase::SC_SiegeTile_Implementation(UMaterialInterface* InMaterialTile)
+{
+	bIsAttacked = true;
+	MaterialAttacked = InMaterialTile;
+	StaticMesh->SetMaterial(0 , MaterialOwned);
+	MC_RemoveHighlighting();
+	MC_ShowEdges(false, FColor::Black);
+	FlagMesh->SetVisibility(true);
+	FlagMesh->SetMaterial(0, MaterialAttacked);
+}
+
+void ABM_TileBase::SC_SetDisputedAppearance_Implementation()
+{
+	FlagMesh->SetVisibility(true);
+	MaterialAttacked = DisputedTerritoryMaterial;
+	//FlagMesh->SetMaterial(0, DisputedTerritoryMaterial);
+}
+
 void ABM_TileBase::DecreaseCastleHP_Implementation()
 {
 	TileHP--;
 }
 
-void ABM_TileBase::RemoveTileFromPlayerTerritory_Implementation(ABM_PlayerState* PlayerState)
+void ABM_TileBase::RemoveTileFromPlayerTerritory_Implementation()
 {
 	bIsAttacked = false;
-	PlayerState->AddPoints(-1 * Points);
-	PlayerState->OwnedTiles.RemoveSwap(this);
+	// TODO? reset Material/OwnerID/OwnerNickname
+}
+
+void ABM_TileBase::AddTileToPlayerTerritory_Implementation(ETileStatus InStatus, int32 InPlayerID, const FString& InPlayerNickname, UMaterialInterface* InMaterialTile)
+{
+	bIsAttacked = false;
+	MaterialOwned = InMaterialTile;
+	CurrentMaterial = MaterialOwned;
+	StaticMesh->SetMaterial(0, CurrentMaterial);
+	OwnerPlayerID = InPlayerID;
+	OwnerPlayerNickname = InPlayerNickname;
+	ChangeStatus(InStatus);
+	MC_RemoveSelection();
+	MC_ShowEdges(false, FColor::Black);
 }
 
 void ABM_TileBase::MC_ShowEdges_Implementation(bool bVisibility, FColor PlayerColor)
@@ -96,31 +136,6 @@ void ABM_TileBase::MC_RemoveSelection_Implementation()
 	FlagMesh->SetVisibility(false);
 }
 
-void ABM_TileBase::AddTileToPlayerTerritory_Implementation(ABM_PlayerState* PlayerState)
-{
-	bIsAttacked = false;
-	if(PlayerState->OwnedTiles.Num() == 0)
-	{
-		ChangeStatus(ETileStatus::Castle);
-		PlayerState->AddPoints(1000.0f);
-	}
-	else
-	{
-		ChangeStatus(ETileStatus::Controlled);
-		PlayerState->AddPoints(Points);
-	}
-	MaterialOwned = PlayerState->MaterialTile;
-	CurrentMaterial = MaterialOwned;
-	StaticMesh->SetMaterial(0, CurrentMaterial);
-	PlayerState->OwnedTiles.Add(this);
-	OwnerPlayerID = PlayerState->BMPlayerID;
-	OwnerPlayerNickname = PlayerState->Nickname;
-	//PlayerState->SetPointsInWidget();
-	//MC_TryUpdatePlayersHUD();
-	MC_RemoveSelection();
-	MC_ShowEdges(false, FColor::Black);
-}
-
 void ABM_TileBase::CancelAttack_Implementation()
 {
 	bIsAttacked = false;
@@ -130,68 +145,11 @@ void ABM_TileBase::CancelAttack_Implementation()
 
 void ABM_TileBase::TileWasChosen_Implementation(ABM_PlayerState* PlayerState, EGameRound GameRound)
 {
-	switch (Status)
-	{
-	case ETileStatus::NotOwned:
-		if (IsValid(PlayerState))
-		{
-			if (GameRound == EGameRound::ChooseCastle)
-			{
-				OwnerPlayerNickname = PlayerState->Nickname;
-				ChangeStatus(ETileStatus::Castle);
-				MaterialCastle = PlayerState->MaterialCastle;
-				CurrentMaterial = MaterialCastle;
-				if (StaticMesh->GetMaterial(0))
-					UE_LOG(LogBM_Tile, Display, TEXT("Current Material %s"), *StaticMesh->GetMaterial(0)->GetName());
-				StaticMesh->SetMaterial(0, CurrentMaterial);
-				CastleMesh->SetVisibility(true);
-				CastleMesh->SetMaterial(0, MaterialCastle);
-				AddTileToPlayerTerritory(PlayerState);
-				//PlayerState->OwnedTiles.Add(this);
-			}
-			else //Set the territory
-			{
-				bIsAttacked = true;
-				//OriginalMaterial = Material;
-				MaterialAttacked = PlayerState->MaterialAttack;
-				StaticMesh->SetMaterial(0 , MaterialOwned);
-				MC_RemoveHighlighting();
-				MC_ShowEdges(false, FColor::Black);
-				FlagMesh->SetVisibility(true);
-				FlagMesh->SetMaterial(0, MaterialAttacked);
-			}
-		}
-		break;
-	case ETileStatus::Controlled:
-		if(OwnerPlayerNickname == PlayerState->Nickname)
-		{
-			if (!bIsFortified)
-			{
-				bIsFortified = true;
-				TileHP++;
-				UE_LOG(LogBM_Tile, Display, TEXT("Tile was fortified"));
-			}
-		}
-		else
-		{
-			bIsAttacked = true;
-			//OriginalMaterial = Material;
-			MaterialAttacked = PlayerState->MaterialAttack;
-			StaticMesh->SetMaterial(0 , MaterialOwned);
-			MC_RemoveHighlighting();
-			MC_ShowEdges(false, FColor::Black);
-			FlagMesh->SetVisibility(true);
-			FlagMesh->SetMaterial(0, MaterialAttacked);
-		}
-	case ETileStatus::Castle:
-		break;
-	default:
-		break;
-	};
 }
 
 void ABM_TileBase::TileWasClicked_Implementation(FKey ButtonPressed, EGameRound GameRound, ABM_PlayerState* PlayerState)
 {
+	/* add Tooltip widget opening when pressing with RMB or holding on the Tile*/
 	switch (GameRound)
 	{
 		case EGameRound::ChooseCastle:
@@ -224,6 +182,7 @@ void ABM_TileBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME(ABM_TileBase, bIsArtillery);
 	DOREPLIFETIME(ABM_TileBase, CurrentMaterial);
 	DOREPLIFETIME(ABM_TileBase, MaterialAttacked);
+	DOREPLIFETIME(ABM_TileBase, DisputedTerritoryMaterial);
 	DOREPLIFETIME(ABM_TileBase, MaterialOwned);
 	DOREPLIFETIME(ABM_TileBase, MaterialCastle);
 	DOREPLIFETIME(ABM_TileBase, OwnerPlayerNickname);

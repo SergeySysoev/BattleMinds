@@ -34,18 +34,21 @@ public:
 	UFUNCTION(BlueprintPure)
 	FORCEINLINE TArray<ABM_TileBase*> GetCurrentPlayerAvailableTiles() const { return CurrentPlayerAvailableTiles; }
 
+	UFUNCTION()
+	void HandleClickedTile(ABM_TileBase* InClickedTile);
+
 	UFUNCTION(BlueprintCallable)
 	void UpdatePlayersHUD();
 
 	UFUNCTION(BlueprintCallable)
-	void SetDefendingPlayerID(int32 InID);
+	void SetDefendingPlayer(int32 InID, ABM_TileBase* InTile);
 
 	UFUNCTION(BlueprintCallable)
 	void RequestToClearPlayerTurnTimer();
 
 	UFUNCTION(BlueprintCallable)
 	void RequestToOpenQuestion(EQuestionType QuestionType);
-
+	
 	UFUNCTION(BlueprintCallable)
 	void PassTurnToTheNextPlayer();
 
@@ -115,7 +118,10 @@ protected:
 	const ABM_GameModeBase* BMGameMode = nullptr;
 
 	UPROPERTY(BlueprintReadOnly)
-	int32 NumberOfTotalTurns;
+	int32 TotalSetTerritoryTurns = 0;
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 TotalFightForTerritoryTurns = 0;
 
 	virtual void BeginPlay() override;
 
@@ -130,7 +136,7 @@ protected:
 	void ResetQuestionTimer(int32 LastSentPlayer);
 
 	UFUNCTION()
-	void GenerateAutoPlayerChoice(ABM_PlayerState* PlayerState);
+	void GenerateAutoPlayerChoice(ABM_PlayerState* PlayerState) const;
 
 	UFUNCTION(BlueprintCallable)
 	void GatherPlayersAnswers();
@@ -139,10 +145,10 @@ protected:
 	void ConstructQuestionResult(ABM_PlayerState* InPlayerState, int32 InQuestionNumber, FInstancedStruct InQuestion, TArray<FInstancedStruct> InPlayerChoices, int32 InReceivedPoints, bool InWasAnswered);
 	
 	UFUNCTION(BlueprintCallable)
-	void ShowCorrectAnswers();
+	void ShowPlayerChoicesAndCorrectAnswer();
 
 	UFUNCTION()
-	void SetNextGameRound();
+	void PrepareNextTurn();
 	
 	UFUNCTION(BlueprintCallable)
 	void VerifyAnswers();
@@ -154,10 +160,20 @@ protected:
 	void VerifyShotAnswers();
 	
 	UFUNCTION()
-	EGameRound NextGameRound() const;
+	EGameRound GetNextGameRound() const;
 
 	UFUNCTION()
-	void ResetPlayersTurns(int32 PlayerID);
+	void SetNextGameRound(EGameRound NewRound);
+
+	UFUNCTION()
+	int32 CountNotOwnedTiles();
+
+	UFUNCTION()
+	void WrapUpCurrentRound();
+
+	UFUNCTION()
+	void UpdatePlayersTurnTimerAndNickname(int32 PlayerID);
+	void HighlightAvailableTiles(int32 PlayerID);
 
 	UFUNCTION(BlueprintCallable)
 	void StartPlayerTurnTimer(int32 PlayerID);

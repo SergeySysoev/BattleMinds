@@ -9,9 +9,8 @@
 #include "Tiles/BM_TileBase.h"
 #include "BM_PlayerState.generated.h"
 
-/**
- * 
- */
+class ABM_PlayerControllerBase;
+
 UCLASS()
 class BATTLEMINDS_API ABM_PlayerState : public APlayerState
 {
@@ -63,20 +62,23 @@ public:
 
 	/* Array of Player choices*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info", meta=(BaseStruct="PlayerChoice"))
-	TArray<FInstancedStruct> AnsweredQuestions;
+	TArray<FInstancedStruct> QuestionChoices;
 
 	/* Array of Player Question Results*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
 	TArray<FQuestionResult> QuestionResults;
 	
-	UFUNCTION(BlueprintCallable)
-	TSet<ABM_TileBase*> GetAllCurrentNeighbours();
-	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	float GetPoints();
+	float GetPoints() const;
 	
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void AddPoints(int32 inPoints);
+
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void SC_AddTileToTerritory(ABM_TileBase* InTile, ETileStatus InTileStatus);
+
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void SC_RemoveTileFromTerritory(ABM_TileBase* InTile);
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsPlayerTurn();
@@ -98,15 +100,15 @@ public:
 	
 	UFUNCTION()
 	TSet<ABM_TileBase*> GetNeighbors();
-
-	UFUNCTION(BlueprintCallable)
-	void ConstructGameQuestions();
 	
 protected:
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing=SetPointsInWidget, Category = "Player Info")
 	float Points;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
 	bool bHasArtillery;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
 	bool bHasTurn;
 	

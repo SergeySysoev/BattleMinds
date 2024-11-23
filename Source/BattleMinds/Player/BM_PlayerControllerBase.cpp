@@ -1,13 +1,13 @@
 // Battle Minds, 2022. All rights reserved.
 
 #include "BM_PlayerControllerBase.h"
-
 #include "BM_UWQuestion.h"
 #include "BattleMinds/Tiles/BM_TileBase.h"
 #include "BattleMinds/Player/BM_PlayerState.h"
 #include "Blueprint/UserWidget.h"
 #include "Core/BM_GameModeBase.h"
 #include "Core/BM_GameStateBase.h"
+#include "Tiles/BM_TileBase.h"
 #include "UI/BM_UWResults.h"
 
 DEFINE_LOG_CATEGORY(LogBM_PlayerController);
@@ -19,6 +19,56 @@ ABM_PlayerControllerBase::ABM_PlayerControllerBase()
 	bEnableMouseOverEvents = true;
 }
 
+bool ABM_PlayerControllerBase::HasValidCurrentClickedTile() const
+{
+	return IsValid(CurrentClickedTile);
+}
+
+void ABM_PlayerControllerBase::SC_RemoveCurrentTileFromTerritory_Implementation() const
+{
+	check(HasAuthority());
+	
+	if (IsValid(CurrentClickedTile))
+	{
+		CurrentClickedTile->RemoveTileFromPlayerTerritory();
+	}
+}
+
+void ABM_PlayerControllerBase::SC_AssignCurrentTile_Implementation(ABM_TileBase* TargetTile)
+{
+	check(HasAuthority());
+	CurrentClickedTile = TargetTile;
+}
+
+int32 ABM_PlayerControllerBase::GetPointsOfCurrentClickedTile() const
+{
+	if (!IsValid(CurrentClickedTile))
+	{
+		return 0;	
+	}
+	return CurrentClickedTile->GetPoints();
+}
+
+void ABM_PlayerControllerBase::SC_AddCurrentTileToTerritory_Implementation(ETileStatus InTileStatus) const
+{
+	check(HasAuthority());
+	
+	if (IsValid(CurrentClickedTile))
+	{
+		Cast<ABM_PlayerState>(PlayerState)->SC_AddTileToTerritory(CurrentClickedTile, InTileStatus);
+	}
+}
+
+void ABM_PlayerControllerBase::SC_CancelAttackForCurrentTile_Implementation() const
+{
+	check(HasAuthority());
+	
+	if (IsValid(CurrentClickedTile))
+	{
+		CurrentClickedTile->CancelAttack();
+	}
+}
+
 void ABM_PlayerControllerBase::SC_AddAnsweredQuestionChoice_Implementation(FInstancedStruct InPlayerChoice)
 {
 	ABM_PlayerState* BM_PlayerState = Cast<ABM_PlayerState>(PlayerState);
@@ -27,7 +77,7 @@ void ABM_PlayerControllerBase::SC_AddAnsweredQuestionChoice_Implementation(FInst
 		return;
 	}
 	BM_PlayerState->CurrentQuestionAnswerSent = true;
-	BM_PlayerState->AnsweredQuestions.Add(InPlayerChoice);
+	BM_PlayerState->QuestionChoices.Add(InPlayerChoice);
 	if(ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState()))
 	{
 		LGameState->OnAnswerSent.Broadcast(BM_PlayerState->BMPlayerID);
@@ -172,40 +222,34 @@ void ABM_PlayerControllerBase::SC_TryClickTheTile_Implementation(ABM_TileBase* T
 {
 	ABM_PlayerState* BM_PlayerState = Cast<ABM_PlayerState>(this->PlayerState);
 	ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState());
-	CurrentClickedTile = TargetTile;
+	SC_AssignCurrentTile(TargetTile);
+	
+	if (!IsValid(BM_PlayerState) || !IsValid(LGameState))
+	{
+		return;
+	}
+	
 	if (LGameState->GetCurrentPlayerID() == BM_PlayerState->BMPlayerID)
 	{
-		BM_PlayerState->SetPlayerTurn(true);
 		if (BM_PlayerState->IsPlayerTurn())
 		{
 			if (LGameState->GetCurrentPlayerAvailableTiles().Contains(CurrentClickedTile))
 			{
-				if (LGameState->GetCurrentRound() != EGameRound::FightForTerritory)
-				{
-					TargetTile->TileWasClicked(EKeys::LeftMouseButton, LGameState->GetCurrentRound(), BM_PlayerState);
-					BM_PlayerState->SetPlayerTurn(false);
-					LGameState->PassTurnToTheNextPlayer();
-				}
-				else
-				{
-					TargetTile->TileWasClicked(EKeys::LeftMouseButton, LGameState->GetCurrentRound(), BM_PlayerState);
-					BM_PlayerState->SetPlayerTurn(false);
-					LGameState->SetDefendingPlayerID(CurrentClickedTile->GetOwningPlayerID());
-					//LGameState->RequestToClearPlayerTurnTimer();
-					//LGameState->OpenQuestion(EQuestionType::Choose);
-					SC_RequestToOpenQuestion(EQuestionType::Choose);
-					if(const auto LDefendingPlayerController = LGameState->GetPlayerController(CurrentClickedTile->GetOwningPlayerID()))
-					{
-						LDefendingPlayerController->CurrentClickedTile = CurrentClickedTile;
-					}
-				}
+				TargetTile->TileWasClicked(EKeys::LeftMouseButton, LGameState->GetCurrentRound(), BM_PlayerState);
+				LGameState->HandleClickedTile(TargetTile);
 			}
 			else
 			{
 				//TODO: add option to attack any tile once per game
 				//TODO: add Widget notification about inability to attack selected tile
 				UE_LOG(LogBM_PlayerController, Warning, TEXT("This tile is not available"));
+				CC_ShowWarningPopup(FText::FromString("This Tile is not available for attack"));
 			}
+		}
+		else
+		{
+			UE_LOG(LogBM_PlayerController, Warning, TEXT("It's not your turn"));
+			CC_ShowWarningPopup(FText::FromString("It's not your turn"));
 		}
 	}
 	else

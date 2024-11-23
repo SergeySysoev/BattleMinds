@@ -24,6 +24,7 @@ class BATTLEMINDS_API ABM_PlayerControllerBase : public APlayerController
 
 public:
 	ABM_PlayerControllerBase();
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "User Widgets")
 	UBM_UWQuestion* QuestionWidget = nullptr;
 	
@@ -44,9 +45,12 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "User Widgets")
 	TSubclassOf<UBM_UWPlayerHUD> PlayerHUDClass;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "Tiles")
-	ABM_TileBase* CurrentClickedTile = nullptr;
+
+	UFUNCTION()
+	FORCEINLINE ABM_TileBase* GetCurrentClickedTile() const { return CurrentClickedTile; }
+
+	UFUNCTION()
+	bool HasValidCurrentClickedTile() const;
 	
 	UFUNCTION(BlueprintImplementableEvent)
 	void OpenQuestion();
@@ -86,6 +90,9 @@ public:
 	
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void SC_TryClickTheTile(ABM_TileBase* TargetTile);
+
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void SC_AssignCurrentTile(ABM_TileBase* TargetTile);
 	
 	UFUNCTION(Client, Reliable, BlueprintCallable)
 	void CC_InitPlayerHUD(const TArray<APlayerState*>& PlayerArray);
@@ -95,5 +102,21 @@ public:
 
 	UFUNCTION(Client, Unreliable, BlueprintCallable)
 	void CC_ShowWarningPopup(const FText& InText);
-	
+
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void SC_CancelAttackForCurrentTile() const;
+
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void SC_AddCurrentTileToTerritory(ETileStatus InTileStatus) const;
+
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void SC_RemoveCurrentTileFromTerritory() const;
+
+	UFUNCTION(BlueprintPure)
+	int32 GetPointsOfCurrentClickedTile() const ;
+
+protected:
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "Tiles")
+	ABM_TileBase* CurrentClickedTile = nullptr;
 };
