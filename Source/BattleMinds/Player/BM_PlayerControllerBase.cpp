@@ -30,7 +30,7 @@ void ABM_PlayerControllerBase::SC_RemoveCurrentTileFromTerritory_Implementation(
 	
 	if (IsValid(CurrentClickedTile))
 	{
-		CurrentClickedTile->RemoveTileFromPlayerTerritory();
+		Cast<ABM_PlayerState>(PlayerState)->SC_RemoveTileFromTerritory(CurrentClickedTile);
 	}
 }
 

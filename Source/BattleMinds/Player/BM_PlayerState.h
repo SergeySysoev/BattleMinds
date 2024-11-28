@@ -25,19 +25,19 @@ public:
 	FString Nickname;
 
 	/* Material used to apply to Player's tiles meshes*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
 	UMaterialInterface* MaterialTile;
 
 	/* Material used to apply to Player's castle meshe*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
 	UMaterialInterface* MaterialCastle;
 
 	/* Material used to apply to map mesh Player is attacking*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
 	UMaterialInterface* MaterialAttack;
 
 	/* Material used to apply to neighbours of the Player's tiles*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
 	UMaterialInterface* MaterialNeighbour;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")

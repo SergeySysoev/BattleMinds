@@ -38,6 +38,22 @@ enum class EQuestionType : uint8
 	Shot UMETA(DisplayName = "Shot")
 };
 
+UENUM(BlueprintType)
+enum class EColor : uint8
+{
+	Undefined,
+	Red,
+	Green,
+	Blue,
+	Pink,
+	Orange,
+	White,
+	Black,
+	Purple,
+	Brown,
+	MAX UMETA(Hidden)
+};
+
 USTRUCT(BlueprintType)
 struct FAnswer
 {
@@ -433,4 +449,7 @@ UCLASS()
 class BATTLEMINDS_API UBM_Types : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
+
+	UFUNCTION(BlueprintPure)
+	static EColor GetColorStringAsEnum(FString InColor);
 };

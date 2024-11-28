@@ -12,13 +12,9 @@ void ABM_PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(ABM_PlayerState, BMPlayerID);
 	DOREPLIFETIME(ABM_PlayerState, Nickname);
 	DOREPLIFETIME(ABM_PlayerState, Points);
-	DOREPLIFETIME(ABM_PlayerState, MaterialTile);
-	DOREPLIFETIME(ABM_PlayerState, bHasArtillery);
-	DOREPLIFETIME(ABM_PlayerState, bHasTurn);
+	//DOREPLIFETIME(ABM_PlayerState, bHasArtillery);
+	//DOREPLIFETIME(ABM_PlayerState, bHasTurn);
 	DOREPLIFETIME(ABM_PlayerState, QuestionChoices);
-	DOREPLIFETIME(ABM_PlayerState, MaterialCastle);
-	DOREPLIFETIME(ABM_PlayerState, MaterialAttack);
-	DOREPLIFETIME(ABM_PlayerState, MaterialNeighbour);
 	DOREPLIFETIME(ABM_PlayerState, PlayerColor);
 	DOREPLIFETIME(ABM_PlayerState, CurrentQuestionAnswerSent);
 	DOREPLIFETIME(ABM_PlayerState, NumberOfTurns);

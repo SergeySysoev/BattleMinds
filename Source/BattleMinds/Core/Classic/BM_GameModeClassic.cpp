@@ -6,6 +6,11 @@
 #include "GameFramework/PlayerState.h"
 #include "Player/BM_PlayerControllerBase.h"
 
+ABM_GameModeClassic::ABM_GameModeClassic()
+{
+	MaxNumberOfActivePlayers = 3;
+}
+
 void ABM_GameModeClassic::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
@@ -21,7 +26,6 @@ void ABM_GameModeClassic::StartGame()
 	if (IsValid(LGameStateBase))
 	{
 		LGameStateBase->InitGameState();
-		//TODO: initialize Players HUD
 		for (const auto PlayerState: GetGameState<ABM_GameStateBase>()->PlayerArray)
 		{
 			if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))

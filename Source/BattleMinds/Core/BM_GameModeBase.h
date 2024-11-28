@@ -64,6 +64,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game settings")
 	float TurnTimer;
 	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Game settings")
+	int32 MaxNumberOfActivePlayers = 3;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Game settings")
 	int32 NumberOfActivePlayers = 0;
 	

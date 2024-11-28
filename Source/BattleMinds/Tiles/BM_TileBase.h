@@ -100,16 +100,16 @@ public:
 protected:
 	
 	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_TileMeshChanged, BlueprintReadWrite, Category = "Components")
-	UStaticMeshComponent* StaticMesh;
+	UStaticMeshComponent* StaticMesh = nullptr;
 	
 	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_FlagMeshChanged, BlueprintReadWrite, Category = "Components")
-    UStaticMeshComponent* FlagMesh;
+    USkeletalMeshComponent* BannerMesh = nullptr;
 	
     UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_CastleMeshChanged, BlueprintReadWrite, Category = "Components")
-    UStaticMeshComponent* CastleMesh;
+    UStaticMeshComponent* CastleMesh = nullptr;
 	
 	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_CastleMeshChanged, BlueprintReadWrite, Category = "Components")
-	UBoxComponent* EdgesBox;
+	UBoxComponent* EdgesBox = nullptr;
 	
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Points")
 	float Points = 200.0f;

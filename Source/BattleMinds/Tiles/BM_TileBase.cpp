@@ -14,17 +14,18 @@ ABM_TileBase::ABM_TileBase()
 	bReplicates = true;
 	PrimaryActorTick.bCanEverTick = true;
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Tile Mesh"));
-	StaticMesh->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+	StaticMesh->SetupAttachment(GetRootComponent());
 	StaticMesh->SetIsReplicated(true);
-	FlagMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Flag Mesh"));
-	FlagMesh->AttachToComponent(StaticMesh, FAttachmentTransformRules::KeepRelativeTransform);
-	FlagMesh->SetIsReplicated(true);
+	SetRootComponent(StaticMesh);
+	BannerMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Banner Mesh"));
+	BannerMesh->SetupAttachment(StaticMesh);
+	BannerMesh->SetIsReplicated(true);
 	CastleMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Castle Mesh"));
-	CastleMesh->AttachToComponent(StaticMesh, FAttachmentTransformRules::KeepRelativeTransform);
+	CastleMesh->SetupAttachment(StaticMesh);
 	CastleMesh->SetIsReplicated(true);
 	EdgesBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Edges box"));
 	EdgesBox->SetIsReplicated(true);
-	EdgesBox->AttachToComponent(StaticMesh,FAttachmentTransformRules::KeepRelativeTransform);
+	EdgesBox->SetupAttachment(StaticMesh);
 	EdgesBox->SetVisibility(false);
 	EdgesBox->SetHiddenInGame(false);
 	CurrentMaterial = MaterialOwned;
@@ -59,7 +60,7 @@ void ABM_TileBase::OnRep_TileMeshChanged()
 
 void ABM_TileBase::OnRep_FlagMeshChanged()
 {
-	FlagMesh->SetMaterial(0, MaterialAttacked);
+	BannerMesh->SetMaterial(0, MaterialAttacked);
 }
 void ABM_TileBase::OnRep_CastleMeshChanged()
 {
@@ -73,15 +74,15 @@ void ABM_TileBase::SC_SiegeTile_Implementation(UMaterialInterface* InMaterialTil
 	StaticMesh->SetMaterial(0 , MaterialOwned);
 	MC_RemoveHighlighting();
 	MC_ShowEdges(false, FColor::Black);
-	FlagMesh->SetVisibility(true);
-	FlagMesh->SetMaterial(0, MaterialAttacked);
+	BannerMesh->SetVisibility(true);
+	BannerMesh->SetMaterial(0, MaterialAttacked);
 }
 
 void ABM_TileBase::SC_SetDisputedAppearance_Implementation()
 {
-	FlagMesh->SetVisibility(true);
+	BannerMesh->SetVisibility(true);
 	MaterialAttacked = DisputedTerritoryMaterial;
-	//FlagMesh->SetMaterial(0, DisputedTerritoryMaterial);
+	BannerMesh->SetMaterial(0, DisputedTerritoryMaterial);
 }
 
 void ABM_TileBase::DecreaseCastleHP_Implementation()
@@ -133,7 +134,7 @@ void ABM_TileBase::MC_RemoveHighlighting_Implementation()
 
 void ABM_TileBase::MC_RemoveSelection_Implementation()
 {
-	FlagMesh->SetVisibility(false);
+	BannerMesh->SetVisibility(false);
 }
 
 void ABM_TileBase::CancelAttack_Implementation()
