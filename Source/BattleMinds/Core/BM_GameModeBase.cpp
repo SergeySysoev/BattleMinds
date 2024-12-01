@@ -12,30 +12,6 @@
 
 DEFINE_LOG_CATEGORY(LogBM_GameMode);
 
-void ABM_GameModeBase::InitPlayer(APlayerController* NewPlayer)
-{
-	if (ABM_PlayerState* PlayerState = Cast<ABM_PlayerState>(NewPlayer->GetPlayerState<ABM_PlayerState>()))
-	{
-		PlayerState->BMPlayerID = NumberOfActivePlayers;
-		PlayerState->MaterialTile = MaterialMap.FindRef(NumberOfActivePlayers);
-		//TODO: get this info from Steam info (loaded into Save game UserProfile)
-		PlayerState->Nickname = NicknameMap.FindRef(NumberOfActivePlayers);
-		PlayerState->MaterialCastle = CastleMaterialMap.FindRef(NumberOfActivePlayers);
-		PlayerState->MaterialAttack = MaterialAttackMap.FindRef(NumberOfActivePlayers);
-		PlayerState->MaterialNeighbour = MaterialNeighborMap.FindRef(NumberOfActivePlayers);
-		PlayerState->PlayerColor = ColorMap.FindRef(NumberOfActivePlayers);
-		PlayerState->NumberOfTurns = NumberOfPlayerTurns;
-		TotalSetTerritoryTurns += NumberOfPlayerTurns;
-		const auto AvailablePlayerStart = FindPlayerStart(NewPlayer, TEXT(""));
-		const FVector Location = AvailablePlayerStart->GetActorLocation();
-		const FRotator Rotation = AvailablePlayerStart->GetActorRotation();
-		ABM_PlayerPawn* SpawnedPawn = GetWorld()->SpawnActor<ABM_PlayerPawn>(PawnClass, Location, Rotation);
-		//SpawnedPawn->SetActorRotation(Rotation);
-		NewPlayer->Possess(SpawnedPawn);
-		NumberOfActivePlayers++;
-	}
-}
-
 ACameraActor* ABM_GameModeBase::GetQuestionCamera(EQuestionType QuestionType) const
 {
 	switch (QuestionType)
@@ -102,5 +78,27 @@ void ABM_GameModeBase::BeginPlay()
 		{
 			ShotQuestionCamera = Cast<ACameraActor>(Camera);
 		}
+	}
+}
+
+void ABM_GameModeBase::InitPlayer_Implementation(APlayerController* NewPlayer)
+{
+	if (ABM_PlayerState* PlayerState = Cast<ABM_PlayerState>(NewPlayer->GetPlayerState<ABM_PlayerState>()))
+	{
+		EColor LTempColor = PlayerState->GetPlayerColor();
+		UE_LOG(LogBM_GameMode, Display, TEXT("Player color: %s"), *UEnum::GetValueAsString(LTempColor));
+		UBM_GameInstance* LGameInstance = Cast<UBM_GameInstance>(GetWorld()->GetGameInstance());
+		PlayerState->BMPlayerID = NumberOfActivePlayers;
+		//TODO: get this info from Steam info (loaded into Save game UserProfile)
+		PlayerState->Nickname = NicknameMap.FindRef(NumberOfActivePlayers);
+		PlayerState->NumberOfTurns = NumberOfPlayerTurns;
+		TotalSetTerritoryTurns += NumberOfPlayerTurns;
+		const auto AvailablePlayerStart = FindPlayerStart(NewPlayer, TEXT(""));
+		const FVector Location = AvailablePlayerStart->GetActorLocation();
+		const FRotator Rotation = AvailablePlayerStart->GetActorRotation();
+		ABM_PlayerPawn* SpawnedPawn = GetWorld()->SpawnActor<ABM_PlayerPawn>(PawnClass, Location, Rotation);
+		//SpawnedPawn->SetActorRotation(Rotation);
+		NewPlayer->Possess(SpawnedPawn);
+		NumberOfActivePlayers++;
 	}
 }

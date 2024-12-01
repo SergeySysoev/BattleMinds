@@ -309,6 +309,24 @@ enum class EGameRound : uint8
 	End
 };
 
+USTRUCT(BlueprintType)
+struct FTileMaterials
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	TObjectPtr<UMaterialInterface> CastleMaterial;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	TObjectPtr<UMaterialInterface> BannerMaterial;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	TObjectPtr<UMaterialInterface> TileMeshMaterial;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	FColor TileEdgesColor;
+};
+
 UENUM(BlueprintType)
 enum class EClassicRound : uint8
 {
@@ -442,6 +460,15 @@ struct FConnectedPlayer
 	FPlayerProfile Profile;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Info")
 	FPlayerFigures Figures;
+};
+
+USTRUCT(BlueprintType)
+struct FPlayerInfo
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly)
+	FString Nickname;
 };
 
 

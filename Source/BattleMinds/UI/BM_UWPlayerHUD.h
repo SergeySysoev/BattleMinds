@@ -6,9 +6,7 @@
 #include "CommonUserWidget.h"
 #include "BM_UWPlayerHUD.generated.h"
 
-/**
- * 
- */
+
 UCLASS()
 class BATTLEMINDS_API UBM_UWPlayerHUD : public UCommonUserWidget
 {
@@ -17,9 +15,6 @@ class BATTLEMINDS_API UBM_UWPlayerHUD : public UCommonUserWidget
 public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void InitPlayersInfo(const TArray<APlayerState*>& Players);
-	
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
-	void UpdatePlayersInfo(const TArray<APlayerState*>& Players);
 
 	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
 	void ShowWarningPopup(const FText& InText);

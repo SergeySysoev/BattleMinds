@@ -3,16 +3,20 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BM_PlayerStateBase.h"
 #include "GameFramework/PlayerState.h"
 #include "Net/UnrealNetwork.h"
 #include "Core/BM_Types.h"
 #include "Tiles/BM_TileBase.h"
 #include "BM_PlayerState.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogBM_PlayerState, Display, All);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPointsChanged, int32, PlayerID, float, NewScore);
 class ABM_PlayerControllerBase;
 
 UCLASS()
-class BATTLEMINDS_API ABM_PlayerState : public APlayerState
+class BATTLEMINDS_API ABM_PlayerState : public ABM_PlayerStateBase
 {
 	GENERATED_BODY()
 
@@ -23,25 +27,6 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
 	FString Nickname;
-
-	/* Material used to apply to Player's tiles meshes*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	UMaterialInterface* MaterialTile;
-
-	/* Material used to apply to Player's castle meshe*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	UMaterialInterface* MaterialCastle;
-
-	/* Material used to apply to map mesh Player is attacking*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	UMaterialInterface* MaterialAttack;
-
-	/* Material used to apply to neighbours of the Player's tiles*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Info")
-	UMaterialInterface* MaterialNeighbour;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
-	FColor PlayerColor;
 	
 	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Questions")
 	bool CurrentQuestionAnswerSent;
@@ -49,9 +34,10 @@ public:
 	/* Number of turns this player will make in the game, calculated based on number of players in lobby*/
 	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Questions")
 	int32 NumberOfTurns;
-	
+
+	/* Based on how many points Player received, calculated in GameState */
 	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Questions")
-	int32 WinnerPosition;
+	int32 TotalPlace;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Player Stats")
 	TArray<ABM_TileBase*> OwnedTiles;
@@ -67,12 +53,15 @@ public:
 	/* Array of Player Question Results*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
 	TArray<FQuestionResult> QuestionResults;
+
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
+	FOnPointsChanged OnPointsChanged;
 	
-	UFUNCTION(BlueprintCallable, BlueprintPure)
+	UFUNCTION(BlueprintPure)
 	float GetPoints() const;
 	
 	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void AddPoints(int32 inPoints);
+	void SC_AddPoints(int32 inPoints);
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_AddTileToTerritory(ABM_TileBase* InTile, ETileStatus InTileStatus);
@@ -95,15 +84,17 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int32 GetWrongAnswersNumber();
 	
-	UFUNCTION(BlueprintNativeEvent)
-	void SetPointsInWidget();
+	UFUNCTION()
+	void OnRep_Points();
 	
 	UFUNCTION()
 	TSet<ABM_TileBase*> GetNeighbors();
 	
 protected:
+
+	virtual void BeginPlay() override;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing=SetPointsInWidget, Category = "Player Info")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing=OnRep_Points, Category = "Player Info")
 	float Points;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")

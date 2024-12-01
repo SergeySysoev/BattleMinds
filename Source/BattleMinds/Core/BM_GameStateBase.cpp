@@ -1,6 +1,8 @@
 // Battle Minds, 2022. All rights reserved.
 
 #include "Core/BM_GameStateBase.h"
+
+#include "BM_GameInstance.h"
 #include "BM_GameModeBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Player/BM_PlayerState.h"
@@ -25,6 +27,38 @@ void ABM_GameStateBase::InitGameState()
 		TotalSetTerritoryTurns = BMGameMode->GetNumberOfActivePlayers()*
 			FMath::Floor(Tiles.Num()/BMGameMode->GetNumberOfActivePlayers() - 1);
 		TotalFightForTerritoryTurns = TotalSetTerritoryTurns;
+	}
+	
+	TMap<EColor, FTileMaterials> LInGameMaterials;
+	UBM_GameInstance* LGameInstance = Cast<UBM_GameInstance>(GetGameInstance());
+	if (!IsValid(LGameInstance))
+	{
+		return;
+	}
+	for (const auto PlayerState : PlayerArray)
+	{
+		if (ABM_PlayerState* BMPlayerState = Cast<ABM_PlayerState>(PlayerState))
+		{
+			EColor LPlayerColor = BMPlayerState->GetPlayerColor();
+			if (LPlayerColor == EColor::Undefined)
+			{
+				LPlayerColor = static_cast<EColor>(static_cast<uint8>(BMPlayerState->BMPlayerID + 1));
+				BMPlayerState->SetPlayerColor(LPlayerColor);
+			}
+			FTileMaterials LTileMaterials;
+			LTileMaterials.CastleMaterial = LGameInstance->CastleMaterials.FindRef(LPlayerColor);
+			LTileMaterials.BannerMaterial = LGameInstance->BannerMaterials.FindRef(LPlayerColor);
+			LTileMaterials.TileEdgesColor = LGameInstance->TileEdgesColors.FindRef(LPlayerColor);
+			LTileMaterials.TileMeshMaterial = LGameInstance->TileMeshMaterials.FindRef(LPlayerColor);;
+			LInGameMaterials.Add(LPlayerColor,LTileMaterials);
+		}
+	}
+	for (auto Tile : Tiles)
+	{
+		if (ABM_TileBase* LBMTile = Cast<ABM_TileBase>(Tile))
+		{
+			LBMTile->SetInGameTTileMaterials(LInGameMaterials);
+		}
 	}
 }
 
@@ -71,17 +105,6 @@ void ABM_GameStateBase::SetDefendingPlayer(int32 InID, ABM_TileBase* InTile)
 void ABM_GameStateBase::RequestToClearPlayerTurnTimer()
 {
 	GetWorldTimerManager().ClearTimer(PlayerTurnHandle);
-}
-
-void ABM_GameStateBase::UpdatePlayersHUD()
-{
-	for (const auto PlayerState: PlayerArray)
-	{
-		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
-		{
-			PlayerController->CC_UpdatePlayerHUD();
-		}
-	}
 }
 
 void ABM_GameStateBase::ChooseFirstAvailableTileForPlayer(int32 PlayerID)
@@ -225,7 +248,7 @@ void ABM_GameStateBase::HandleClickedTile(ABM_TileBase* InClickedTile)
 			 the GameState will open the question */
 			if (PlayerArray.IsValidIndex(CurrentPlayerID) && Cast<ABM_PlayerState>(PlayerArray[CurrentPlayerID]))
 			{
-				InClickedTile->SC_SiegeTile(Cast<ABM_PlayerState>(PlayerArray[CurrentPlayerID])->MaterialAttack);
+				InClickedTile->SC_SiegeTile(Cast<ABM_PlayerState>(PlayerArray[CurrentPlayerID])->GetPlayerColor());
 				CurrentPlayerID++;
 				PassTurnToTheNextPlayer();
 			}
@@ -239,7 +262,7 @@ void ABM_GameStateBase::HandleClickedTile(ABM_TileBase* InClickedTile)
 			//  in that case no question is needed
 			if (PlayerArray.IsValidIndex(CurrentPlayerID) && Cast<ABM_PlayerState>(PlayerArray[CurrentPlayerID]))
 			{
-				InClickedTile->SC_SiegeTile(Cast<ABM_PlayerState>(PlayerArray[CurrentPlayerID])->MaterialAttack);
+				InClickedTile->SC_SiegeTile(Cast<ABM_PlayerState>(PlayerArray[CurrentPlayerID])->GetPlayerColor());
 			}
 			SetDefendingPlayer(InClickedTile->GetOwningPlayerID(), InClickedTile);
 			RequestToOpenQuestion(EQuestionType::Choose);
@@ -278,8 +301,7 @@ void ABM_GameStateBase::StartPlayerTurnTimer(int32 PlayerID)
 	for (const auto Tile : Tiles)
 	{
 		ABM_TileBase* BMTile = Cast<ABM_TileBase>(Tile);
-		BMTile->MC_RemoveHighlighting();
-		BMTile->MC_ShowEdges(false, FColor::Black);
+		BMTile->MC_ShowEdges(false);
 	}
 	
 	HighlightAvailableTiles(PlayerID);
@@ -310,7 +332,7 @@ void ABM_GameStateBase::HighlightAvailableTiles(int32 PlayerID)
 					if(NeighborsAvailable)
 					{
 						const ABM_PlayerState* PlayerState = Cast<ABM_PlayerState>(PlayerArray[CurrentPlayerID]);
-						BMTile->MC_ShowEdges(true, PlayerState->PlayerColor);
+						BMTile->MC_ShowEdges(true, PlayerState->GetPlayerColor());
 						CurrentPlayerAvailableTiles.Add(BMTile);
 					}
 				}
@@ -325,7 +347,7 @@ void ABM_GameStateBase::HighlightAvailableTiles(int32 PlayerID)
 				if (NeighborTile->GetStatus() == ETileStatus::NotOwned && !NeighborTile->bIsAttacked)
 				{
 					UE_LOG(LogBM_GameMode, Display, TEXT("Neighbor tile: %s"), *NeighborTile->GetActorNameOrLabel());
-					NeighborTile->MC_ShowEdges(true, CurrentPlayerState->PlayerColor);
+					NeighborTile->MC_ShowEdges(true, CurrentPlayerState->GetPlayerColor());
 					CurrentPlayerAvailableTiles.Add(NeighborTile);
 				}
 			}
@@ -337,7 +359,7 @@ void ABM_GameStateBase::HighlightAvailableTiles(int32 PlayerID)
 					ABM_TileBase* BMTile = Cast<ABM_TileBase>(Tile);
 					if (BMTile->GetStatus() == ETileStatus::NotOwned && BMTile->bIsAttacked == false)
 					{
-						BMTile->MC_ShowEdges(true, CurrentPlayerState->PlayerColor);
+						BMTile->MC_ShowEdges(true, CurrentPlayerState->GetPlayerColor());
 						CurrentPlayerAvailableTiles.Add(BMTile);
 						break;
 					}
@@ -353,7 +375,7 @@ void ABM_GameStateBase::HighlightAvailableTiles(int32 PlayerID)
 				if (!CurrentPlayerState->OwnedTiles.Contains(NeighborTile))
 				{
 					UE_LOG(LogBM_GameMode, Display, TEXT("Neighbor tile: %s"), *NeighborTile->GetActorNameOrLabel());
-					NeighborTile->MC_ShowEdges(true, CurrentPlayerState->PlayerColor);
+					NeighborTile->MC_ShowEdges(true, CurrentPlayerState->GetPlayerColor());
 					CurrentPlayerAvailableTiles.Add(NeighborTile);
 				}
 			}
@@ -658,7 +680,6 @@ void ABM_GameStateBase::VerifyAnswers()
 			default:
 				break;
 		}
-		UpdatePlayersHUD();
 		PrepareNextTurn();
 	}
 }
@@ -731,7 +752,7 @@ void ABM_GameStateBase::VerifyChooseAnswers()
 							ConstructQuestionResult(DefendingPlayerState, UsedQuestions.Num(), LastQuestion, PlayersCurrentChoices, 100, true);
 							ConstructQuestionResult(AttackingPlayerState, UsedQuestions.Num(), LastQuestion, PlayersCurrentChoices, 0, false);
 							AttackingPlayer->SC_CancelAttackForCurrentTile();
-							DefendingPlayerState->AddPoints(100);
+							DefendingPlayerState->SC_AddPoints(100);
 						}
 						break;
 					}
@@ -965,7 +986,7 @@ void ABM_GameStateBase::UpdatePlayersTurnTimerAndNickname(int32 PlayerID)
 	{
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 		{
-			PlayerController->UpdateCurrentPlayerNickname(Cast<ABM_PlayerState>(PlayerArray[PlayerID])->Nickname);
+			PlayerController->UpdateCurrentPlayerNickname(PlayerID);
 			Cast<ABM_PlayerState>(PlayerState)->CurrentQuestionAnswerSent = false;
 			PlayerController->ResetTurnTimer(Round);
 		}

@@ -61,14 +61,11 @@ public:
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_AddAnsweredQuestionChoice(FInstancedStruct InPlayerChoice);
 	
-	UFUNCTION(Server,Reliable)
-	void SC_RequestToUpdateHUD();
-	
 	UFUNCTION(Client, Reliable, BlueprintCallable)
 	void CC_OpenQuestionWidget(FInstancedStruct LastQuestion, const TArray<int32>& AnsweringPlayers, AActor* NewViewTarget);
 	
 	UFUNCTION(BlueprintImplementableEvent)
-	void UpdateCurrentPlayerNickname(const FString& CurrentPlayerNickname);
+	void UpdateCurrentPlayerNickname(const int32 CurrentPlayerID);
 	
 	UFUNCTION(Client, Reliable, BlueprintCallable)
 	void CC_MarkAnsweredPlayers(int32 LastSentPlayer);
@@ -96,9 +93,6 @@ public:
 	
 	UFUNCTION(Client, Reliable, BlueprintCallable)
 	void CC_InitPlayerHUD(const TArray<APlayerState*>& PlayerArray);
-	
-	UFUNCTION(Client, Reliable, BlueprintCallable)
-	void CC_UpdatePlayerHUD();
 
 	UFUNCTION(Client, Unreliable, BlueprintCallable)
 	void CC_ShowWarningPopup(const FText& InText);

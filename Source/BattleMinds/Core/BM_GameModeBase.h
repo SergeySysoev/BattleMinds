@@ -112,6 +112,6 @@ protected:
 	UPROPERTY()
 	int32 TotalSetTerritoryTurns = 0;
 	
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void InitPlayer(APlayerController* NewPlayer);
 };

@@ -38,9 +38,6 @@ public:
 	void HandleClickedTile(ABM_TileBase* InClickedTile);
 
 	UFUNCTION(BlueprintCallable)
-	void UpdatePlayersHUD();
-
-	UFUNCTION(BlueprintCallable)
 	void SetDefendingPlayer(int32 InID, ABM_TileBase* InTile);
 
 	UFUNCTION(BlueprintCallable)
@@ -173,6 +170,8 @@ protected:
 
 	UFUNCTION()
 	void UpdatePlayersTurnTimerAndNickname(int32 PlayerID);
+
+	UFUNCTION()
 	void HighlightAvailableTiles(int32 PlayerID);
 
 	UFUNCTION(BlueprintCallable)

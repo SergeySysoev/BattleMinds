@@ -92,30 +92,6 @@ void ABM_PlayerControllerBase::CC_ShowWarningPopup_Implementation(const FText& I
 	}
 }
 
-void ABM_PlayerControllerBase::SC_RequestToUpdateHUD_Implementation()
-{
-	if(ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState()))
-	{
-		LGameState->UpdatePlayersHUD();
-	}
-}
-
-void ABM_PlayerControllerBase::CC_UpdatePlayerHUD_Implementation()
-{
-	ABM_GameStateBase* GameState = GetWorld() != nullptr ? GetWorld()->GetGameState<ABM_GameStateBase>() : nullptr;
-	if(GameState)
-	{
-		UE_LOG(LogBM_PlayerController, Display, TEXT("Client %s copy of GameState: %s"), *this->GetName(),*GameState->GetName());
-	}
-	else
-	{
-		UE_LOG(LogBM_PlayerController, Warning, TEXT("No GameState copy is available at this client %s"), *this->GetName());
-	}
-	if(PlayerHUD)
-	{
-		PlayerHUD->UpdatePlayersInfo(GameState->PlayerArray);
-	}
-}
 
 void ABM_PlayerControllerBase::CC_InitPlayerHUD_Implementation(const TArray<APlayerState*>& PlayerArray)
 {
@@ -235,7 +211,6 @@ void ABM_PlayerControllerBase::SC_TryClickTheTile_Implementation(ABM_TileBase* T
 		{
 			if (LGameState->GetCurrentPlayerAvailableTiles().Contains(CurrentClickedTile))
 			{
-				TargetTile->TileWasClicked(EKeys::LeftMouseButton, LGameState->GetCurrentRound(), BM_PlayerState);
 				LGameState->HandleClickedTile(TargetTile);
 			}
 			else

@@ -47,22 +47,16 @@ public:
 	void OnRep_CastleMeshChanged();
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void TileWasChosen(ABM_PlayerState* PlayerState, EGameRound GameRound);
-
-	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void TileWasClicked(FKey ButtonPressed, EGameRound GameRound, ABM_PlayerState* PlayerState);
-
-	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void SC_SiegeTile(UMaterialInterface* InMaterialTile);
+	void SC_SiegeTile(EColor InPlayerColor);
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_SetDisputedAppearance();
+
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void SC_RestoreCastleHP();
 	
 	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void DecreaseCastleHP();
-	
-	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
-	void MC_RemoveHighlighting();
+	void SC_DecreaseCastleHP();
 	
 	UFUNCTION(BlueprintCallable)
 	FString GetOwningPlayerNickname(){ return OwnerPlayerNickname; };
@@ -78,24 +72,21 @@ public:
 
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable, Category="Visuals")
 	void MC_RemoveSelection();
-
-	UFUNCTION(Server, Reliable, BlueprintCallable, Category="Visuals")
-	void TurnOnHighlight(UMaterialInterface* NeighborMaterial);
-	
-	UFUNCTION(Server, Reliable, BlueprintCallable, Category="Visuals")
-	void TurnOffHighlight();
 	
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable, Category="Visuals")
-	void MC_ShowEdges(bool bVisibility, FColor PlayerColor);
+	void MC_ShowEdges(bool bVisibility, EColor InPlayerColor = EColor::Black);
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void CancelAttack();
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void AddTileToPlayerTerritory(ETileStatus InStatus, int32 InPlayerID, const FString& InPlayerNickname, UMaterialInterface* InMaterialTile);
+	void AddTileToPlayerTerritory(ETileStatus InStatus, int32 InPlayerID, const FString& InPlayerNickname, EColor InPlayerColor);
 	
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void RemoveTileFromPlayerTerritory();
+
+	UFUNCTION(BlueprintCallable)
+	void SetInGameTTileMaterials(TMap<EColor, FTileMaterials> InGameMaterials);
 	
 protected:
 	
@@ -111,23 +102,29 @@ protected:
 	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_CastleMeshChanged, BlueprintReadWrite, Category = "Components")
 	UBoxComponent* EdgesBox = nullptr;
 	
-	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Points")
+	UPROPERTY(EditDefaultsOnly, Replicated, BlueprintReadWrite, Category = "Points")
 	float Points = 200.0f;
+
+	UPROPERTY(EditDefaultsOnly, Replicated, BlueprintReadWrite, Category = "Points")
+	float SuccessfulDefencePoints = 100.f;
+
+	UPROPERTY(EditDefaultsOnly, Replicated, BlueprintReadWrite, Category = "Points")
+	float ConqueredPoints = 400.f;
 	
-	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Territory")
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Territory")
 	ETileStatus Status = ETileStatus::NotOwned;
 	
-	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Territory")
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Territory")
 	bool bIsArtillery;
 	
-	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Territory")
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Territory")
 	bool bIsFortified;
 	
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Territory")
 	int32 TileHP = 1;
 	
 	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_TileMeshChanged, BlueprintReadWrite, Category = "Visuals")
-	TObjectPtr<UMaterialInterface> CurrentMaterial;
+	TObjectPtr<UMaterialInterface> TileMeshMaterial;
 	
 	UPROPERTY(ReplicatedUsing = OnRep_FlagMeshChanged, BlueprintReadWrite, Category = "Visuals")
 	TObjectPtr<UMaterialInterface> MaterialAttacked;
@@ -146,6 +143,9 @@ protected:
 	
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Player")
 	int32 OwnerPlayerID;
+
+	UPROPERTY()
+	TMap<EColor, FTileMaterials> TileMaterials;
 
 	virtual void BeginPlay() override;
 

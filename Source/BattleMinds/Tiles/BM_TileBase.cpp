@@ -3,7 +3,6 @@
 
 #include "BM_TileBase.h"
 #include "BattleMinds/Player/BM_PlayerState.h"
-#include "Core/BM_GameModeBase.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -13,22 +12,27 @@ ABM_TileBase::ABM_TileBase()
 {
 	bReplicates = true;
 	PrimaryActorTick.bCanEverTick = true;
+	
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Tile Mesh"));
 	StaticMesh->SetupAttachment(GetRootComponent());
 	StaticMesh->SetIsReplicated(true);
 	SetRootComponent(StaticMesh);
+	
 	BannerMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Banner Mesh"));
 	BannerMesh->SetupAttachment(StaticMesh);
 	BannerMesh->SetIsReplicated(true);
+	
 	CastleMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Castle Mesh"));
 	CastleMesh->SetupAttachment(StaticMesh);
 	CastleMesh->SetIsReplicated(true);
+	
 	EdgesBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Edges box"));
 	EdgesBox->SetIsReplicated(true);
 	EdgesBox->SetupAttachment(StaticMesh);
 	EdgesBox->SetVisibility(false);
 	EdgesBox->SetHiddenInGame(false);
-	CurrentMaterial = MaterialOwned;
+	
+	TileMeshMaterial = MaterialOwned;
 
 }
 
@@ -55,25 +59,31 @@ bool ABM_TileBase::ChangeStatus_Validate(ETileStatus NewStatus)
 
 void ABM_TileBase::OnRep_TileMeshChanged()
 {
-	StaticMesh->SetMaterial(0, CurrentMaterial);
+	StaticMesh->SetMaterial(0, TileMeshMaterial);
 }
 
 void ABM_TileBase::OnRep_FlagMeshChanged()
 {
 	BannerMesh->SetMaterial(0, MaterialAttacked);
 }
+
 void ABM_TileBase::OnRep_CastleMeshChanged()
 {
 	CastleMesh->SetMaterial(0, MaterialCastle);
 }
 
-void ABM_TileBase::SC_SiegeTile_Implementation(UMaterialInterface* InMaterialTile)
+void ABM_TileBase::SetInGameTTileMaterials(TMap<EColor, FTileMaterials> InGameMaterials)
+{
+	check(HasAuthority());
+	TileMaterials = InGameMaterials;
+}
+
+void ABM_TileBase::SC_SiegeTile_Implementation(EColor InPlayerColor)
 {
 	bIsAttacked = true;
-	MaterialAttacked = InMaterialTile;
+	MaterialAttacked = TileMaterials.FindRef(InPlayerColor).BannerMaterial;
 	StaticMesh->SetMaterial(0 , MaterialOwned);
-	MC_RemoveHighlighting();
-	MC_ShowEdges(false, FColor::Black);
+	MC_ShowEdges(false);
 	BannerMesh->SetVisibility(true);
 	BannerMesh->SetMaterial(0, MaterialAttacked);
 }
@@ -85,7 +95,12 @@ void ABM_TileBase::SC_SetDisputedAppearance_Implementation()
 	BannerMesh->SetMaterial(0, DisputedTerritoryMaterial);
 }
 
-void ABM_TileBase::DecreaseCastleHP_Implementation()
+void ABM_TileBase::SC_RestoreCastleHP_Implementation()
+{
+	TileHP++;
+}
+
+void ABM_TileBase::SC_DecreaseCastleHP_Implementation()
 {
 	TileHP--;
 }
@@ -96,40 +111,31 @@ void ABM_TileBase::RemoveTileFromPlayerTerritory_Implementation()
 	// TODO? reset Material/OwnerID/OwnerNickname
 }
 
-void ABM_TileBase::AddTileToPlayerTerritory_Implementation(ETileStatus InStatus, int32 InPlayerID, const FString& InPlayerNickname, UMaterialInterface* InMaterialTile)
+void ABM_TileBase::AddTileToPlayerTerritory_Implementation(ETileStatus InStatus, int32 InPlayerID, const FString& InPlayerNickname, EColor InPlayerColor)
 {
 	bIsAttacked = false;
-	MaterialOwned = InMaterialTile;
-	CurrentMaterial = MaterialOwned;
-	StaticMesh->SetMaterial(0, CurrentMaterial);
+	MaterialOwned = TileMaterials.FindRef(InPlayerColor).TileMeshMaterial;
+	TileMeshMaterial = MaterialOwned;
+	StaticMesh->SetMaterial(0, TileMeshMaterial);
 	OwnerPlayerID = InPlayerID;
 	OwnerPlayerNickname = InPlayerNickname;
+	MaterialCastle = TileMaterials.FindRef(InPlayerColor).CastleMaterial;
 	ChangeStatus(InStatus);
 	MC_RemoveSelection();
-	MC_ShowEdges(false, FColor::Black);
+	MC_ShowEdges(false);
 }
 
-void ABM_TileBase::MC_ShowEdges_Implementation(bool bVisibility, FColor PlayerColor)
+void ABM_TileBase::MC_ShowEdges_Implementation(bool bVisibility, EColor InPlayerColor)
 {
-	EdgesBox->ShapeColor = PlayerColor;
+	if (!bVisibility)
+	{
+		EdgesBox->ShapeColor = FColor::Black;
+	}
+	else
+	{
+		EdgesBox->ShapeColor = TileMaterials.FindRef(InPlayerColor).TileEdgesColor;
+	}
 	EdgesBox->SetVisibility(bVisibility);
-}
-
-void ABM_TileBase::TurnOffHighlight_Implementation()
-{
-	CurrentMaterial = MaterialOwned;
-	OnRep_TileMeshChanged();
-}
-
-void ABM_TileBase::TurnOnHighlight_Implementation(UMaterialInterface* NeighborMaterial)
-{
-	CurrentMaterial = NeighborMaterial;
-	OnRep_TileMeshChanged();
-}
-
-void ABM_TileBase::MC_RemoveHighlighting_Implementation()
-{
-	StaticMesh->SetMaterial(0, MaterialOwned);
 }
 
 void ABM_TileBase::MC_RemoveSelection_Implementation()
@@ -141,28 +147,7 @@ void ABM_TileBase::CancelAttack_Implementation()
 {
 	bIsAttacked = false;
 	MC_RemoveSelection();
-	MC_ShowEdges(false, FColor::Black);
-}
-
-void ABM_TileBase::TileWasChosen_Implementation(ABM_PlayerState* PlayerState, EGameRound GameRound)
-{
-}
-
-void ABM_TileBase::TileWasClicked_Implementation(FKey ButtonPressed, EGameRound GameRound, ABM_PlayerState* PlayerState)
-{
-	/* add Tooltip widget opening when pressing with RMB or holding on the Tile*/
-	switch (GameRound)
-	{
-		case EGameRound::ChooseCastle:
-			TileWasChosen(PlayerState, GameRound);
-			break;
-		case EGameRound::SetTerritory:
-			TileWasChosen(PlayerState, GameRound);
-			break;
-		case EGameRound::FightForTerritory:
-			TileWasChosen(PlayerState, GameRound);
-			break;
-	}
+	MC_ShowEdges(false);
 }
 
 void ABM_TileBase::BeginPlay()
@@ -181,7 +166,7 @@ void ABM_TileBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME(ABM_TileBase, Points);
 	DOREPLIFETIME(ABM_TileBase, Status);
 	DOREPLIFETIME(ABM_TileBase, bIsArtillery);
-	DOREPLIFETIME(ABM_TileBase, CurrentMaterial);
+	DOREPLIFETIME(ABM_TileBase, TileMeshMaterial);
 	DOREPLIFETIME(ABM_TileBase, MaterialAttacked);
 	DOREPLIFETIME(ABM_TileBase, DisputedTerritoryMaterial);
 	DOREPLIFETIME(ABM_TileBase, MaterialOwned);
