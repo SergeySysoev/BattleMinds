@@ -42,8 +42,7 @@ void ABM_TileBase::ChangeStatus_Implementation(ETileStatus NewStatus)
 	switch (Status)
 	{
 		case ETileStatus::Castle:
-			CastleMesh->SetMaterial(0, MaterialCastle);
-			CastleMesh->SetVisibility(true);
+			SpawnCastleMesh();
 			break;
 		case ETileStatus::Controlled:
 			break;
@@ -72,10 +71,47 @@ void ABM_TileBase::OnRep_CastleMeshChanged()
 	CastleMesh->SetMaterial(0, MaterialCastle);
 }
 
+void ABM_TileBase::OnRep_AttackingColor()
+{
+	UE_LOG(LogBM_Tile, Display, TEXT("Current color: %s"), *AttackingColor.ToString());
+	if (AttackingColor == FColor::Transparent)
+	{
+		EdgesBox->ShapeColor = FColor::Transparent;
+		EdgesBox->SetVisibility(false);
+	}
+	else
+	{
+		EdgesBox->ShapeColor = AttackingColor;
+		EdgesBox->SetVisibility(true);
+	}
+	
+}
+
+void ABM_TileBase::SC_SetAttackingColorForTileEdges_Implementation(EColor AttackingPlayerColor)
+{
+	AttackingColor = TileMaterials.FindRef(AttackingPlayerColor).TileEdgesColor;
+	if (HasAuthority())
+	{
+		OnRep_AttackingColor();
+	}
+}
+
 void ABM_TileBase::SetInGameTTileMaterials(TMap<EColor, FTileMaterials> InGameMaterials)
 {
 	check(HasAuthority());
 	TileMaterials = InGameMaterials;
+}
+
+void ABM_TileBase::SpawnBannerMesh_Implementation()
+{
+	BannerMesh->SetMaterial(0, MaterialAttacked);
+	BannerMesh->SetVisibility(true);
+}
+
+void ABM_TileBase::SpawnCastleMesh_Implementation()
+{
+	CastleMesh->SetMaterial(0, MaterialCastle);
+	CastleMesh->SetVisibility(true);
 }
 
 void ABM_TileBase::SC_SiegeTile_Implementation(EColor InPlayerColor)
@@ -83,9 +119,8 @@ void ABM_TileBase::SC_SiegeTile_Implementation(EColor InPlayerColor)
 	bIsAttacked = true;
 	MaterialAttacked = TileMaterials.FindRef(InPlayerColor).BannerMaterial;
 	StaticMesh->SetMaterial(0 , MaterialOwned);
-	MC_ShowEdges(false);
-	BannerMesh->SetVisibility(true);
-	BannerMesh->SetMaterial(0, MaterialAttacked);
+	SC_SetAttackingColorForTileEdges(EColor::Undefined);
+	SpawnBannerMesh();
 }
 
 void ABM_TileBase::SC_SetDisputedAppearance_Implementation()
@@ -122,12 +157,13 @@ void ABM_TileBase::AddTileToPlayerTerritory_Implementation(ETileStatus InStatus,
 	MaterialCastle = TileMaterials.FindRef(InPlayerColor).CastleMaterial;
 	ChangeStatus(InStatus);
 	MC_RemoveSelection();
-	MC_ShowEdges(false);
+	SC_SetAttackingColorForTileEdges(EColor::Undefined);
+	OnBannerMeshSpawned.Clear();
 }
 
 void ABM_TileBase::MC_ShowEdges_Implementation(bool bVisibility, EColor InPlayerColor)
 {
-	if (!bVisibility)
+	if (!bVisibility) 
 	{
 		EdgesBox->ShapeColor = FColor::Blue;
 	}
@@ -147,7 +183,8 @@ void ABM_TileBase::CancelAttack_Implementation()
 {
 	bIsAttacked = false;
 	MC_RemoveSelection();
-	MC_ShowEdges(false);
+	OnBannerMeshSpawned.Clear();
+	SC_SetAttackingColorForTileEdges(EColor::Undefined);
 }
 
 void ABM_TileBase::BeginPlay()
@@ -177,4 +214,5 @@ void ABM_TileBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME(ABM_TileBase, bIsAttacked);
 	DOREPLIFETIME(ABM_TileBase, TileHP);
 	DOREPLIFETIME(ABM_TileBase, OwnerPlayerID);
+	DOREPLIFETIME(ABM_TileBase, AttackingColor);
 }

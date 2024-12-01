@@ -10,6 +10,9 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogBM_Tile, Display, All);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCastleMeshSpawned);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnBannerMeshSpawned);
+
 class UStaticMeshComponent;
 class ABM_PlayerControllerBase;
 class ABM_PlayerState;
@@ -35,6 +38,12 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category="Neighbours")
 	TArray<TObjectPtr<ABM_TileBase>> NeighbourTiles;
+
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
+	FOnCastleMeshSpawned OnCastleMeshSpawned;
+
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
+	FOnBannerMeshSpawned OnBannerMeshSpawned;
 	
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void ChangeStatus(ETileStatus NewStatus);
@@ -45,6 +54,8 @@ public:
 	void OnRep_FlagMeshChanged();
 	UFUNCTION()
 	void OnRep_CastleMeshChanged();
+	UFUNCTION()
+	void OnRep_AttackingColor();
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_SiegeTile(EColor InPlayerColor);
@@ -76,6 +87,9 @@ public:
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable, Category="Visuals")
 	void MC_ShowEdges(bool bVisibility, EColor InPlayerColor = EColor::Black);
 
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category="Visuals")
+	void SC_SetAttackingColorForTileEdges(EColor AttackingPlayerColor);
+
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void CancelAttack();
 
@@ -87,6 +101,12 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetInGameTTileMaterials(TMap<EColor, FTileMaterials> InGameMaterials);
+
+	UFUNCTION(BlueprintNativeEvent)
+	void SpawnCastleMesh();
+
+	UFUNCTION(BlueprintNativeEvent)
+	void SpawnBannerMesh();
 	
 protected:
 	
@@ -99,7 +119,7 @@ protected:
     UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_CastleMeshChanged, BlueprintReadWrite, Category = "Components")
     UStaticMeshComponent* CastleMesh = nullptr;
 	
-	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_CastleMeshChanged, BlueprintReadWrite, Category = "Components")
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Components")
 	UBoxComponent* EdgesBox = nullptr;
 	
 	UPROPERTY(EditDefaultsOnly, Replicated, BlueprintReadWrite, Category = "Points")
@@ -137,6 +157,9 @@ protected:
 	
 	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_CastleMeshChanged, BlueprintReadWrite, Category = "Visuals")
 	TObjectPtr<UMaterialInterface> MaterialCastle;
+
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_AttackingColor, BlueprintReadWrite, Category = "Visuals")
+	FColor AttackingColor = FColor::Black;
 	
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Player")
 	FString OwnerPlayerNickname;

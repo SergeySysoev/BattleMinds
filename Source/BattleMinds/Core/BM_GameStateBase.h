@@ -45,6 +45,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void RequestToOpenQuestion(EQuestionType QuestionType);
+
+	UFUNCTION(BlueprintCallable)
+	void OpenChooseQuestion();
 	
 	UFUNCTION(BlueprintCallable)
 	void PassTurnToTheNextPlayer();
@@ -122,6 +125,15 @@ protected:
 
 	virtual void BeginPlay() override;
 
+	UFUNCTION()
+	void DisableTileEdgesHighlight();
+
+	UFUNCTION()
+	void UnbindAllOnBannerSpawnedTiles();
+
+	UFUNCTION()
+	void StopPlayerTurnTimer();
+	
 	// Move Players Cameras to Question Location
 	UFUNCTION()
 	void SetViewTargetForQuestion(EQuestionType QuestionType, TArray<FName> RowNames, int32 QuestionIndex) const;
@@ -179,9 +191,9 @@ protected:
 	
 	UFUNCTION(BlueprintCallable)
 	void ChooseFirstAvailableTileForPlayer(int32 PlayerID);
-	
-	UFUNCTION(BlueprintCallable)
-	void UpdatePlayerTurnTimers();
+
+	UFUNCTION()
+	void ForceChooseAvailableTile();
 	
 	UFUNCTION(BlueprintCallable)
 	void CountResults();

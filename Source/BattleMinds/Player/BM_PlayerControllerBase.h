@@ -84,6 +84,9 @@ public:
 	
 	UFUNCTION(BlueprintImplementableEvent)
 	void ResetTurnTimer(EGameRound GameRound);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void StartCountdownTimer();
 	
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void SC_TryClickTheTile(ABM_TileBase* TargetTile);
