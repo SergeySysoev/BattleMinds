@@ -129,7 +129,7 @@ void ABM_TileBase::MC_ShowEdges_Implementation(bool bVisibility, EColor InPlayer
 {
 	if (!bVisibility)
 	{
-		EdgesBox->ShapeColor = FColor::Black;
+		EdgesBox->ShapeColor = FColor::Blue;
 	}
 	else
 	{

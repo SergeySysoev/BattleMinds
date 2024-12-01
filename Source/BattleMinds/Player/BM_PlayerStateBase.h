@@ -18,14 +18,35 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void SetPlayerColor(EColor NewColor);
 
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE EColor GetPlayerColor() const { return PlayerColor; }
+
 	UFUNCTION(BlueprintCallable)
-	FORCEINLINE EColor GetPlayerColor() const { return PlayerColor;}
+	void SetPlayerAvatar(UTexture2D* NewAvatar);
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE UTexture2D* GetPlayerAvatar() const { return PlayerAvatar; }
+
+	UFUNCTION(BlueprintCallable)
+	void SetPlayerNickname(FString NewNickname);
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE FString GetPlayerNickname() const { return PlayerNickname; }
+
 protected:
 
 	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Player Info")
 	EColor PlayerColor = EColor::Undefined;
 
+	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Player Info")
+	TObjectPtr<UTexture2D> PlayerAvatar;
+
+	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Player Info")
+	FString PlayerNickname = "NewUser";
+
 	virtual void CopyProperties(APlayerState* PlayerState) override;
+
+	virtual void OverrideWith(APlayerState* PlayerState) override;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };
