@@ -49,7 +49,14 @@ void ABM_PlayerState::SC_RemoveTileFromTerritory_Implementation(ABM_TileBase* In
 	if (IsValid(InTile))
 	{
 		InTile->RemoveTileFromPlayerTerritory();
-		SC_AddPoints(-1 * Points);
+		if (InTile->GetStatus() == ETileStatus::Castle)
+		{
+			OnCastleConquered.Broadcast();
+		}
+		else
+		{
+			SC_AddPoints(-1 * Points);
+		}
 		OwnedTiles.RemoveSwap(InTile, true);
 	}
 }

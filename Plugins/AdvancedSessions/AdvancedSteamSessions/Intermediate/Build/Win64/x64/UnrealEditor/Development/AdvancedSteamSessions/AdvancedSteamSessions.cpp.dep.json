@@ -1,0 +1,14 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "e:\\ue_projects\\battleminds\\plugins\\advancedsessions\\advancedsteamsessions\\source\\advancedsteamsessions\\private\\advancedsteamsessions.cpp",
+        "ProvidedModule": "",
+        "PCH": "e:\\ue_projects\\battleminds\\intermediate\\build\\win64\\x64\\battlemindseditor\\development\\unrealed\\sharedpch.unrealed.project.novalfmtstr.valapi.cpp17.inclorderoldest.h.pch",
+        "Includes": [
+            "e:\\ue_projects\\battleminds\\plugins\\advancedsessions\\advancedsteamsessions\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\advancedsteamsessions\\definitions.advancedsteamsessions.h",
+            "e:\\ue_projects\\battleminds\\plugins\\advancedsessions\\advancedsteamsessions\\source\\advancedsteamsessions\\classes\\advancedsteamsessions.h"
+        ],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}

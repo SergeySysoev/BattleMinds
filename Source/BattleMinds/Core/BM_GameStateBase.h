@@ -6,6 +6,7 @@
 #include "GameFramework/GameStateBase.h"
 #include "BM_Types.h"
 #include "Camera/CameraActor.h"
+#include "Player/BM_PlayerControllerBase.h"
 #include "BM_GameStateBase.generated.h"
 
 class ABM_PlayerControllerBase;
@@ -47,6 +48,9 @@ public:
 	void RequestToOpenQuestion(EQuestionType QuestionType);
 
 	UFUNCTION(BlueprintCallable)
+	void StartSiege();
+
+	UFUNCTION(BlueprintCallable)
 	void OpenChooseQuestion();
 	
 	UFUNCTION(BlueprintCallable)
@@ -63,6 +67,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void OpenQuestion(EQuestionType QuestionType);
+
+	UFUNCTION()
+	void TransferDefendingPlayerTerritoryToAttacker();
 
 protected:
 	
@@ -122,6 +129,12 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly)
 	int32 TotalFightForTerritoryTurns = 0;
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 CurrentSiegeTileQuestionCount = 0;
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 TotalSiegeTileQuestionCount = 0;
 
 	virtual void BeginPlay() override;
 
@@ -207,6 +220,10 @@ protected:
 
 	UFUNCTION()
 	void StopAllTimers();
+
+	UFUNCTION()
+	void HandleSiegedTile(ABM_PlayerControllerBase* AttackingPlayerController, ABM_PlayerControllerBase* DefendingPlayerController,
+		bool QuestionWasAnsweredByAttacker);
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

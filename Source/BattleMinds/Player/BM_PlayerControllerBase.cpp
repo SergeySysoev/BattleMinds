@@ -40,6 +40,14 @@ void ABM_PlayerControllerBase::SC_AssignCurrentTile_Implementation(ABM_TileBase*
 	CurrentClickedTile = TargetTile;
 }
 
+void ABM_PlayerControllerBase::SC_ApplyDamageToClickedTile_Implementation(int32 DamageAmount) const
+{
+	if (IsValid(CurrentClickedTile))
+	{
+		CurrentClickedTile->SC_ApplyDamage(DamageAmount);
+	}
+}
+
 int32 ABM_PlayerControllerBase::GetPointsOfCurrentClickedTile() const
 {
 	if (!IsValid(CurrentClickedTile))
@@ -47,6 +55,20 @@ int32 ABM_PlayerControllerBase::GetPointsOfCurrentClickedTile() const
 		return 0;	
 	}
 	return CurrentClickedTile->GetPoints();
+}
+
+void ABM_PlayerControllerBase::BeginPlay()
+{
+	Super::BeginPlay();
+	Cast<ABM_PlayerState>(PlayerState)->OnCastleConquered.AddUniqueDynamic(this, &ThisClass::SC_BeginTransferTerritory);
+}
+
+void ABM_PlayerControllerBase::SC_BeginTransferTerritory_Implementation()
+{
+	if(ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState()))
+	{
+		LGameState->TransferDefendingPlayerTerritoryToAttacker();
+	}
 }
 
 void ABM_PlayerControllerBase::SC_AddCurrentTileToTerritory_Implementation(ETileStatus InTileStatus) const
@@ -142,13 +164,13 @@ void ABM_PlayerControllerBase::CC_ShowCorrectAnswers_Implementation(const TArray
 	}
 }
 
-void ABM_PlayerControllerBase::CC_RemoveQuestionWidget_Implementation()
+void ABM_PlayerControllerBase::CC_RemoveQuestionWidget_Implementation(bool bSwitchViewTargetBackToTiles)
 {
 	if (QuestionWidget)
 	{
 		QuestionWidget->RemoveFromParent();
 	}
-	if (PlayerHUD)
+	if (PlayerHUD && bSwitchViewTargetBackToTiles)
 	{
 		PlayerHUD->SetVisibility(ESlateVisibility::Visible);
 		SetViewTargetWithBlend(GetPawn(), 0.5);

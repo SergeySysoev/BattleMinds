@@ -66,7 +66,7 @@ void ABM_GameModeBase::PostLogin(APlayerController* NewPlayer)
 void ABM_GameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
-	TArray<TObjectPtr<AActor>> FoundCameras;
+	TArray<AActor*> FoundCameras;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACameraActor::StaticClass() ,FoundCameras);
 	for (auto Camera:FoundCameras)
 	{

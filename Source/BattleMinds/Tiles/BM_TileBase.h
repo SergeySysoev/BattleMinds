@@ -12,18 +12,11 @@ DECLARE_LOG_CATEGORY_EXTERN(LogBM_Tile, Display, All);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCastleMeshSpawned);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnBannerMeshSpawned);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCastleDestroyed);
 
 class UStaticMeshComponent;
 class ABM_PlayerControllerBase;
 class ABM_PlayerState;
-
-UENUM(BlueprintType)
-enum class ETileStatus : uint8
-{
-	NotOwned UMETA(DisplayName = "Not Owned"),
-	Controlled UMETA(DisplayName = "Controlled"),
-	Castle UMETA(DisplayName = "Castle")
-};
 
 UCLASS()
 class BATTLEMINDS_API ABM_TileBase : public AActor
@@ -44,6 +37,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnBannerMeshSpawned OnBannerMeshSpawned;
+
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
+	FOnCastleDestroyed OnCastleDestroyed;
 	
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void ChangeStatus(ETileStatus NewStatus);
@@ -81,6 +77,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	float GetPoints() {return Points;};
 
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE int32 GetTileQuestionCount() const { return CurrentQuestionArray.Num(); };
+
+	UFUNCTION(BlueprintPure)
+	EQuestionType GetTileNextQuestionType() const;
+
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable, Category="Visuals")
 	void MC_RemoveSelection();
 	
@@ -107,6 +109,9 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent)
 	void SpawnBannerMesh();
+
+	UFUNCTION(BlueprintCallable)
+	void SC_ApplyDamage(int32 InDamageAmount);
 	
 protected:
 	
@@ -142,6 +147,12 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Territory")
 	int32 TileHP = 1;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Territory")
+	TArray<EQuestionType> CurrentQuestionArray;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Territory")
+	TArray<EQuestionType> DefaultQuestionArray;
 	
 	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_TileMeshChanged, BlueprintReadWrite, Category = "Visuals")
 	TObjectPtr<UMaterialInterface> TileMeshMaterial;

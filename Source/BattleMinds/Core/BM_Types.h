@@ -34,8 +34,29 @@ enum class EAnswerType : uint8
 UENUM(BlueprintType)
 enum class EQuestionType : uint8
 {
+	Undefined, 
 	Choose UMETA(DisplayName = "Choose Answer"),
 	Shot UMETA(DisplayName = "Shot")
+};
+
+UENUM(BlueprintType)
+enum class ETileStatus : uint8
+{
+	NotOwned UMETA(DisplayName = "Not Owned"),
+	Controlled UMETA(DisplayName = "Controlled"),
+	Castle UMETA(DisplayName = "Castle")
+};
+
+USTRUCT(BlueprintType)
+struct FTileQuestionCount
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	EQuestionType QuestionType;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	int32 Count;
 };
 
 UENUM(BlueprintType)

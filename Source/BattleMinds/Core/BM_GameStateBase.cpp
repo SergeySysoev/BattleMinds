@@ -276,7 +276,9 @@ void ABM_GameStateBase::HandleClickedTile(ABM_TileBase* InClickedTile)
 			SetDefendingPlayer(InClickedTile->GetOwningPlayerID(), InClickedTile);
 			DisableTileEdgesHighlight();
 			StopPlayerTurnTimer();
-			InClickedTile->OnBannerMeshSpawned.AddUniqueDynamic(this, &ThisClass::OpenChooseQuestion);
+			//InClickedTile->OnBannerMeshSpawned.AddUniqueDynamic(this, &ThisClass::OpenChooseQuestion);
+			CurrentSiegeTileQuestionCount = TotalSiegeTileQuestionCount = InClickedTile->GetTileQuestionCount();
+			InClickedTile->OnBannerMeshSpawned.AddUniqueDynamic(this, &ThisClass::StartSiege);
 			break;
 		default: break;
 	}
@@ -411,6 +413,25 @@ void ABM_GameStateBase::ForceChooseAvailableTile()
 	ChooseFirstAvailableTileForPlayer(CurrentPlayerID);
 }
 
+void ABM_GameStateBase::StartSiege()
+{
+	if (!IsValid(BMGameMode))
+	{
+		return;
+	}
+	ABM_PlayerControllerBase* LCurrentPlayerController = Cast<ABM_PlayerControllerBase>(PlayerArray[CurrentPlayerID]->GetOwningController());
+	if (!IsValid(LCurrentPlayerController))
+	{
+		return;
+	}
+	ABM_TileBase* LCurrentClickedTile = LCurrentPlayerController->GetCurrentClickedTile();
+	if (!IsValid(LCurrentClickedTile))
+	{
+		return;
+	}
+	RequestToOpenQuestion(LCurrentClickedTile->GetTileNextQuestionType());
+}
+
 void ABM_GameStateBase::RequestToOpenQuestion(EQuestionType QuestionType)
 {
 	GetWorld()->GetTimerManager().ClearTimer(PlayerTurnHandle);
@@ -441,6 +462,28 @@ void ABM_GameStateBase::OpenQuestion(EQuestionType QuestionType)
 		OnAnswerSent.AddDynamic(this, &ABM_GameStateBase::ResetQuestionTimer);
 	}
 	StartQuestionTimer();
+}
+
+void ABM_GameStateBase::TransferDefendingPlayerTerritoryToAttacker()
+{
+	StopAllTimers();
+	if (HasAuthority())
+	{
+		ABM_PlayerControllerBase* AttackingPlayer = Cast<ABM_PlayerControllerBase>(PlayerArray[CurrentPlayerID]->GetPlayerController());
+		ABM_PlayerState* AttackingPlayerState = Cast<ABM_PlayerState>(AttackingPlayer->PlayerState);
+		ABM_PlayerControllerBase* DefendingPlayer = Cast<ABM_PlayerControllerBase>(PlayerArray[DefendingPlayerID]->GetPlayerController());
+		ABM_PlayerState* DefendingPlayerState = Cast<ABM_PlayerState>(DefendingPlayer->PlayerState);
+		for (const auto LTile: DefendingPlayerState->OwnedTiles)
+		{
+			AttackingPlayerState->SC_AddTileToTerritory(LTile, ETileStatus::Controlled);
+		}
+		if (BMGameMode->GetNumberOfActivePlayers() == 2)
+		{
+			Round = GetNextGameRound();
+			FTimerHandle LCountResultsHandle;
+			GetWorld()->GetTimerManager().SetTimer(LCountResultsHandle,this, &ABM_GameStateBase::CountResults, 3.0f, false);
+		}
+	}
 }
 
 int32 ABM_GameStateBase::FindNextQuestion(EQuestionType Question, TArray<FName> Array, FString& ContextString)
@@ -595,6 +638,7 @@ void ABM_GameStateBase::GenerateAutoPlayerChoice(ABM_PlayerState* const PlayerSt
 
 void ABM_GameStateBase::GatherPlayersAnswers()
 {
+	//TODO: triggered when the actual WBP_Timer is 2 seconds delayed 
 	PlayersCurrentChoices.Empty();
 	//Remove Question Widget and add Player's answer to the CurrentAnswers array
 	if (Round != EGameRound::FightForTerritory)
@@ -608,7 +652,7 @@ void ABM_GameStateBase::GatherPlayersAnswers()
 				continue;
 			}
 			
-			if(LPlayerState->CurrentQuestionAnswerSent == false)
+			if(LPlayerState->CurrentQuestionAnswerSent == false)	// TODO: not set properly : Testcase - FightForTheRestTiles round with Shot question
 			{
 				GenerateAutoPlayerChoice(LPlayerState);
 			}
@@ -657,12 +701,20 @@ void ABM_GameStateBase::ShowPlayerChoicesAndCorrectAnswer()
 
 void ABM_GameStateBase::VerifyAnswers()
 {
+	CurrentSiegeTileQuestionCount--;
 	bShotQuestionIsNeeded = false;
 	for (const auto PlayerState : PlayerArray)
 	{
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 		{
-			PlayerController->CC_RemoveQuestionWidget();
+			if (CurrentSiegeTileQuestionCount <= 0)
+			{
+				PlayerController->CC_RemoveQuestionWidget(true);
+			}
+			else
+			{
+				PlayerController->CC_RemoveQuestionWidget(false);
+			}
 		}
 	}
 	//Verify Players answers:
@@ -735,7 +787,7 @@ void ABM_GameStateBase::VerifyChooseAnswers()
 				ConstructQuestionResult(AttackingPlayerState, UsedQuestions.Num(), LastQuestion, PlayersCurrentChoices, 0, false);
 				AttackingPlayer->SC_CancelAttackForCurrentTile();
 			}
-			else
+			else // Someone got the right answer
 			{
 				for (const auto AnsweredQuestion : PlayersCurrentChoices)
 				{
@@ -745,10 +797,17 @@ void ABM_GameStateBase::VerifyChooseAnswers()
 						if(AnsweredQuestion.GetPtr<FPlayerChoiceChoose>()->PlayerID == CurrentPlayerID)
 						{
 							// attacking player was right
-							ConstructQuestionResult(DefendingPlayerState, UsedQuestions.Num(), LastQuestion, PlayersCurrentChoices, -1*DefendingPlayer->GetPointsOfCurrentClickedTile(), false);
+							if (CurrentSiegeTileQuestionCount == 0)
+							{
+								DefendingPlayer->SC_RemoveCurrentTileFromTerritory();
+								AttackingPlayer->SC_AddCurrentTileToTerritory(ETileStatus::Controlled);
+							}
+							else
+							{
+								AttackingPlayer->SC_ApplyDamageToClickedTile(1);
+							}
+							ConstructQuestionResult(DefendingPlayerState, UsedQuestions.Num(), LastQuestion, PlayersCurrentChoices, -1 * DefendingPlayer->GetPointsOfCurrentClickedTile(), false);
 							ConstructQuestionResult(AttackingPlayerState, UsedQuestions.Num(), LastQuestion, PlayersCurrentChoices, DefendingPlayer->GetPointsOfCurrentClickedTile(), true);
-							DefendingPlayer->SC_RemoveCurrentTileFromTerritory();
-							AttackingPlayer->SC_AddCurrentTileToTerritory(ETileStatus::Controlled);
 						}
 						else 
 						{
@@ -831,9 +890,49 @@ void ABM_GameStateBase::VerifyShotAnswers()
 		}
 		if(WinnerPlayerController && WinnerPlayerController->HasValidCurrentClickedTile())
 		{
-			WinnerPlayerController->SC_AddCurrentTileToTerritory(ETileStatus::Controlled);
+			if (CurrentSiegeTileQuestionCount == 0)
+			{
+				WinnerPlayerController->SC_AddCurrentTileToTerritory(ETileStatus::Controlled);
+			}
+			else
+			{
+				WinnerPlayerController->SC_ApplyDamageToClickedTile(1);
+			}
 			ConstructQuestionResult(WinnerPlayerController->GetPlayerState<ABM_PlayerState>(), UsedQuestions.Num(), LastQuestion, PlayersCurrentChoices, WinnerPlayerController->GetPointsOfCurrentClickedTile(), true);
 		}
+	}
+}
+
+void ABM_GameStateBase::HandleSiegedTile(ABM_PlayerControllerBase* AttackingPlayerController, ABM_PlayerControllerBase* DefendingPlayerController, bool QuestionWasAnsweredByAttacker)
+{
+	ABM_PlayerState* AttackingPlayerState = Cast<ABM_PlayerState>(AttackingPlayerController);
+	ABM_PlayerState* DefendingPlayerState = Cast<ABM_PlayerState>(DefendingPlayerController);
+	switch (LastQuestion.GetPtr<FQuestion>()->Type)
+	{
+		case EQuestionType::Choose:
+			if (QuestionWasAnsweredByAttacker)
+			{
+				ConstructQuestionResult(DefendingPlayerState, UsedQuestions.Num(), LastQuestion, PlayersCurrentChoices, -1 * AttackingPlayerController->GetPointsOfCurrentClickedTile(), false);
+				ConstructQuestionResult(AttackingPlayerState, UsedQuestions.Num(), LastQuestion, PlayersCurrentChoices, AttackingPlayerController->GetPointsOfCurrentClickedTile(), true);
+				if (CurrentSiegeTileQuestionCount == 0)
+				{
+					DefendingPlayerController->SC_RemoveCurrentTileFromTerritory();
+					AttackingPlayerController->SC_AddCurrentTileToTerritory(ETileStatus::Controlled);
+				}
+			}
+			else
+			{
+				// defending player was right
+				ConstructQuestionResult(DefendingPlayerState, UsedQuestions.Num(), LastQuestion, PlayersCurrentChoices, 100, true);
+				ConstructQuestionResult(AttackingPlayerState, UsedQuestions.Num(), LastQuestion, PlayersCurrentChoices, 0, false);
+				AttackingPlayerController->SC_CancelAttackForCurrentTile();
+				DefendingPlayerState->SC_AddPoints(100);
+			}
+			
+			break;
+		case EQuestionType::Shot:
+			break;
+		default: break;
 	}
 }
 
@@ -859,6 +958,7 @@ void ABM_GameStateBase::WrapUpCurrentRound()
 		case EGameRound::FightForTheRestTiles:
 			//Start Shot question for the rest tiles
 			//Find first not owned tile
+			UpdatePlayersTurnTimerAndNickname(0);
 			for (auto Tile: Tiles)
 			{
 				auto LFoundTile = Cast<ABM_TileBase>(Tile);
@@ -951,29 +1051,38 @@ void ABM_GameStateBase::PrepareNextTurn()
 		case EGameRound::FightForTerritory:
 		{
 			/*
-			 * check how many players are in game
-			 * if >=2,
-			 *	check how many turns left and decrease that counter for Attacking Player, continue FightForTerritory round
-			 * else
-			 * switch to the CountResults round
+			 * check how many questions left to answer to conquer the tile
+			 * if 0, then
+			 *		check how many players are in game
+			 *		if >=2,
+			 *		check how many turns left and decrease that counter for Attacking Player, continue FightForTerritory round
+			 *		else
+			 *		switch to the CountResults round
+			 *	else Continue the siege
 			 */
 			if (bShotQuestionIsNeeded)
 			{
 				OpenQuestion(EQuestionType::Shot);
 				break;
 			}
-			
 			TotalFightForTerritoryTurns--;
-			if (BMGameMode->GetNumberOfActivePlayers() < 2 || TotalFightForTerritoryTurns <= 0)
+			if (CurrentSiegeTileQuestionCount == 0)
 			{
-				Round = GetNextGameRound();
-				FTimerHandle LCountResultsHandle;
-				GetWorld()->GetTimerManager().SetTimer(LCountResultsHandle,this, &ABM_GameStateBase::CountResults, 3.0f, false);
+				if (BMGameMode->GetNumberOfActivePlayers() < 2 || TotalFightForTerritoryTurns <= 0)
+				{
+					Round = GetNextGameRound();
+					FTimerHandle LCountResultsHandle;
+					GetWorld()->GetTimerManager().SetTimer(LCountResultsHandle,this, &ABM_GameStateBase::CountResults, 3.0f, false);
+				}
+				else
+				{
+					CurrentPlayerID++;
+					PassTurnToTheNextPlayer();
+				}
 			}
 			else
 			{
-				CurrentPlayerID++;
-				PassTurnToTheNextPlayer();
+				StartSiege();
 			}
 			break;
 		}

@@ -13,6 +13,8 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogBM_PlayerState, Display, All);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPointsChanged, int32, PlayerID, float, NewScore);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCastleConquered);
+
 class ABM_PlayerControllerBase;
 
 UCLASS()
@@ -29,7 +31,7 @@ public:
 	FString Nickname;
 	
 	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Questions")
-	bool CurrentQuestionAnswerSent;
+	bool CurrentQuestionAnswerSent = false;
 
 	/* Number of turns this player will make in the game, calculated based on number of players in lobby*/
 	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Questions")
@@ -54,6 +56,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
 	TArray<FQuestionResult> QuestionResults;
 
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
+	FOnCastleConquered OnCastleConquered;
+	
 	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnPointsChanged OnPointsChanged;
 	

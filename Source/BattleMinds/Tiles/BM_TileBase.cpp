@@ -34,6 +34,7 @@ ABM_TileBase::ABM_TileBase()
 	
 	TileMeshMaterial = MaterialOwned;
 
+	CurrentQuestionArray.Add(EQuestionType::Choose);
 }
 
 void ABM_TileBase::ChangeStatus_Implementation(ETileStatus NewStatus)
@@ -43,8 +44,12 @@ void ABM_TileBase::ChangeStatus_Implementation(ETileStatus NewStatus)
 	{
 		case ETileStatus::Castle:
 			SpawnCastleMesh();
+			CurrentQuestionArray.Add(EQuestionType::Choose);
+			CurrentQuestionArray.Add(EQuestionType::Choose);
+			TileHP = 3;
 			break;
 		case ETileStatus::Controlled:
+			TileHP = 1;
 			break;
 		default: break;
 	}
@@ -94,6 +99,15 @@ void ABM_TileBase::SC_SetAttackingColorForTileEdges_Implementation(EColor Attack
 	{
 		OnRep_AttackingColor();
 	}
+}
+
+EQuestionType ABM_TileBase::GetTileNextQuestionType() const
+{
+	if (CurrentQuestionArray.IsValidIndex(FMath::Abs(CurrentQuestionArray.Num() - TileHP)))
+	{
+		return CurrentQuestionArray[TileHP-1];
+	}
+	return EQuestionType::Undefined;
 }
 
 void ABM_TileBase::SetInGameTTileMaterials(TMap<EColor, FTileMaterials> InGameMaterials)
@@ -192,10 +206,18 @@ void ABM_TileBase::BeginPlay()
 	Super::BeginPlay();
 }
 
+void ABM_TileBase::SC_ApplyDamage(int32 InDamageAmount)
+{
+	TileHP -= InDamageAmount;
+	if (TileHP <= 0)
+	{
+		OnCastleDestroyed.Broadcast();
+	}
+}
+
 void ABM_TileBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 void ABM_TileBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

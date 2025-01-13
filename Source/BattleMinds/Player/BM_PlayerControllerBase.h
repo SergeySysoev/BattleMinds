@@ -71,7 +71,7 @@ public:
 	void CC_MarkAnsweredPlayers(int32 LastSentPlayer);
 	
 	UFUNCTION(Client, Reliable, BlueprintCallable)
-	void CC_RemoveQuestionWidget();
+	void CC_RemoveQuestionWidget(bool bSwitchViewTargetBackToTiles = true);
 	
 	UFUNCTION(Client, Reliable, BlueprintCallable)
 	void CC_ShowResultsWidget(const TArray<APlayerState*>& PlayerArray);
@@ -109,11 +109,18 @@ public:
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_RemoveCurrentTileFromTerritory() const;
 
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void SC_ApplyDamageToClickedTile(int32 DamageAmount = 1) const;
+
 	UFUNCTION(BlueprintPure)
 	int32 GetPointsOfCurrentClickedTile() const ;
 
 protected:
-
+	virtual void BeginPlay() override;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "Tiles")
 	ABM_TileBase* CurrentClickedTile = nullptr;
+
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void SC_BeginTransferTerritory();
 };
