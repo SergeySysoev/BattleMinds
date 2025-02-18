@@ -226,8 +226,10 @@ struct FCategory
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Category settings")
 	EQuestionCategories Name;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Category settings")
 	FText DisplayableName;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Category settings")
 	TObjectPtr<UTexture2D> Thumbnail;
 };

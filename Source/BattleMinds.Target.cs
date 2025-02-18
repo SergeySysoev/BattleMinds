@@ -7,6 +7,7 @@ public class BattleMindsTarget : TargetRules
 {
 	public BattleMindsTarget( TargetInfo Target) : base(Target)
 	{
+		bOverrideBuildEnvironment = true;
 		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
 		ExtraModuleNames.AddRange( new string[] { "BattleMinds" } );
