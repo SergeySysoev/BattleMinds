@@ -96,7 +96,7 @@ void UBMDataUtilsLibrary::CreateQuestionsDataTable(FName QuestionsStringTableID,
 			for (int32 i = 0,j = 0; i < LAnswersKeys.Num(), j < LQuestionsKeys.Num(); i+=4, j++)
 			{
 				FQuestionChooseText LNewQuestionChooseText;
-				LNewQuestionChooseText.Category.Name = QuestionsCategory;
+				LNewQuestionChooseText.Category = QuestionsCategory;
 				LNewQuestionChooseText.Type = QuestionType;
 				FString LQuestionKey = LQuestionsKeys[j].RightChop(2).LeftChop(2);
 				LNewQuestionChooseText.Question = FText::FromStringTable(QuestionsStringTableID, LQuestionsKeys[j], EStringTableLoadingPolicy::FindOrFullyLoad);

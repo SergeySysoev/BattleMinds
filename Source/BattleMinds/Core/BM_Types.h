@@ -243,7 +243,7 @@ public:
 	FText Question;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="General Question")
-	FCategory Category;
+	EQuestionCategories Category;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="General Question")
 	EQuestionType Type;
@@ -256,7 +256,7 @@ public:
 	int32 QuestionID = MAX_int32;
 
 	FORCEINLINE FText GetQuestionText() const { return Question;}
-	FORCEINLINE FCategory GetCategory() const { return Category;}
+	FORCEINLINE EQuestionCategories GetCategory() const { return Category;}
 	FORCEINLINE EQuestionType GetType() const { return Type;}
 	FORCEINLINE int32 GetPointsModifier() const { return PointsModifier;}
 };
