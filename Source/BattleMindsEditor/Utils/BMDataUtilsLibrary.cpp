@@ -12,79 +12,125 @@ DEFINE_LOG_CATEGORY(LogBMEditorDataUtils);
 
 void UBMDataUtilsLibrary::CreateQuestionsDataTable(FName QuestionsStringTableID, FName AnswersStringTableID, EQuestionType QuestionType, EQuestionCategories QuestionsCategory, FString InTableName)
 {
-	
+
 	TArray<FString> LQuestionsKeys;
 	TArray<FString> LQuestionsTexts;
-	
-	FStringTableConstPtr LQuestionsStringTablePtr = FStringTableRegistry::Get().FindStringTable(QuestionsStringTableID);
-	if (!LQuestionsStringTablePtr.IsValid())
-	{
-		UE_LOG(LogBMEditorDataUtils, Error, TEXT("Failed to find string table with the id: %s"), *QuestionsStringTableID.ToString());
-		return;
-	}
-	
-	LQuestionsStringTablePtr->EnumerateSourceStrings([&](const FString& InKey, const FString& InSourceString) -> bool
-	{
-		LQuestionsKeys.Add(InKey);
-		LQuestionsTexts.Add(InSourceString);
-		return true; // continue enumeration
-	});
-	
-	if (LQuestionsKeys.Num() == 0)
-	{
-		UE_LOG(LogBMEditorDataUtils, Error, TEXT("Question Keys are not populated"));
-		return;
-	}
-	if (LQuestionsTexts.Num() == 0)
-	{
-		UE_LOG(LogBMEditorDataUtils, Error, TEXT("Question Texts are not populated"));
-		return;
-	}
-	
-	
 	TArray<FString> LAnswersKeys;
 	TArray<FString> LAnswersTexts;
 	TArray<FName> LMetaDataIdsFromAnswersStringTable;
 	TArray<FString> LMetaDataFromAnswersStringTable;
 	TMap<FString, FString> LQuestionAnswersKeysMap;
-	FStringTableConstPtr LAnswersStringTablePtr = FStringTableRegistry::Get().FindStringTable(AnswersStringTableID);
-	if (!LAnswersStringTablePtr.IsValid())
+	switch (QuestionType)
 	{
-		UE_LOG(LogBMEditorDataUtils, Error, TEXT("Failed to find string table with the id: %s"), *AnswersStringTableID.ToString());
-		return;
-	}
-	
-	LAnswersStringTablePtr->EnumerateSourceStrings([&](const FString& InKey, const FString& InSourceString) -> bool
-	{
-		LAnswersKeys.Add(InKey);
-		LAnswersTexts.Add(InSourceString);
-		return true; // continue enumeration
-	});
-	for (const FString& AnswerKey : LAnswersKeys)
-	{
-		LAnswersStringTablePtr->EnumerateMetaData(AnswerKey, [&](FName InMetaDataId, const FString& InMetaData) -> bool
+		case EQuestionType::Choose:
 		{
-			LMetaDataIdsFromAnswersStringTable.Add(InMetaDataId);
-			LMetaDataFromAnswersStringTable.Add(InMetaData);
-			return true; // continue enumeration
-		});
+			FStringTableConstPtr LQuestionsStringTablePtr = FStringTableRegistry::Get().FindStringTable(QuestionsStringTableID);
+			if (!LQuestionsStringTablePtr.IsValid())
+			{
+				UE_LOG(LogBMEditorDataUtils, Error, TEXT("Failed to find string table with the id: %s"), *QuestionsStringTableID.ToString());
+				return;
+			}
+			
+			LQuestionsStringTablePtr->EnumerateSourceStrings([&](const FString& InKey, const FString& InSourceString) -> bool
+			{
+				LQuestionsKeys.Add(InKey);
+				LQuestionsTexts.Add(InSourceString);
+				return true; // continue enumeration
+			});
+			
+			if (LQuestionsKeys.Num() == 0)
+			{
+				UE_LOG(LogBMEditorDataUtils, Error, TEXT("Question Keys are not populated"));
+				return;
+			}
+			if (LQuestionsTexts.Num() == 0)
+			{
+				UE_LOG(LogBMEditorDataUtils, Error, TEXT("Question Texts are not populated"));
+				return;
+			}
+			
+			FStringTableConstPtr LAnswersStringTablePtr = FStringTableRegistry::Get().FindStringTable(AnswersStringTableID);
+			if (!LAnswersStringTablePtr.IsValid())
+			{
+				UE_LOG(LogBMEditorDataUtils, Error, TEXT("Failed to find string table with the id: %s"), *AnswersStringTableID.ToString());
+				return;
+			}
+			
+			LAnswersStringTablePtr->EnumerateSourceStrings([&](const FString& InKey, const FString& InSourceString) -> bool
+			{
+				LAnswersKeys.Add(InKey);
+				LAnswersTexts.Add(InSourceString);
+				return true; // continue enumeration
+			});
+			for (const FString& AnswerKey : LAnswersKeys)
+			{
+				LAnswersStringTablePtr->EnumerateMetaData(AnswerKey, [&](FName InMetaDataId, const FString& InMetaData) -> bool
+				{
+					LMetaDataIdsFromAnswersStringTable.Add(InMetaDataId);
+					LMetaDataFromAnswersStringTable.Add(InMetaData);
+					return true; // continue enumeration
+				});
+			}
+			if (LAnswersKeys.Num() == 0)
+			{
+				UE_LOG(LogBMEditorDataUtils, Error, TEXT("Answer Keys are not populated"));
+				return;
+			}
+			if (LAnswersTexts.Num() == 0)
+			{
+				UE_LOG(LogBMEditorDataUtils, Error, TEXT("Answer Texts are not populated"));
+				return;
+			}
+			if (LMetaDataFromAnswersStringTable.Num() == 0)
+			{
+				UE_LOG(LogBMEditorDataUtils, Error, TEXT("Answers Metadata are not populated"));
+				return;
+			}
+			break;
+		}
+		case EQuestionType::Shot:
+		{
+			FStringTableConstPtr LQuestionsStringTablePtr = FStringTableRegistry::Get().FindStringTable(QuestionsStringTableID);
+			if (!LQuestionsStringTablePtr.IsValid())
+			{
+				UE_LOG(LogBMEditorDataUtils, Error, TEXT("Failed to find string table with the id: %s"), *QuestionsStringTableID.ToString());
+				return;
+			}
+			
+			LQuestionsStringTablePtr->EnumerateSourceStrings([&](const FString& InKey, const FString& InSourceString) -> bool
+			{
+				LQuestionsKeys.Add(InKey);
+				LQuestionsTexts.Add(InSourceString);
+				return true; // continue enumeration
+			});
+			
+			if (LQuestionsKeys.Num() == 0)
+			{
+				UE_LOG(LogBMEditorDataUtils, Error, TEXT("Question Keys are not populated"));
+				return;
+			}
+			if (LQuestionsTexts.Num() == 0)
+			{
+				UE_LOG(LogBMEditorDataUtils, Error, TEXT("Question Texts are not populated"));
+				return;
+			}
+			for (const FString& QuestionKey : LQuestionsKeys)
+			{
+				LQuestionsStringTablePtr->EnumerateMetaData(QuestionKey, [&](FName InMetaDataId, const FString& InMetaData) -> bool
+				{
+					LMetaDataIdsFromAnswersStringTable.Add(InMetaDataId);
+					LMetaDataFromAnswersStringTable.Add(InMetaData);
+					return true; // continue enumeration
+				});
+			}
+			if (LMetaDataFromAnswersStringTable.Num() == 0)
+			{
+				UE_LOG(LogBMEditorDataUtils, Error, TEXT("Answers Metadata are not populated"));
+				return;
+			}
+			break;
+		}
 	}
-	if (LAnswersKeys.Num() == 0)
-	{
-		UE_LOG(LogBMEditorDataUtils, Error, TEXT("Answer Keys are not populated"));
-		return;
-	}
-	if (LAnswersTexts.Num() == 0)
-	{
-		UE_LOG(LogBMEditorDataUtils, Error, TEXT("Answer Texts are not populated"));
-		return;
-	}
-	if (LMetaDataFromAnswersStringTable.Num() == 0)
-	{
-		UE_LOG(LogBMEditorDataUtils, Error, TEXT("Answers Metadata are not populated"));
-		return;
-	}
-	
 
 	//Step 3: Create DT
 	UDataTable* LNewDataTable = NewObject<UDataTable>();
@@ -119,7 +165,16 @@ void UBMDataUtilsLibrary::CreateQuestionsDataTable(FName QuestionsStringTableID,
 		case EQuestionType::Shot:
 		{
 			LNewDataTable->RowStruct = FQuestionShot::StaticStruct();
-			//TODO
+			FQuestionShot LNewShotQuestion;
+			for (int32 i = 0; i < LQuestionsKeys.Num(); i++)
+			{
+				LNewShotQuestion.Category = QuestionsCategory;
+				LNewShotQuestion.Type = QuestionType;
+				LNewShotQuestion.Question = FText::FromStringTable(QuestionsStringTableID, LQuestionsKeys[i], EStringTableLoadingPolicy::FindOrFullyLoad);
+				LNewShotQuestion.Answer = FCString::Atoi(*LMetaDataFromAnswersStringTable[i]);
+				LNewDataTable->AddRow(*LQuestionsKeys[i], LNewShotQuestion);
+			}
+			
 			break;
 		}
 		default: break;
