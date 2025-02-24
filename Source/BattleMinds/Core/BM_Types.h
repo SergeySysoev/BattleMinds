@@ -75,6 +75,10 @@ enum class EColor : uint8
 	MAX UMETA(Hidden)
 };
 
+
+/*
+ * Struct representing Answers in UI
+ */
 USTRUCT(BlueprintType)
 struct FAnswer
 {
@@ -114,6 +118,12 @@ struct FAnswerShot
 	int32 Difference = MAX_int32;
 };
 
+
+/*
+ * Base struct representing Player choice in Question UI
+ * This struct is created and populated when a Player presses the button in Choose Questions
+ * or enters the number in Shot Question
+ */
 USTRUCT(Blueprintable)
 struct FPlayerChoice
 {
@@ -219,6 +229,9 @@ struct FPlayerChoiceShot: public FPlayerChoice
 	}
 };
 
+/*
+ * UI only struct for Question Category info
+ */
 USTRUCT(BlueprintType)
 struct FCategory
 {
@@ -234,6 +247,10 @@ public:
 	TObjectPtr<UTexture2D> Thumbnail;
 };
 
+/*
+ * Base struct for Question
+ * used as instanced struct for different types of Question
+ */
 USTRUCT(Blueprintable, BlueprintType)
 struct FQuestion : public FTableRowBase
 {
@@ -290,6 +307,11 @@ struct FQuestionShot: public FQuestion
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Shot Question")
 	int32 Answer;
 };
+
+/*
+ * Struct for collecting data about Player answers
+ * Used in Results UI in the end of the game
+ */
 
 USTRUCT(BlueprintType)
 struct FQuestionResult
