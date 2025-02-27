@@ -49,10 +49,12 @@ public:
 	bool bHasChosenTile;
 
 	/* Array of Player choices*/
+	// TODO: rewrite using FFastArraySerializer?
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info", meta=(BaseStruct="PlayerChoice"))
 	TArray<FInstancedStruct> QuestionChoices;
 
 	/* Array of Player Question Results*/
+	// TODO: rewrite using FFastArraySerializer?
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
 	TArray<FQuestionResult> QuestionResults;
 
