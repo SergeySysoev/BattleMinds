@@ -8,6 +8,7 @@
 #include "Player/BM_PlayerPawn.h"
 #include "Tiles/BM_TileBase.h"
 #include "InstancedStruct.h"
+#include "Data/DA_QuestionTables.h"
 #include "BM_GameModeBase.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogBM_GameMode, Display, All);
@@ -93,11 +94,17 @@ protected:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Players settings")
 	TMap<int32, FString> NicknameMap;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game settings | Questions")
-	TArray<UDataTable*> QuestionTablesChoose;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game settings | Questions")
+	TObjectPtr<UDA_QuestionTables> ChooseTables;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game settings | Questions")
+	TObjectPtr<UDA_QuestionTables> ShotTables;
+	
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Game settings | Questions")
+	TArray<UDataTable*> QuestionTablesChoose;
+
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Game settings | Questions")
 	TArray<UDataTable*> QuestionTablesShot;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Players settings")

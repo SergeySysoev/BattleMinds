@@ -79,6 +79,19 @@ void ABM_GameModeBase::BeginPlay()
 			ShotQuestionCamera = Cast<ACameraActor>(Camera);
 		}
 	}
+	UBM_GameInstance* LGameInstance = Cast<UBM_GameInstance>(GetWorld()->GetGameInstance());
+	if (IsValid(LGameInstance))
+	{
+		if (IsValid(ChooseTables))
+		{
+			ChooseTables->GetTablesOfCategories(LGameInstance->ChosenCategories, QuestionTablesChoose);
+		}
+		if (IsValid(ShotTables))
+		{
+			ShotTables->GetTablesOfCategories(LGameInstance->ChosenCategories, QuestionTablesShot);
+		}
+	}
+	
 }
 
 void ABM_GameModeBase::InitPlayer_Implementation(APlayerController* NewPlayer)
