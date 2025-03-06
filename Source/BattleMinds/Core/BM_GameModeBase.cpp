@@ -94,6 +94,7 @@ void ABM_GameModeBase::BeginPlay()
 	
 }
 
+//TODO: rework Player initialization (remove unnecessary info e.g. NumberOfTurns, Nickname)
 void ABM_GameModeBase::InitPlayer_Implementation(APlayerController* NewPlayer)
 {
 	if (ABM_PlayerState* PlayerState = Cast<ABM_PlayerState>(NewPlayer->GetPlayerState<ABM_PlayerState>()))
