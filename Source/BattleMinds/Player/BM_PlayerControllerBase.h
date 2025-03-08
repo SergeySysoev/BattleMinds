@@ -123,4 +123,7 @@ protected:
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_BeginTransferTerritory();
+
+	UFUNCTION(BlueprintPure)
+	FLinearColor GetPlayerColorByID(int32 PlayerID) const;
 };

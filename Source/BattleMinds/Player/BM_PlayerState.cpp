@@ -10,6 +10,7 @@ DEFINE_LOG_CATEGORY(LogBM_PlayerState);
 
 void ABM_PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ABM_PlayerState, BMPlayerID);
 	DOREPLIFETIME(ABM_PlayerState, Nickname);
 	DOREPLIFETIME(ABM_PlayerState, Points);

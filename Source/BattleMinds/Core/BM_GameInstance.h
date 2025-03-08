@@ -48,6 +48,12 @@ public:
 	TMap<EColor, FColor> TileEdgesColors;
 
 	/*
+	 * Map of Colors to be applied to the Answer UI element
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Visuals")
+	TMap<EColor, FLinearColor> AnswersColors;
+
+	/*
 	 * Question categories that were chosen by the host in Lobby Game Settings UI
 	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Game Settings")

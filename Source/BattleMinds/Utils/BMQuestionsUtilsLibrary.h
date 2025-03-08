@@ -6,6 +6,7 @@
 #include "Core/BM_Types.h"
 #include "Data/DA_QuestionCategories.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "Player/BM_PlayerControllerBase.h"
 #include "BMQuestionsUtilsLibrary.generated.h"
 
 

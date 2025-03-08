@@ -125,6 +125,23 @@ ABM_PlayerControllerBase* ABM_GameStateBase::GetPlayerController(int32 PlayerID)
 	return nullptr;
 }
 
+FLinearColor ABM_GameStateBase::GetPlayerColorByID(int32 PlayerID) const
+{
+	for (const auto Player : PlayerArray)
+	{
+		ABM_PlayerState* LPlayerState = Cast<ABM_PlayerState>(Player); 
+		if (IsValid(LPlayerState) && LPlayerState->BMPlayerID == PlayerID)
+		{
+			UBM_GameInstance* LGameInstance = Cast<UBM_GameInstance>(GetWorld()->GetGameInstance());
+			if (IsValid(LGameInstance))
+			{
+				return LGameInstance->AnswersColors.FindRef(LPlayerState->GetPlayerColor());
+			}
+		}
+	}
+	return FLinearColor::White;
+}
+
 void ABM_GameStateBase::SetDefendingPlayer(int32 InID, ABM_TileBase* InTile)
 {
 	check(HasAuthority());
@@ -229,6 +246,7 @@ void ABM_GameStateBase::RequestToStartPlayerTurnTimer(int32 PlayerID)
 {
 	StartPlayerTurnTimer(PlayerID);
 }
+
 
 void ABM_GameStateBase::HandleClickedTile(ABM_TileBase* InClickedTile)
 {

@@ -3,6 +3,9 @@
 
 #include "Utils/BMQuestionsUtilsLibrary.h"
 
+#include "Core/BM_GameInstance.h"
+#include "Player/BM_PlayerControllerBase.h"
+
 void UBMQuestionsUtilsLibrary::GetQuestionCategoryStruct(EQuestionCategories Category, UDA_QuestionCategories* QuestionCategoriesDataAsset, FCategory& OutCategoryStruct)
 {
 	if (!IsValid(QuestionCategoriesDataAsset))

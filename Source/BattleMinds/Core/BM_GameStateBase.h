@@ -12,6 +12,8 @@
 class ABM_PlayerControllerBase;
 class ABM_TileBase;
 class ABM_GameModeBase;
+class ABM_PlayerStateBase;
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAnswerSentSignature, int32, PlayerID);
 
 class ABM_PlayerState;
@@ -34,6 +36,9 @@ public:
 
 	UFUNCTION(BlueprintPure)
 	FORCEINLINE TArray<ABM_TileBase*> GetCurrentPlayerAvailableTiles() const { return CurrentPlayerAvailableTiles; }
+
+	UFUNCTION(BlueprintPure)
+	FLinearColor GetPlayerColorByID(int32 PlayerID) const;
 
 	UFUNCTION()
 	void HandleClickedTile(ABM_TileBase* InClickedTile);

@@ -63,6 +63,15 @@ void ABM_PlayerControllerBase::BeginPlay()
 	Cast<ABM_PlayerState>(PlayerState)->OnCastleConquered.AddUniqueDynamic(this, &ThisClass::SC_BeginTransferTerritory);
 }
 
+FLinearColor ABM_PlayerControllerBase::GetPlayerColorByID(int32 PlayerID) const
+{
+	if(ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState()))
+	{
+		return LGameState->GetPlayerColorByID(PlayerID);
+	}
+	return FLinearColor::White;
+}
+
 void ABM_PlayerControllerBase::SC_BeginTransferTerritory_Implementation()
 {
 	if(ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState()))
