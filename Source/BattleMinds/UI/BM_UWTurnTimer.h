@@ -18,12 +18,16 @@ class BATTLEMINDS_API UBM_UWTurnTimer : public UUserWidget
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Widget settings")
 	UMaterialInstanceDynamic* TimerMaterialDynamic;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Timer settings")
 	float TimerTotal;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Timer settings")
 	float TimerCurrent;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Timer settings")
 	ABM_PlayerControllerBase* OwningPlayerController;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Timer settings")
 	FTimerHandle TimerHandle;
 
