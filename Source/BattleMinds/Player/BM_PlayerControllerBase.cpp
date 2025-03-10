@@ -181,7 +181,8 @@ void ABM_PlayerControllerBase::CC_RemoveQuestionWidget_Implementation(bool bSwit
 	}
 	if (PlayerHUD && bSwitchViewTargetBackToTiles)
 	{
-		PlayerHUD->SetVisibility(ESlateVisibility::Visible);
+		//PlayerHUD->SetVisibility(ESlateVisibility::Visible);
+		PlayerHUD->ShowAllWidgets();
 		SetViewTargetWithBlend(GetPawn(), 0.5);
 	}
 }
@@ -194,7 +195,8 @@ void ABM_PlayerControllerBase::CC_OpenQuestionWidget_Implementation(FInstancedSt
 	}
 	if(PlayerHUD)
 	{
-		PlayerHUD->SetVisibility(ESlateVisibility::Collapsed);
+		//PlayerHUD->SetVisibility(ESlateVisibility::Collapsed);
+		PlayerHUD->HideAllExceptForPlayerInfo();
 	}
 	if (IsValid(NewViewTarget))
 	{

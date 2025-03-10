@@ -8,13 +8,13 @@
 #include "TimerManager.h"
 #include "BM_UWTurnTimer.generated.h"
 
-/**
- * 
- */
+class USoundCue;
+
 UCLASS()
 class BATTLEMINDS_API UBM_UWTurnTimer : public UUserWidget
 {
 	GENERATED_BODY()
+	
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Widget settings")
 	UMaterialInstanceDynamic* TimerMaterialDynamic;
@@ -24,6 +24,9 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Timer settings")
 	float TimerCurrent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Timer settings")
+	TObjectPtr<USoundCue> TimerSound;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Timer settings")
 	ABM_PlayerControllerBase* OwningPlayerController;
@@ -33,8 +36,17 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void StartTimer();
+	
 	UFUNCTION(BlueprintCallable)
 	void ResetTimer();
+	
 	UFUNCTION(BlueprintCallable)
 	void UpdateTimer();
+	
+	UFUNCTION(BlueprintCallable)
+	void StopTimer();
+
+private:
+	UPROPERTY(BlueprintReadWrite, Category="Timer settings", meta=(AllowPrivateAccess=true))
+	TObjectPtr<UAudioComponent> SpawnedTimerSound;
 };

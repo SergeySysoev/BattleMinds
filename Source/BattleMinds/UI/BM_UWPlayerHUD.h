@@ -18,4 +18,10 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
 	void ShowWarningPopup(const FText& InText);
+
+	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
+	void HideAllExceptForPlayerInfo();
+
+	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
+	void ShowAllWidgets();
 };
