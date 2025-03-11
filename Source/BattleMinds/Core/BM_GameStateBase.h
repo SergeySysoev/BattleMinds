@@ -160,7 +160,7 @@ protected:
 	void StartQuestionTimer();
 	
 	UFUNCTION()
-	void ResetQuestionTimer(int32 LastSentPlayer);
+	void OnPlayerAnswerSent(int32 LastSentPlayer);
 
 	UFUNCTION()
 	void GenerateAutoPlayerChoice(ABM_PlayerState* PlayerState) const;

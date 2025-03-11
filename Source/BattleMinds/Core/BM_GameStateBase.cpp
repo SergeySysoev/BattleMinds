@@ -477,7 +477,7 @@ void ABM_GameStateBase::OpenQuestion(EQuestionType QuestionType)
 	NumberOfSentAnswers = 0;
 	if (!OnAnswerSent.IsBound())
 	{
-		OnAnswerSent.AddDynamic(this, &ABM_GameStateBase::ResetQuestionTimer);
+		OnAnswerSent.AddDynamic(this, &ABM_GameStateBase::OnPlayerAnswerSent);
 	}
 	StartQuestionTimer();
 }
@@ -563,7 +563,7 @@ void ABM_GameStateBase::StartQuestionTimer()
 	GetWorld()->GetTimerManager().SetTimer(QuestionTimerHandle, this, &ABM_GameStateBase::GatherPlayersAnswers, BMGameMode->GetQuestionTimer(), false);
 }
 
-void ABM_GameStateBase::ResetQuestionTimer(int32 LastSentPlayer)
+void ABM_GameStateBase::OnPlayerAnswerSent(int32 LastSentPlayer)
 {
 	if (!IsValid(BMGameMode))
 	{
