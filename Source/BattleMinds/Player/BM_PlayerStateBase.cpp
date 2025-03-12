@@ -2,6 +2,8 @@
 
 #include "BM_PlayerStateBase.h"
 
+DEFINE_LOG_CATEGORY(LogBM_PlayerStateBase);
+
 void ABM_PlayerStateBase::SetPlayerColor_Implementation(EColor NewColor)
 {
 	PlayerColor = NewColor;
@@ -16,6 +18,7 @@ void ABM_PlayerStateBase::SetPlayerNickname(FString NewNickname)
 {
 	PlayerNickname = NewNickname;
 }
+
 
 void ABM_PlayerStateBase::CopyProperties(APlayerState* PlayerState)
 {
@@ -46,3 +49,10 @@ void ABM_PlayerStateBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 	DOREPLIFETIME(ABM_PlayerStateBase, PlayerAvatar);
 	DOREPLIFETIME(ABM_PlayerStateBase, PlayerNickname);
 }
+
+void ABM_PlayerStateBase::OnRep_Color()
+{
+	PlayerColorChanged();
+}
+
+void ABM_PlayerStateBase::PlayerColorChanged() {}

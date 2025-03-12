@@ -109,5 +109,7 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
 	bool bHasTurn;
+
+	virtual void PlayerColorChanged() override;
 	
 };

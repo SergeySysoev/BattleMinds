@@ -95,7 +95,7 @@ public:
 	void SC_AssignCurrentTile(ABM_TileBase* TargetTile);
 	
 	UFUNCTION(Client, Reliable, BlueprintCallable)
-	void CC_InitPlayerHUD(const TArray<APlayerState*>& PlayerArray);
+	void CC_InitPlayerHUD(const TArray<FPlayerInfo>& PlayersHUDInfo);
 
 	UFUNCTION(Client, Unreliable, BlueprintCallable)
 	void CC_ShowWarningPopup(const FText& InText);

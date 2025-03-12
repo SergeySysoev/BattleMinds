@@ -124,7 +124,7 @@ void ABM_PlayerControllerBase::CC_ShowWarningPopup_Implementation(const FText& I
 }
 
 
-void ABM_PlayerControllerBase::CC_InitPlayerHUD_Implementation(const TArray<APlayerState*>& PlayerArray)
+void ABM_PlayerControllerBase::CC_InitPlayerHUD_Implementation(const TArray<FPlayerInfo>& PlayersHUDInfo)
 {
 	ABM_GameStateBase* GameState = GetWorld() != nullptr ? GetWorld()->GetGameState<ABM_GameStateBase>() : nullptr;
 	if(GameState)
@@ -139,7 +139,7 @@ void ABM_PlayerControllerBase::CC_InitPlayerHUD_Implementation(const TArray<APla
 	if(PlayerHUD)
 	{
 		PlayerHUD->AddToViewport();
-		PlayerHUD->InitPlayersInfo(PlayerArray);
+		PlayerHUD->InitPlayersInfo(PlayersHUDInfo);
 	}
 }
 

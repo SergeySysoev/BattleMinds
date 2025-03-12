@@ -15,7 +15,7 @@ class ABM_GameModeBase;
 class ABM_PlayerStateBase;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAnswerSentSignature, int32, PlayerID);
-
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPlayerPointsChanged, int32, PlayerID, float, NewScore);
 class ABM_PlayerState;
 
 UCLASS()
@@ -27,6 +27,9 @@ public:
 	
 	UPROPERTY(BlueprintAssignable, BlueprintReadOnly, BlueprintCallable, Category = "Players info")
 	FAnswerSentSignature OnAnswerSent;
+	
+	UPROPERTY(BlueprintAssignable, BlueprintReadOnly, BlueprintCallable, Category = "Players info")
+	FOnPlayerPointsChanged OnPlayerPointsChanged;
 
 	UFUNCTION(BlueprintPure)
 	FORCEINLINE int32 GetCurrentPlayerID() const { return CurrentPlayerID; }
@@ -229,6 +232,9 @@ protected:
 	UFUNCTION()
 	void HandleSiegedTile(ABM_PlayerControllerBase* AttackingPlayerController, ABM_PlayerControllerBase* DefendingPlayerController,
 		bool QuestionWasAnsweredByAttacker);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MC_UpdatePoints(int32 PlayerID, float NewScore);
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

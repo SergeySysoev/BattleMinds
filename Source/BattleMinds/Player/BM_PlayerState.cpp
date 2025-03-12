@@ -124,3 +124,9 @@ void ABM_PlayerState::BeginPlay()
 	Super::BeginPlay();
 	UE_LOG(LogTemp, Display, TEXT("ABMPlayerState BeginPlay()"));
 }
+
+void ABM_PlayerState::PlayerColorChanged()
+{
+	UE_LOG(LogBM_PlayerState, Display, TEXT("OnRep_Color, ID: %d, Color: %s, Role: %s"), BMPlayerID, *UEnum::GetValueAsString(PlayerColor), *UEnum::GetValueAsString(GetLocalRole()));
+}
+

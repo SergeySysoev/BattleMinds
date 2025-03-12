@@ -20,4 +20,7 @@ public:
 	
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void UpdatePlayerPoints(float NewPoints);
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	void SetPlayerInfoTint();
 };

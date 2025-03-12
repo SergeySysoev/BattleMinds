@@ -4,8 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "CommonUserWidget.h"
+#include "Core/BM_Types.h"
 #include "BM_UWPlayerHUD.generated.h"
 
+
+class UBM_UWPlayerInfo;
 
 UCLASS()
 class BATTLEMINDS_API UBM_UWPlayerHUD : public UCommonUserWidget
@@ -14,7 +17,7 @@ class BATTLEMINDS_API UBM_UWPlayerHUD : public UCommonUserWidget
 
 public:
 	UFUNCTION(BlueprintImplementableEvent)
-	void InitPlayersInfo(const TArray<APlayerState*>& Players);
+	void InitPlayersInfo(const TArray<FPlayerInfo>& PlayersHUDInfo);
 
 	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
 	void ShowWarningPopup(const FText& InText);
@@ -24,4 +27,10 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
 	void ShowAllWidgets();
+
+protected:
+
+	/* Map of WBP_PlayerInfo widgets for each Player*/
+	UPROPERTY(BlueprintReadWrite)
+	TMap<int32, UBM_UWPlayerInfo*> PlayerInfos;
 };

@@ -514,6 +514,12 @@ struct FPlayerInfo
 
 	UPROPERTY(BlueprintReadOnly)
 	FString Nickname;
+
+	UPROPERTY(BlueprintReadOnly)
+	EColor Color;
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 PlayerID;
 };
 
 

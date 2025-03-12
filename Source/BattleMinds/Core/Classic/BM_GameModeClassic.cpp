@@ -5,6 +5,8 @@
 #include "Core/BM_GameStateBase.h"
 #include "GameFramework/PlayerState.h"
 #include "Player/BM_PlayerControllerBase.h"
+#include "Player/BM_PlayerState.h"
+#include "Player/BM_PlayerStateBase.h"
 
 ABM_GameModeClassic::ABM_GameModeClassic()
 {
@@ -26,13 +28,27 @@ void ABM_GameModeClassic::StartGame()
 	if (IsValid(LGameStateBase))
 	{
 		LGameStateBase->InitGameState();
-		for (const auto PlayerState: GetGameState<ABM_GameStateBase>()->PlayerArray)
+		TArray<FPlayerInfo> LPlayersHUDInfo;
+		for (const auto LPlayerState: GetGameState<ABM_GameStateBase>()->PlayerArray)
 		{
-			if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
+			ABM_PlayerState* LPS = Cast<ABM_PlayerState>(LPlayerState);
+			if (IsValid(LPS))
 			{
-				PlayerController->CC_InitPlayerHUD(GetGameState<ABM_GameStateBase>()->PlayerArray);
+				FPlayerInfo LNewPlayerInfo;
+				LNewPlayerInfo.Nickname = LPS->GetPlayerNickname();
+				LNewPlayerInfo.Color = LPS->GetPlayerColor();
+				LNewPlayerInfo.PlayerID = LPS->BMPlayerID;
+				LPlayersHUDInfo.Add(LNewPlayerInfo);
 			}
 		}
+		for (const auto LPlayerState: GetGameState<ABM_GameStateBase>()->PlayerArray)
+		{
+			if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(LPlayerState->GetPlayerController()))
+			{
+				PlayerController->CC_InitPlayerHUD(LPlayersHUDInfo);
+			}
+		}
+		
 		//StartPlayerTurnTimer(0);
 	}
 }

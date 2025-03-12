@@ -8,6 +8,8 @@
 #include "Net/UnrealNetwork.h"
 #include "BM_PlayerStateBase.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogBM_PlayerStateBase, Display, All);
+
 UCLASS()
 class BATTLEMINDS_API ABM_PlayerStateBase : public APlayerState
 {
@@ -34,8 +36,8 @@ public:
 	FORCEINLINE FString GetPlayerNickname() const { return PlayerNickname; }
 
 protected:
-
-	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Player Info")
+	
+	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_Color, Category = "Player Info")
 	EColor PlayerColor = EColor::Undefined;
 
 	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Player Info")
@@ -49,4 +51,9 @@ protected:
 	virtual void OverrideWith(APlayerState* PlayerState) override;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UFUNCTION()
+	void OnRep_Color();
+
+	virtual void PlayerColorChanged();
 };
