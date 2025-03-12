@@ -9,6 +9,13 @@
 #include "BM_Types.generated.h"
 
 UENUM(BlueprintType)
+enum class EGameLength : uint8
+{
+	Short,
+	Long,
+};
+
+UENUM(BlueprintType)
 enum class EQuestionCategories : uint8
 {
 	Science UMETA(DisplayedName = "Science"),
@@ -193,6 +200,9 @@ struct FPlayerChoiceShot: public FPlayerChoice
 
 	UPROPERTY(BlueprintReadWrite, Category="Shot choice")
 	int32 Difference = 0;
+
+	UPROPERTY(BlueprintReadWrite, Category="Shot choice")
+	bool bAnswered = false;
 	
 	FPlayerChoiceShot() {}
 
@@ -530,4 +540,8 @@ class BATTLEMINDS_API UBM_Types : public UBlueprintFunctionLibrary
 
 	UFUNCTION(BlueprintPure)
 	static EColor GetColorStringAsEnum(FString InColor);
+
+	/* How many rounds on N players should be in the game*/
+	UFUNCTION(BlueprintPure)
+	static int32 GetGameLengthAsInt(EGameLength GameLength);
 };

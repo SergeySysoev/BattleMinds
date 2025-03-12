@@ -48,6 +48,14 @@ void ABM_PlayerControllerBase::SC_ApplyDamageToClickedTile_Implementation(int32 
 	}
 }
 
+void ABM_PlayerControllerBase::CC_SetGameLength_Implementation(const EGameLength GameLength)
+{
+	if (IsValid(PlayerHUD))
+	{
+		PlayerHUD->SetGameLength(GameLength);
+	}
+}
+
 int32 ABM_PlayerControllerBase::GetPointsOfCurrentClickedTile() const
 {
 	if (!IsValid(CurrentClickedTile))

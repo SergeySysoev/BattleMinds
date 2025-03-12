@@ -46,6 +46,7 @@ void ABM_GameModeClassic::StartGame()
 			if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(LPlayerState->GetPlayerController()))
 			{
 				PlayerController->CC_InitPlayerHUD(LPlayersHUDInfo);
+				PlayerController->CC_SetGameLength(SelectedGameLength);
 			}
 		}
 		

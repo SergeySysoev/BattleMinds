@@ -28,6 +28,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
 	void ShowAllWidgets();
 
+	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
+	void SetGameLength(EGameLength GameLength);
+
 protected:
 
 	/* Map of WBP_PlayerInfo widgets for each Player*/

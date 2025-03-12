@@ -116,6 +116,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game settings | Cameras")
 	TObjectPtr<ACameraActor> ShotQuestionCamera;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game settings")
+	EGameLength SelectedGameLength;
+
 	UPROPERTY()
 	int32 TotalSetTerritoryTurns = 0;
 	

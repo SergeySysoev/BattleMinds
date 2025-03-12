@@ -66,6 +66,7 @@ void ABM_GameStateBase::BeginPlay()
 {
 	Super::BeginPlay();
 	BMGameMode = Cast<ABM_GameModeBase>(GetWorld()->GetAuthGameMode());
+	
 }
 
 void ABM_GameStateBase::DisableTileEdgesHighlight()
@@ -246,7 +247,6 @@ void ABM_GameStateBase::RequestToStartPlayerTurnTimer(int32 PlayerID)
 {
 	StartPlayerTurnTimer(PlayerID);
 }
-
 
 void ABM_GameStateBase::HandleClickedTile(ABM_TileBase* InClickedTile)
 {
@@ -699,43 +699,14 @@ void ABM_GameStateBase::GatherPlayersAnswers()
 	}
 	GetWorld()->GetTimerManager().ClearTimer(PauseHandle);
 
-	//Show correct answers after 1 second
-	GetWorld()->GetTimerManager().SetTimer(PauseHandle,this,&ABM_GameStateBase::ShowPlayerChoicesAndCorrectAnswer, 1.0f, false);
-}
-
-void ABM_GameStateBase::ShowPlayerChoicesAndCorrectAnswer()
-{
-	for (const auto PlayerState : PlayerArray)
-	{
-		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
-		{
-			PlayerController->CC_ShowCorrectAnswers(PlayersCurrentChoices);
-		}
-	}
-	GetWorld()->GetTimerManager().ClearTimer(PauseHandle);
-
-	// Verify answers after 2 seconds
-	GetWorld()->GetTimerManager().SetTimer(PauseHandle,this,&ABM_GameStateBase::VerifyAnswers, 2.0f, false);
+	//Verify answers after 1 second
+	GetWorld()->GetTimerManager().SetTimer(PauseHandle,this,&ABM_GameStateBase::VerifyAnswers, 1.0f, false);
 }
 
 void ABM_GameStateBase::VerifyAnswers()
 {
 	CurrentSiegeTileQuestionCount--;
 	bShotQuestionIsNeeded = false;
-	for (const auto PlayerState : PlayerArray)
-	{
-		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
-		{
-			if (CurrentSiegeTileQuestionCount <= 0)
-			{
-				PlayerController->CC_RemoveQuestionWidget(true);
-			}
-			else
-			{
-				PlayerController->CC_RemoveQuestionWidget(false);
-			}
-		}
-	}
 	//Verify Players answers:
 	if (LastQuestion.GetPtr<FQuestion>())
 	{
@@ -755,7 +726,9 @@ void ABM_GameStateBase::VerifyAnswers()
 				break;
 		}
 		UnbindAllOnBannerSpawnedTiles();
-		PrepareNextTurn();
+		//Show Correct answers after 1 second
+		//GetWorld()->GetTimerManager().SetTimer(PauseHandle,this,&ABM_GameStateBase::ShowPlayerChoicesAndCorrectAnswer, 1.0f, false);
+		ShowPlayerChoicesAndCorrectAnswer();
 	}
 }
 
@@ -850,7 +823,7 @@ void ABM_GameStateBase::VerifyChooseAnswers()
 			break;
 	}
 }
-
+PRAGMA_DISABLE_OPTIMIZATION
 void ABM_GameStateBase::VerifyShotAnswers()
 {
 	TArray<FPlayerChoiceShot> ShotChoices;
@@ -879,15 +852,24 @@ void ABM_GameStateBase::VerifyShotAnswers()
 	}
 	const ABM_PlayerControllerBase* WinnerPlayerController = nullptr;
 	ABM_PlayerState* WinnerPlayerState = nullptr;
+
 	for (const auto LShotChoice: ShotChoices)
 	{
 		if (LShotChoice.Answer > 0)
 		{
+			for (FInstancedStruct& LPlayerChoice : PlayersCurrentChoices)
+			{
+				if (LPlayerChoice.Get<FPlayerChoiceShot>().PlayerID == LShotChoice.PlayerID)
+				{
+					LPlayerChoice.GetMutable<FPlayerChoiceShot>().bAnswered = true;
+				}
+			}
 			WinnerPlayerController = Cast<ABM_PlayerControllerBase>(PlayerArray[ShotChoices[0].PlayerID]->GetPlayerController());
 			WinnerPlayerState = WinnerPlayerController->GetPlayerState<ABM_PlayerState>();
 			break;
 		}
 	}
+
 	if (Round == EGameRound::FightForTheRestTiles)
 	{
 		for (int i =1; i < ShotChoices.Num(); i++)
@@ -934,6 +916,21 @@ void ABM_GameStateBase::VerifyShotAnswers()
 			ConstructQuestionResult(WinnerPlayerState, UsedQuestions.Num(), LastQuestion, PlayersCurrentChoices, WinnerPlayerController->GetPointsOfCurrentClickedTile(), true);
 		}
 	}
+}
+PRAGMA_ENABLE_OPTIMIZATION
+void ABM_GameStateBase::ShowPlayerChoicesAndCorrectAnswer()
+{
+	for (const auto PlayerState : PlayerArray)
+	{
+		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
+		{
+			PlayerController->CC_ShowCorrectAnswers(PlayersCurrentChoices);
+		}
+	}
+	GetWorld()->GetTimerManager().ClearTimer(PauseHandle);
+	
+	// Process to the next turn after 3 seconds
+	GetWorld()->GetTimerManager().SetTimer(PauseHandle,this,&ABM_GameStateBase::PrepareNextTurn, 3.0f, false);
 }
 
 void ABM_GameStateBase::HandleSiegedTile(ABM_PlayerControllerBase* AttackingPlayerController, ABM_PlayerControllerBase* DefendingPlayerController, bool QuestionWasAnsweredByAttacker)
@@ -1024,6 +1021,20 @@ void ABM_GameStateBase::WrapUpCurrentRound()
 
 void ABM_GameStateBase::PrepareNextTurn()
 {
+	for (const auto PlayerState : PlayerArray)
+	{
+		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
+		{
+			if (CurrentSiegeTileQuestionCount <= 0)
+			{
+				PlayerController->CC_RemoveQuestionWidget(true);
+			}
+			else
+			{
+				PlayerController->CC_RemoveQuestionWidget(false);
+			}
+		}
+	}
 	//If GameRound == SetTerritory,
 	// check if there are available tiles and their amount == NumberOfActivePlayers%
 	// if yes, Continue SetTerritory round

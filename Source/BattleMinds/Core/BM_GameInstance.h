@@ -72,5 +72,11 @@ public:
 	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Game Settings")
 	int32 QuestionTimer = 10;
+
+	/*
+	 * Selected Game length
+	 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game Settings")
+	EGameLength GameLength = EGameLength::Long;
 	
 };

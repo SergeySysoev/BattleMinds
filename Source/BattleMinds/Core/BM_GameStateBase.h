@@ -115,6 +115,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Tiles")
 	TArray<AActor*> Tiles;
 
+	/* Order of Player's turn in IDs*/
+	UPROPERTY(BlueprintReadOnly, Category = "Players info")
+	TArray<int32> PlayerTurns;
+
 	UPROPERTY()
 	TArray<int32> AnsweringPlayers;
 	

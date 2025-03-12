@@ -98,6 +98,9 @@ public:
 	void CC_InitPlayerHUD(const TArray<FPlayerInfo>& PlayersHUDInfo);
 
 	UFUNCTION(Client, Unreliable, BlueprintCallable)
+	void CC_SetGameLength(const EGameLength GameLength);
+
+	UFUNCTION(Client, Unreliable, BlueprintCallable)
 	void CC_ShowWarningPopup(const FText& InText);
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)

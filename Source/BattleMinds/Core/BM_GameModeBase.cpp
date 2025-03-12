@@ -90,6 +90,7 @@ void ABM_GameModeBase::BeginPlay()
 		{
 			ShotTables->GetTablesOfCategories(LGameInstance->ChosenCategories, QuestionTablesShot);
 		}
+		SelectedGameLength = LGameInstance->GameLength;
 	}
 	
 }
