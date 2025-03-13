@@ -24,6 +24,7 @@ bool ABM_PlayerControllerBase::HasValidCurrentClickedTile() const
 	return IsValid(CurrentClickedTile);
 }
 
+
 void ABM_PlayerControllerBase::SC_RemoveCurrentTileFromTerritory_Implementation() const
 {
 	check(HasAuthority());

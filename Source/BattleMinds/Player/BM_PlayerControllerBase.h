@@ -60,6 +60,9 @@ public:
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_AddAnsweredQuestionChoice(FInstancedStruct InPlayerChoice);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void SetPlayerBorderBlinking(bool IsEnabled);
 	
 	UFUNCTION(Client, Reliable, BlueprintCallable)
 	void CC_OpenQuestionWidget(FInstancedStruct LastQuestion, const TArray<int32>& AnsweringPlayers, AActor* NewViewTarget);

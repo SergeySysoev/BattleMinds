@@ -316,7 +316,9 @@ void ABM_GameStateBase::SetViewTargetForQuestion(EQuestionType QuestionType, TAr
 		{
 			TObjectPtr<AActor> LNewViewTarget = nullptr;
 			LNewViewTarget = Cast<AActor>(BMGameMode->GetQuestionCamera(QuestionType));
+			PlayerController->SetPlayerBorderBlinking(false);
 			PlayerController->CC_OpenQuestionWidget(LastQuestion, AnsweringPlayers, LNewViewTarget);
+			
 		}
 	}
 }
