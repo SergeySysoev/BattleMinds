@@ -23,6 +23,7 @@ void UBM_TestCreateWidget::CreateWidgetsList(FString Path)
 
 	TArray<FAssetData> AssetData;
 	AssetRegistryModule.Get().GetAssets(Filter, AssetData);
+	AssetData.Sort();
 
 	for (const FAssetData& Asset : AssetData)
 	{
