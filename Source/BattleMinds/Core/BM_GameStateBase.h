@@ -9,6 +9,7 @@
 #include "Player/BM_PlayerControllerBase.h"
 #include "BM_GameStateBase.generated.h"
 
+class ABM_TileManager;
 class ABM_PlayerControllerBase;
 class ABM_TileBase;
 class ABM_GameModeBase;
@@ -32,25 +33,25 @@ public:
 	FOnPlayerPointsChanged OnPlayerPointsChanged;
 
 	UFUNCTION(BlueprintPure)
-	FORCEINLINE int32 GetCurrentPlayerID() const { return CurrentPlayerID; }
+	FORCEINLINE int32 GetCurrentPlayerID() const { return CurrentPlayerCounter; }
 	
 	UFUNCTION(BlueprintPure)
 	FORCEINLINE EGameRound GetCurrentRound() const { return Round; }
 
 	UFUNCTION(BlueprintPure)
-	FORCEINLINE TArray<ABM_TileBase*> GetCurrentPlayerAvailableTiles() const { return CurrentPlayerAvailableTiles; }
+	TArray<FIntPoint> GetCurrentPlayerAvailableTiles() const;
 
 	UFUNCTION(BlueprintPure)
 	FLinearColor GetPlayerColorByID(int32 PlayerID) const;
 
 	UFUNCTION()
-	void HandleClickedTile(ABM_TileBase* InClickedTile);
+	void HandleClickedTile(FIntPoint InClickedTile);
 
 	UFUNCTION(BlueprintCallable)
-	void SetDefendingPlayer(int32 InID, ABM_TileBase* InTile);
+	void SetDefendingPlayer(FIntPoint InClickedTile);
 
 	UFUNCTION(BlueprintCallable)
-	void RequestToClearPlayerTurnTimer();
+	void ClearPlayerTurnTimer();
 
 	UFUNCTION(BlueprintCallable)
 	void RequestToOpenQuestion(EQuestionType QuestionType);
@@ -72,12 +73,16 @@ public:
 
 	UFUNCTION()
 	void InitGameState();
-
+	
 	UFUNCTION(BlueprintCallable)
 	void OpenQuestion(EQuestionType QuestionType);
 
 	UFUNCTION()
 	void TransferDefendingPlayerTerritoryToAttacker();
+	
+	FunctionVoidPtr OpenChooseQuestionPtr;
+	FunctionVoidPtr StartSiegePtr;
+	FunctionVoidPtr PassTurnToNextPlayerPtr;
 
 protected:
 	
@@ -94,7 +99,7 @@ protected:
 	FInstancedStruct LastQuestion;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Players info")
-	int32 CurrentPlayerID = 0;
+	int32 CurrentPlayerCounter = 0;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Game flow")
 	FTimerHandle PlayerTurnHandle;
@@ -102,19 +107,13 @@ protected:
 	/* Player choices sent (or auto generated) to the LastQuestion */
 	UPROPERTY(BlueprintReadWrite, Category="Players info", meta=(BaseStruct="PlayerChoice"))
 	TArray<FInstancedStruct> PlayersCurrentChoices;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Players info")
-	TArray<ABM_TileBase*> CurrentPlayerAvailableTiles;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Players info")
 	int32 DefendingPlayerID;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Game flow", meta=(BaseStruct = "Question"))
 	TArray<FInstancedStruct> UsedQuestions;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Tiles")
-	TArray<AActor*> Tiles;
-
+	
 	/* Order of Player's turn in IDs*/
 	UPROPERTY(BlueprintReadOnly, Category = "Players info")
 	TArray<int32> PlayerTurns;
@@ -148,13 +147,34 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	int32 TotalSiegeTileQuestionCount = 0;
 
+	UPROPERTY(BlueprintReadWrite)
+	ABM_TileManager* TileManager = nullptr;
+
+	UPROPERTY(BlueprintReadWrite)
+	TArray<FPlayersCycle> PlayerTurnsCycles;
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 CurrentPlayerTurnsCycle = 0;
+
+	UPROPERTY(BlueprintReadOnly)
+	TMap<EGameRound, int32> MaxCyclesPerRound;
+
 	virtual void BeginPlay() override;
+
+	UFUNCTION()
+	void ConstructPlayerTurnsCycles();
 
 	UFUNCTION()
 	void DisableTileEdgesHighlight();
 
 	UFUNCTION()
 	void UnbindAllOnBannerSpawnedTiles();
+
+	UFUNCTION(BlueprintPure)
+	int32 GetNextPlayerArrayIndex() const;
+	
+	UFUNCTION(BlueprintPure)
+	int32 GetPreviousPlayerArrayIndex() const;
 
 	UFUNCTION()
 	void StopPlayerTurnTimer();
@@ -203,16 +223,16 @@ protected:
 	int32 CountNotOwnedTiles();
 
 	UFUNCTION()
-	void WrapUpCurrentRound();
+	void WrapUpCurrentPlayersCycle();
 
 	UFUNCTION()
 	void UpdatePlayersTurnTimerAndNickname(int32 PlayerID);
 
 	UFUNCTION()
-	void HighlightAvailableTiles(int32 PlayerID);
+	void HighlightAvailableTiles(int32 PlayerArrayIndex);
 
 	UFUNCTION(BlueprintCallable)
-	void StartPlayerTurnTimer(int32 PlayerID);
+	void StartPlayerTurnTimer(int32 PlayerArrayIndex);
 	
 	UFUNCTION(BlueprintCallable)
 	void ChooseFirstAvailableTileForPlayer(int32 PlayerID);
@@ -241,4 +261,7 @@ protected:
 	void MC_UpdatePoints(int32 PlayerID, float NewScore);
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	virtual void CalculateAndSetMaxCyclesPerRound();
+
 };

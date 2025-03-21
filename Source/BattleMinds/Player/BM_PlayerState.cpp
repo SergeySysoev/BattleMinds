@@ -35,21 +35,16 @@ void ABM_PlayerState::SC_AddPoints_Implementation(int32 inPoints)
 	}
 }
 
-void ABM_PlayerState::SC_AddTileToTerritory_Implementation(ABM_TileBase* InTile, ETileStatus InTileStatus)
+void ABM_PlayerState::SC_AddTileToTerritory_Implementation()
 {
-	if (IsValid(InTile))
-	{
-		InTile->AddTileToPlayerTerritory(InTileStatus, BMPlayerID, Nickname, GetPlayerColor());
-		SC_AddPoints(InTile->GetPoints());
-		OwnedTiles.Add(InTile);
-	}
+	SC_AddPoints(200);
 }
 
 void ABM_PlayerState::SC_RemoveTileFromTerritory_Implementation(ABM_TileBase* InTile)
 {
 	if (IsValid(InTile))
 	{
-		InTile->RemoveTileFromPlayerTerritory();
+		InTile->SC_RemoveTileFromPlayerTerritory();
 		if (InTile->GetStatus() == ETileStatus::Castle)
 		{
 			OnCastleConquered.Broadcast();
@@ -58,7 +53,6 @@ void ABM_PlayerState::SC_RemoveTileFromTerritory_Implementation(ABM_TileBase* In
 		{
 			SC_AddPoints(-1 * Points);
 		}
-		OwnedTiles.RemoveSwap(InTile, true);
 	}
 }
 
@@ -111,11 +105,6 @@ void ABM_PlayerState::OnRep_Points()
 TSet<ABM_TileBase*> ABM_PlayerState::GetNeighbors()
 {
 	TSet<ABM_TileBase*> Neighbors;
-	for(ABM_TileBase* Tile : OwnedTiles)
-	{
-		for(ABM_TileBase* Neighbor : Tile->NeighbourTiles)
-			Neighbors.Add(Neighbor);
-	}
 	return Neighbors;
 }
 

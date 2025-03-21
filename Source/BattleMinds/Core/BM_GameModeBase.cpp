@@ -106,8 +106,6 @@ void ABM_GameModeBase::InitPlayer_Implementation(APlayerController* NewPlayer)
 		PlayerState->BMPlayerID = NumberOfActivePlayers;
 		//TODO: get this info from Steam info (loaded into Save game UserProfile)
 		PlayerState->Nickname = NicknameMap.FindRef(NumberOfActivePlayers);
-		PlayerState->NumberOfTurns = NumberOfPlayerTurns;
-		TotalSetTerritoryTurns += NumberOfPlayerTurns;
 		const auto AvailablePlayerStart = FindPlayerStart(NewPlayer, TEXT(""));
 		const FVector Location = AvailablePlayerStart->GetActorLocation();
 		const FRotator Rotation = AvailablePlayerStart->GetActorRotation();
@@ -116,4 +114,15 @@ void ABM_GameModeBase::InitPlayer_Implementation(APlayerController* NewPlayer)
 		NewPlayer->Possess(SpawnedPawn);
 		NumberOfActivePlayers++;
 	}
+}
+
+void ABM_GameModeBase::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
+{
+	if (ABM_PlayerState* PlayerState = Cast<ABM_PlayerState>(NewPlayer->GetPlayerState<ABM_PlayerState>()))
+	{
+		UE_LOG(LogBM_GameMode, Display, TEXT("Player color: %s"), *UEnum::GetValueAsString(PlayerState->GetPlayerColor()));
+		PlayerState->BMPlayerID = NumberOfActivePlayers;
+		NumberOfActivePlayers++;
+	}
+	Super::HandleStartingNewPlayer_Implementation(NewPlayer);
 }

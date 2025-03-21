@@ -15,9 +15,6 @@ class BATTLEMINDS_API ABM_GameStateClassic : public ABM_GameStateBase
 	GENERATED_BODY()
 
 protected:
-	UFUNCTION()
-	void AutoAssignTiles();
-
 	UFUNCTION(BlueprintCallable)
 	void ForceSetGameRound(EGameRound NewRound);
 };

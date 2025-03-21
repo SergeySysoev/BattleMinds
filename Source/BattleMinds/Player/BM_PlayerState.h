@@ -40,9 +40,6 @@ public:
 	/* Based on how many points Player received, calculated in GameState */
 	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Questions")
 	int32 TotalPlace;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Player Stats")
-	TArray<ABM_TileBase*> OwnedTiles;
 
 	/* bool to check if the Player clicked on any tile during his turn*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Player Stats")
@@ -71,7 +68,7 @@ public:
 	void SC_AddPoints(int32 inPoints);
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void SC_AddTileToTerritory(ABM_TileBase* InTile, ETileStatus InTileStatus);
+	void SC_AddTileToTerritory();
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_RemoveTileFromTerritory(ABM_TileBase* InTile);

@@ -4,9 +4,11 @@
 #include "Core/BM_GameInstance.h"
 #include "Core/BM_GameStateBase.h"
 #include "GameFramework/PlayerState.h"
+#include "Kismet/GameplayStatics.h"
 #include "Player/BM_PlayerControllerBase.h"
 #include "Player/BM_PlayerState.h"
 #include "Player/BM_PlayerStateBase.h"
+#include "Tiles/BM_TileManager.h"
 
 ABM_GameModeClassic::ABM_GameModeClassic()
 {
@@ -49,7 +51,21 @@ void ABM_GameModeClassic::StartGame()
 				PlayerController->CC_SetGameLength(SelectedGameLength);
 			}
 		}
-		
+		AActor* LFoundManager = UGameplayStatics::GetActorOfClass(GetWorld(), ABM_TileManager::StaticClass());
+		if (IsValid(LFoundManager))
+		{
+			ABM_TileManager* LTileManager = Cast<ABM_TileManager>(LFoundManager);
+			LTileManager->GenerateMap(2);
+		}
 		//StartPlayerTurnTimer(0);
+	}
+}
+
+void ABM_GameModeClassic::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
+{
+	Super::HandleStartingNewPlayer_Implementation(NewPlayer);
+	if (NumberOfActivePlayers == Cast<UBM_GameInstance>(GetWorld()->GetGameInstance())->NumberOfPlayers)
+	{
+		GetWorld()->GetTimerManager().SetTimer(StartGameTimer, this, &ABM_GameModeClassic::StartGame, 5.0, false, 1.0f);
 	}
 }

@@ -92,7 +92,7 @@ public:
 	void StartCountdownTimer();
 	
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
-	void SC_TryClickTheTile(ABM_TileBase* TargetTile);
+	void SC_TryClickTheTile(FIntPoint TargetTile);
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_AssignCurrentTile(ABM_TileBase* TargetTile);

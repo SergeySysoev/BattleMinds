@@ -59,11 +59,7 @@ void ABM_PlayerControllerBase::CC_SetGameLength_Implementation(const EGameLength
 
 int32 ABM_PlayerControllerBase::GetPointsOfCurrentClickedTile() const
 {
-	if (!IsValid(CurrentClickedTile))
-	{
-		return 0;	
-	}
-	return CurrentClickedTile->GetPoints();
+	return 200;
 }
 
 void ABM_PlayerControllerBase::BeginPlay()
@@ -95,7 +91,7 @@ void ABM_PlayerControllerBase::SC_AddCurrentTileToTerritory_Implementation(ETile
 	
 	if (IsValid(CurrentClickedTile))
 	{
-		Cast<ABM_PlayerState>(PlayerState)->SC_AddTileToTerritory(CurrentClickedTile, InTileStatus);
+		Cast<ABM_PlayerState>(PlayerState)->SC_AddTileToTerritory();
 	}
 }
 
@@ -105,7 +101,7 @@ void ABM_PlayerControllerBase::SC_CancelAttackForCurrentTile_Implementation() co
 	
 	if (IsValid(CurrentClickedTile))
 	{
-		CurrentClickedTile->CancelAttack();
+		CurrentClickedTile->SC_CancelAttack();
 	}
 }
 
@@ -236,37 +232,26 @@ void ABM_PlayerControllerBase::SC_RequestToOpenQuestion_Implementation(EQuestion
 	}
 }
 
-void ABM_PlayerControllerBase::SC_TryClickTheTile_Implementation(ABM_TileBase* TargetTile)
+void ABM_PlayerControllerBase::SC_TryClickTheTile_Implementation(FIntPoint TargetTile)
 {
 	ABM_PlayerState* BM_PlayerState = Cast<ABM_PlayerState>(this->PlayerState);
 	ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState());
-	SC_AssignCurrentTile(TargetTile);
 	
 	if (!IsValid(BM_PlayerState) || !IsValid(LGameState))
 	{
 		return;
 	}
-	
-	if (LGameState->GetCurrentPlayerID() == BM_PlayerState->BMPlayerID)
+	if (BM_PlayerState->IsPlayerTurn())
 	{
-		if (BM_PlayerState->IsPlayerTurn())
+		if (LGameState->GetCurrentPlayerAvailableTiles().Contains(TargetTile))
 		{
-			if (LGameState->GetCurrentPlayerAvailableTiles().Contains(CurrentClickedTile))
-			{
-				LGameState->HandleClickedTile(TargetTile);
-			}
-			else
-			{
-				//TODO: add option to attack any tile once per game
-				//TODO: add Widget notification about inability to attack selected tile
-				UE_LOG(LogBM_PlayerController, Warning, TEXT("This tile is not available"));
-				CC_ShowWarningPopup(FText::FromString("This Tile is not available for attack"));
-			}
+			LGameState->HandleClickedTile(TargetTile);
 		}
 		else
 		{
-			UE_LOG(LogBM_PlayerController, Warning, TEXT("It's not your turn"));
-			CC_ShowWarningPopup(FText::FromString("It's not your turn"));
+			//TODO: add option to attack any tile once per game
+			UE_LOG(LogBM_PlayerController, Warning, TEXT("This tile is not available"));
+			CC_ShowWarningPopup(FText::FromString("This Tile is not available for attack"));
 		}
 	}
 	else
@@ -274,10 +259,9 @@ void ABM_PlayerControllerBase::SC_TryClickTheTile_Implementation(ABM_TileBase* T
 		UE_LOG(LogBM_PlayerController, Warning, TEXT("It's not your turn"));
 		CC_ShowWarningPopup(FText::FromString("It's not your turn"));
 	}
-	
 }
 
-bool ABM_PlayerControllerBase::SC_TryClickTheTile_Validate(ABM_TileBase* TargetTile)
+bool ABM_PlayerControllerBase::SC_TryClickTheTile_Validate(FIntPoint TargetTile)
 {
 	return true;
 }

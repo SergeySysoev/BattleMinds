@@ -51,7 +51,8 @@ enum class ETileStatus : uint8
 {
 	NotOwned UMETA(DisplayName = "Not Owned"),
 	Controlled UMETA(DisplayName = "Controlled"),
-	Castle UMETA(DisplayName = "Castle")
+	Castle UMETA(DisplayName = "Castle"),
+	Attacked UMETA(DisplayName = "Attacked")
 };
 
 USTRUCT(BlueprintType)
@@ -370,6 +371,9 @@ struct FTileMaterials
 	GENERATED_BODY()
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	EColor Color;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TObjectPtr<UMaterialInterface> CastleMaterial;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
@@ -379,7 +383,7 @@ struct FTileMaterials
 	TObjectPtr<UMaterialInterface> TileMeshMaterial;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	FColor TileEdgesColor;
+	TObjectPtr<UMaterialInterface> TileBorderMeshMaterial;
 };
 
 UENUM(BlueprintType)
@@ -532,16 +536,63 @@ struct FPlayerInfo
 	int32 PlayerID;
 };
 
+USTRUCT(BlueprintType)
+struct FPermutation
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, Category="Permutation Info")
+	TArray<int32> Values;
+};
+
+USTRUCT(BlueprintType)
+struct FPlayersCycle
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, Category="Player Cycle Info")
+	int32 CycleNumber = 0;
+	
+	UPROPERTY(BlueprintReadWrite, Category="Player Cycle Info")
+	FPermutation PlayersPermutation;
+
+	UPROPERTY(BlueprintReadWrite, Category="Player Cycle Info")
+	bool bIsCompleted = false;
+
+	FPlayersCycle(){}
+	FPlayersCycle(const int32 InCycleNumber, const FPermutation& InPermutation, const bool InIsCompleted)
+	{
+		CycleNumber = InCycleNumber;
+		PlayersPermutation = InPermutation;
+		bIsCompleted = InIsCompleted;
+	}
+};
+
+class ABM_GameStateBase;
+
+typedef void (ABM_GameStateBase::*FunctionVoidPtr)(void);
 
 UCLASS()
 class BATTLEMINDS_API UBM_Types : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 
+public:
 	UFUNCTION(BlueprintPure)
 	static EColor GetColorStringAsEnum(FString InColor);
 
 	/* How many rounds on N players should be in the game*/
 	UFUNCTION(BlueprintPure)
 	static int32 GetGameLengthAsInt(EGameLength GameLength);
+
+	UFUNCTION(BlueprintCallable, Category = "Permutations")
+	static TArray<FPermutation> GenerateAllPermutations(TArray<int32>& ElementsOfPermutations);
+
+	UFUNCTION(BlueprintCallable, Category = "Permutations")
+	static TArray<FPermutation> GenerateNumberOfPermutations(TArray<int32>& ElementsOfPermutations, int32 NumberOfPermutations);
+
+private:
+
+	UFUNCTION()
+	static void Backtrack(TArray<int32>& Current, TArray<int32>& Elements, TArray<FPermutation>& Results);
 };

@@ -21,3 +21,57 @@ int32 UBM_Types::GetGameLengthAsInt(EGameLength GameLength)
 		default: return 0;
 	}
 }
+
+TArray<FPermutation> UBM_Types::GenerateAllPermutations(TArray<int32>& ElementsOfPermutations)
+{
+	TArray<FPermutation> LResults;
+	TArray<int32> LCurrent;
+	Backtrack(LCurrent, ElementsOfPermutations, LResults);
+	return LResults;
+}
+
+TArray<FPermutation> UBM_Types::GenerateNumberOfPermutations(TArray<int32>& ElementsOfPermutations, int32 NumberOfPermutations)
+{
+	TArray<FPermutation> LResults;
+	TArray<FPermutation> LAllPermutations;
+	TArray<int32> LCurrent;
+	Backtrack(LCurrent, ElementsOfPermutations, LAllPermutations);
+	if (LAllPermutations.Num() < NumberOfPermutations)
+	{
+		LResults.Append(LAllPermutations);
+		int32 LRemaining = NumberOfPermutations - LAllPermutations.Num();
+		int32 LCopyCount = FMath::Min(LRemaining, LAllPermutations.Num());
+		for (int32 i = 0; i < LCopyCount; i++)
+		{
+			LResults.Add(LAllPermutations[i]);
+		}
+	}
+	return LResults;
+}
+
+void UBM_Types::Backtrack(TArray<int32>& Current, TArray<int32>& Elements, TArray<FPermutation>& Results)
+{
+	if (Elements.Num() == 0)
+	{
+		FPermutation LNewPerm;
+		LNewPerm.Values = Current;
+		Results.Add(LNewPerm);
+		return;
+	}
+
+	for (int32 i = 0; i < Elements.Num(); i++)
+	{
+		int32 Chosen = Elements[i];
+
+		// Добавляем выбранный элемент в текущую перестановку
+		Current.Add(Chosen);
+		Elements.RemoveAt(i);
+
+		// Рекурсивный вызов
+		Backtrack(Current, Elements, Results);
+
+		// Откат изменений (Backtracking)
+		Elements.Insert(Chosen, i);
+		Current.Pop();
+	}
+}

@@ -42,13 +42,7 @@ public:
 	FORCEINLINE float GetTurnTimer() const { return TurnTimer;}
 
 	UFUNCTION(BlueprintPure)
-	FORCEINLINE int32 GetNumberOfPlayerTurns() const { return NumberOfPlayerTurns;}
-
-	UFUNCTION(BlueprintPure)
 	FORCEINLINE int32 GetNumberOfActivePlayers() const { return NumberOfActivePlayers;}
-
-	UFUNCTION(BlueprintPure)
-	FORCEINLINE int32 GetTotalSetTerritoryTurns() const { return TotalSetTerritoryTurns;}
 
 	UFUNCTION(BlueprintPure)
 	UDataTable* GetQuestionsDataTable(EQuestionType QuestionType) const;
@@ -59,6 +53,8 @@ protected:
 	
 	virtual void BeginPlay() override;
 	
+	void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game settings")
 	float QuestionTimer;
 	
@@ -70,12 +66,6 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Game settings")
 	int32 NumberOfActivePlayers = 0;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game settings")
-	int32 NumberOfPlayerTurns = 6;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game settings")
-	int32 NumberOfTerritoryTurns = 3;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Players settings")
 	TMap<int32, UMaterialInterface*> MaterialMap;
@@ -118,9 +108,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game settings")
 	EGameLength SelectedGameLength;
-
-	UPROPERTY()
-	int32 TotalSetTerritoryTurns = 0;
 	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void InitPlayer(APlayerController* NewPlayer);

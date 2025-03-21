@@ -18,6 +18,8 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void StartGame();
+
+	void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
 	
 private:
 	FTimerHandle StartGameTimer;

@@ -41,11 +41,11 @@ public:
 	TMap<EColor, UMaterialInterface*> TileMeshMaterials;
 
 	/*
-	 * Map of Colors to be applied to the Tile meshes edges
+	 * Map of Materials to be applied to the Border mesh
 	 * when the Player is deciding on which tile to attack
 	 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Visuals")
-	TMap<EColor, FColor> TileEdgesColors;
+	TMap<EColor, UMaterialInterface*> BorderMeshMaterials;
 
 	/*
 	 * Map of Colors to be applied to the Answer UI element
