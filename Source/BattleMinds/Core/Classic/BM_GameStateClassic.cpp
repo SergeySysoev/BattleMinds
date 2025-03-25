@@ -20,6 +20,22 @@ void ABM_GameStateClassic::ForceSetGameRound(EGameRound NewRound)
 			break;
 		case EGameRound::SetTerritory:
 			break;
+		case EGameRound::FightForTheRestTiles:
+			StopAllTimers();
+			if (IsValid(TileManager))
+			{
+				TMap<int32, EColor> PlayerColors;
+				for (const auto LPlayerState : PlayerArray)
+				{
+					ABM_PlayerState* LBMPlayerState = Cast<ABM_PlayerState>(LPlayerState);
+					PlayerColors.Add(LBMPlayerState->GetPlayerIndex(), LBMPlayerState->GetPlayerColor());
+				}
+				TileManager->AutoAssignTerritoryWithEmptyTiles(true, PlayerColors, 1);
+			}
+			CurrentPlayerCounter = 0;
+			CurrentPlayerIndex = 0;
+			WrapUpCurrentPlayersCycle();
+			break;
 		case EGameRound::FightForTerritory:
 			StopAllTimers();
 			if (IsValid(TileManager))
@@ -28,7 +44,7 @@ void ABM_GameStateClassic::ForceSetGameRound(EGameRound NewRound)
 				for (const auto LPlayerState : PlayerArray)
 				{
 					ABM_PlayerState* LBMPlayerState = Cast<ABM_PlayerState>(LPlayerState);
-					PlayerColors.Add(LBMPlayerState->BMPlayerID, LBMPlayerState->GetPlayerColor());
+					PlayerColors.Add(LBMPlayerState->GetPlayerIndex(), LBMPlayerState->GetPlayerColor());
 				}
 				TileManager->AutoAssignTerritory(true, PlayerColors);
 				

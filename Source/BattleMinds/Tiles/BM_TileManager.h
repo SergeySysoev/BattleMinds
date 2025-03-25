@@ -12,7 +12,7 @@ class ABM_PlayerControllerBase;
 class ABM_TileBase;
 class ABM_GameStateBase;
 
-DECLARE_DELEGATE(FOnMapGenerated);
+DECLARE_MULTICAST_DELEGATE(FOnMapGeneratedNative);
 
 UCLASS()
 class BATTLEMINDS_API ABM_TileManager : public AActor
@@ -22,7 +22,7 @@ class BATTLEMINDS_API ABM_TileManager : public AActor
 public:
 	ABM_TileManager();
 	
-	FOnMapGenerated OnMapGenerated;
+	FOnMapGeneratedNative OnMapGeneratedNative;
 	
 	virtual void Tick(float DeltaTime) override;
 
@@ -40,7 +40,7 @@ public:
 	TArray<ABM_TileBase*> GetCurrentPlayerAvailableTiles(int32 PlayerID);
 
 	UFUNCTION(BlueprintPure, Category = "Tile operations")
-	TArray<FIntPoint> GetCurrentPlayerAvailableTilesAxials(int32 PlayerID);
+	TArray<FIntPoint> GetCurrentPlayerAvailableTilesAxials(EGameRound CurrentRound, int32 PlayerIndex);
 
 	UFUNCTION(BlueprintCallable, Category = "Tile operations")
 	void UnhighlightTiles();
@@ -55,19 +55,19 @@ public:
 	void SC_HighlightAvailableTiles(EGameRound GameRound, int32 PlayerID, EColor InPlayerColor);
 	
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category = "Tile operations")
-	void SC_SetTileOwner(FIntPoint TileAxials, ETileStatus NewStatus, int32 NewOwnerID, EColor NewOwnerColor);
+	void SC_SetTileOwner(FIntPoint TileAxials, ETileStatus NewStatus, int32 NewOwnerID, EColor NewOwnerColor, EGameRound CurrentGameRound);
 
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category = "Tile operations")
 	void SC_AttackTile(FIntPoint TileAxials, EColor InPlayerColor);
 
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category = "Tile operations")
-	void SC_AddClickedTileToTheTerritory(int32 PlayerID, ETileStatus NewStatus, EColor NewColor);
+	void SC_AddClickedTileToTheTerritory(int32 PlayerID, ETileStatus NewStatus, EColor NewColor, EGameRound CurrentGameRound);
 
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category = "Tile operations")
 	void SC_CancelAttackOnClickedTile(int32 PlayerID);
 	
 	UFUNCTION()
-	void BindGameStateToTileCastleMeshSpawned(FIntPoint TileAxials);
+	void BindPassTurnToTileCastleMeshSpawned(FIntPoint TileAxials);
 	
 	void BindGameStateToTileBannerMeshSpawned(FIntPoint TileAxials, FunctionVoidPtr FunctionPointer);
 
@@ -82,6 +82,23 @@ public:
 	 */
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category="Tile operations")
 	void AutoAssignTerritory(const bool bAssignCastles, const TMap<int32, EColor>& PlayerColors);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category="Tile operations")
+	void AutoAssignTerritoryWithEmptyTiles(const bool bAssignCastles, const TMap<int32, EColor>& PlayerColors, const int32 AmountOfEmptyTiles);
+
+	UFUNCTION(BlueprintPure)
+	EGameRound GetTileAnnexedRound(FIntPoint TileAxial) const;
+
+	UFUNCTION(BlueprintPure)
+	int32 GetTileQuestionsCount(FIntPoint TileAxials) const;
+
+	/* Get Tile AnnexedRound and found corresponding value in TilePoints map of BM_GameModeBase*/
+	UFUNCTION(BlueprintPure)
+	int32 GetPointsOfTile(FIntPoint TileAxials) const;
+
+	/* Get Tile clicked by a player with PlayerIndex and call on it GetPointsOfTile(Axials)*/
+	UFUNCTION(BlueprintPure)
+	int32 GetPointsOfCurrentClickedTile(int32 PlayerIndex);
 
 protected:
 	

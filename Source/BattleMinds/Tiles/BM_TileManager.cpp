@@ -3,6 +3,7 @@
 
 #include "BM_TileManager.h"
 #include "BM_TileBase.h"
+#include "Core/BM_GameModeBase.h"
 #include "Core/BM_GameStateBase.h"
 
 ABM_TileManager::ABM_TileManager()
@@ -12,7 +13,7 @@ ABM_TileManager::ABM_TileManager()
 
 void ABM_TileManager::GenerateMap_Implementation(int32 NumberOfPlayers)
 {
-	OnMapGenerated.Execute();
+	OnMapGeneratedNative.Broadcast();
 }
 
 void ABM_TileManager::HandleClickedTile(int32 PlayerID, FIntPoint ClickedTileAxials)
@@ -27,14 +28,14 @@ int32 ABM_TileManager::GetTileOwnerID(FIntPoint TileAxials) const
 {
 	if (Tiles.Contains(TileAxials))
 	{
-		return Tiles.FindRef(TileAxials)->GetOwningPlayerID();
+		return Tiles.FindRef(TileAxials)->GetOwningPlayerIndex();
 	}
 	return -1;
 }
 
-void ABM_TileManager::SC_AddClickedTileToTheTerritory_Implementation(int32 PlayerID, ETileStatus NewStatus, EColor NewColor)
+void ABM_TileManager::SC_AddClickedTileToTheTerritory_Implementation(int32 PlayerID, ETileStatus NewStatus, EColor NewColor, EGameRound CurrentGameRound)
 {
-	SC_SetTileOwner(ClickedTiles.FindRef(PlayerID),NewStatus, PlayerID, NewColor);
+	SC_SetTileOwner(ClickedTiles.FindRef(PlayerID),NewStatus, PlayerID, NewColor, CurrentGameRound);
 }
 
 void ABM_TileManager::SC_CancelAttackOnClickedTile_Implementation(int32 PlayerID)
@@ -47,7 +48,7 @@ void ABM_TileManager::SC_CancelAttackOnClickedTile_Implementation(int32 PlayerID
 	}
 }
 
-void ABM_TileManager::BindGameStateToTileCastleMeshSpawned(FIntPoint TileAxials)
+void ABM_TileManager::BindPassTurnToTileCastleMeshSpawned(FIntPoint TileAxials)
 {
 	ABM_TileBase* LTile = Tiles.FindRef(TileAxials);
 	if (IsValid(LTile))
@@ -78,6 +79,51 @@ void ABM_TileManager::UnbindAllOnBannerSpawnedDelegates()
 void ABM_TileManager::AutoAssignTerritory_Implementation(const bool bAssignCastles, const TMap<int32, EColor>& PlayerColors)
 {
 	
+}
+
+void ABM_TileManager::AutoAssignTerritoryWithEmptyTiles_Implementation(const bool bAssignCastles, const TMap<int32, EColor>& PlayerColors, const int32 AmountOfEmptyTiles)
+{
+	
+}
+
+EGameRound ABM_TileManager::GetTileAnnexedRound(FIntPoint TileAxial) const
+{
+	if (Tiles.Contains(TileAxial))
+	{
+		return Tiles.FindRef(TileAxial)->GetAnnexedRound();	
+	}
+	return EGameRound::End;
+}
+
+PRAGMA_DISABLE_OPTIMIZATION
+int32 ABM_TileManager::GetTileQuestionsCount(FIntPoint TileAxials) const
+{
+	if (Tiles.Contains(TileAxials))
+	{
+		int32 LCount = Tiles.FindRef(TileAxials)->GetTileQuestionCount();
+		return LCount;
+	}
+	return 1;
+}
+PRAGMA_ENABLE_OPTIMIZATION
+int32 ABM_TileManager::GetPointsOfTile(FIntPoint TileAxials) const
+{
+	ABM_GameModeBase* LGameMode = Cast<ABM_GameModeBase>(GetWorld()->GetAuthGameMode());
+	if (IsValid(LGameMode) && Tiles.Contains(TileAxials))
+	{
+		EGameRound LRound = Tiles.FindRef(TileAxials)->GetAnnexedRound();
+		return LGameMode->GetPointsOfTile(LRound);
+	}
+	return 200;
+}
+
+int32 ABM_TileManager::GetPointsOfCurrentClickedTile(int32 PlayerIndex)
+{
+	if (ClickedTiles.Contains(PlayerIndex))
+	{
+		return GetPointsOfTile(ClickedTiles.FindRef(PlayerIndex));
+	}
+	return 200;
 }
 
 void ABM_TileManager::BeginPlay()
@@ -162,8 +208,35 @@ TArray<ABM_TileBase*> ABM_TileManager::GetCurrentPlayerAvailableTiles(int32 Play
 	return AvailableTiles;
 }
 
-TArray<FIntPoint> ABM_TileManager::GetCurrentPlayerAvailableTilesAxials(int32 PlayerID)
+TArray<FIntPoint> ABM_TileManager::GetCurrentPlayerAvailableTilesAxials(EGameRound CurrentRound, int32 PlayerIndex)
 {
+	switch (CurrentRound)
+	{
+		case EGameRound::ChooseCastle:
+			/*
+			 * 1) взять границу текущей карты
+			 * 2) Найти занятые клетки в этой границе
+			 * 3) Найти множество клеток на этой границе без занятых клеток, находищихся на расстоянии 2 от занятых клеток,
+			 *  если клеток нет, то уменьшить радиус на 1
+			 *  если радиус == 0, то дать любую клетку из границы
+			 */
+				CurrentPlayerAvailableTiles = GetTilesAvailableForCastle();
+		break;
+		case EGameRound::SetTerritory:
+			/*
+			 * 1) Найти все клетки, у которых OwnerID == PlayerID
+			 * 2) Найти всех соседей этих клеток в пределах карты
+			 */
+				CurrentPlayerAvailableTiles = GetTilesAvailableForExpansion(PlayerIndex);
+		break;
+		case EGameRound::FightForTheRestTiles:
+			CurrentPlayerAvailableTiles = GetUncontrolledTiles();
+		break;
+		case EGameRound::FightForTerritory:
+			CurrentPlayerAvailableTiles = GetTilesAvailableForAttack(PlayerIndex);
+		break;
+		default: break;
+	}
 	return CurrentPlayerAvailableTiles;
 }
 
@@ -173,12 +246,12 @@ TArray<FIntPoint> ABM_TileManager::GetShapeBorder(TArray<FIntPoint> Shape)
 	return AvailableTiles;
 }
 
-void ABM_TileManager::SC_SetTileOwner_Implementation(FIntPoint TileAxials, ETileStatus NewStatus, int32 NewOwnerID, EColor NewOwnerColor)
+void ABM_TileManager::SC_SetTileOwner_Implementation(FIntPoint TileAxials, ETileStatus NewStatus, int32 NewOwnerID, EColor NewOwnerColor, EGameRound CurrentGameRound)
 {
 	ABM_TileBase* LTileToChange = Tiles.FindRef(TileAxials);
 	if (IsValid(LTileToChange))
 	{
-		LTileToChange->SC_AddTileToPlayerTerritory(NewStatus, NewOwnerID, NewOwnerColor);
+		LTileToChange->SC_AddTileToPlayerTerritory(NewStatus, NewOwnerID, NewOwnerColor, CurrentGameRound);
 	}
 }
 

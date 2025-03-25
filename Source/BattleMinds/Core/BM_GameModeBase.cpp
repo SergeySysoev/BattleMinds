@@ -57,6 +57,16 @@ UDataTable* ABM_GameModeBase::GetQuestionsDataTable(EQuestionType QuestionType) 
 	return nullptr;
 }
 
+ABM_GameModeBase::ABM_GameModeBase()
+{
+	TilePoints.Add(EGameRound::SetTerritory, 200);
+	TilePoints.Add(EGameRound::FightForTerritory, 400);
+	TilePoints.Add(EGameRound::FightForTheRestTiles, 800);
+	TilePoints.Add(EGameRound::ChooseCastle, 1000);
+	TilePoints.Add(EGameRound::End, 200);
+	
+}
+
 void ABM_GameModeBase::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
@@ -103,9 +113,8 @@ void ABM_GameModeBase::InitPlayer_Implementation(APlayerController* NewPlayer)
 		EColor LTempColor = PlayerState->GetPlayerColor();
 		UE_LOG(LogBM_GameMode, Display, TEXT("Player color: %s"), *UEnum::GetValueAsString(LTempColor));
 		UBM_GameInstance* LGameInstance = Cast<UBM_GameInstance>(GetWorld()->GetGameInstance());
-		PlayerState->BMPlayerID = NumberOfActivePlayers;
+		PlayerState->SC_SetPlayerIndex(NumberOfActivePlayers);
 		//TODO: get this info from Steam info (loaded into Save game UserProfile)
-		PlayerState->Nickname = NicknameMap.FindRef(NumberOfActivePlayers);
 		const auto AvailablePlayerStart = FindPlayerStart(NewPlayer, TEXT(""));
 		const FVector Location = AvailablePlayerStart->GetActorLocation();
 		const FRotator Rotation = AvailablePlayerStart->GetActorRotation();
@@ -121,7 +130,7 @@ void ABM_GameModeBase::HandleStartingNewPlayer_Implementation(APlayerController*
 	if (ABM_PlayerState* PlayerState = Cast<ABM_PlayerState>(NewPlayer->GetPlayerState<ABM_PlayerState>()))
 	{
 		UE_LOG(LogBM_GameMode, Display, TEXT("Player color: %s"), *UEnum::GetValueAsString(PlayerState->GetPlayerColor()));
-		PlayerState->BMPlayerID = NumberOfActivePlayers;
+		PlayerState->SC_SetPlayerIndex(NumberOfActivePlayers);
 		NumberOfActivePlayers++;
 	}
 	Super::HandleStartingNewPlayer_Implementation(NewPlayer);

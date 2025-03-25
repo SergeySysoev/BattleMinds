@@ -32,18 +32,28 @@ TArray<FPermutation> UBM_Types::GenerateAllPermutations(TArray<int32>& ElementsO
 
 TArray<FPermutation> UBM_Types::GenerateNumberOfPermutations(TArray<int32>& ElementsOfPermutations, int32 NumberOfPermutations)
 {
-	TArray<FPermutation> LResults;
 	TArray<FPermutation> LAllPermutations;
+	TArray<FPermutation> LResults;
 	TArray<int32> LCurrent;
 	Backtrack(LCurrent, ElementsOfPermutations, LAllPermutations);
+	/*while (LAllPermutations.Num() < NumberOfPermutations)
+	{
+		int32 LRemaining = NumberOfPermutations - LAllPermutations.Num();
+		int32 LCopyCount = FMath::Min(LRemaining, LAllPermutations.Num());
+		for (int32 LIndex = 0; LIndex < LCopyCount; LIndex++)
+		{
+			LAllPermutations.Add(LAllPermutations[LIndex]);	
+		}
+	}*/
 	if (LAllPermutations.Num() < NumberOfPermutations)
 	{
 		LResults.Append(LAllPermutations);
 		int32 LRemaining = NumberOfPermutations - LAllPermutations.Num();
-		int32 LCopyCount = FMath::Min(LRemaining, LAllPermutations.Num());
-		for (int32 i = 0; i < LCopyCount; i++)
+		int32 LFullPermutationsArrayNumAdditional = LRemaining / LAllPermutations.Num();
+		int32 LRemainingPermutationsNum = LRemaining % LAllPermutations.Num();
+		for (int32 i = 0; i < LFullPermutationsArrayNumAdditional; i++)
 		{
-			LResults.Add(LAllPermutations[i]);
+			LResults.Append(LAllPermutations);
 		}
 	}
 	return LResults;

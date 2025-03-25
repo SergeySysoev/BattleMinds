@@ -19,4 +19,7 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "BMQuestions")
 	static void GetQuestionCategoryStruct(EQuestionCategories Category, UDA_QuestionCategories* QuestionCategoriesDataAsset, FCategory& OutCategoryStruct);
+
+	UFUNCTION(BlueprintPure, Category = "Players")
+	static EColor GetPlayerColorByIndex(int32 PlayerIndex, UObject* WorldContext);
 };

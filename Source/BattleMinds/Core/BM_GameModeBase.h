@@ -46,8 +46,13 @@ public:
 
 	UFUNCTION(BlueprintPure)
 	UDataTable* GetQuestionsDataTable(EQuestionType QuestionType) const;
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE int32 GetPointsOfTile(const EGameRound TileStatus) const { return TilePoints.FindRef(TileStatus); }
 	
 protected:
+
+	ABM_GameModeBase();
 	
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	
@@ -56,10 +61,10 @@ protected:
 	void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game settings")
-	float QuestionTimer;
+	float QuestionTimer = 10.f;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Game settings")
-	float TurnTimer;
+	float TurnTimer = 10.f;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Game settings")
 	int32 MaxNumberOfActivePlayers = 3;
@@ -107,7 +112,13 @@ protected:
 	TObjectPtr<ACameraActor> ShotQuestionCamera;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game settings")
-	EGameLength SelectedGameLength;
+	EGameLength SelectedGameLength = EGameLength::Long;
+
+	/*
+	 * How many points will be given to Player if he adds the tile with the specified status
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Game settings | Tile Points")
+	TMap<EGameRound, int32> TilePoints;
 	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void InitPlayer(APlayerController* NewPlayer);

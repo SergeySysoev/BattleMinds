@@ -11,8 +11,7 @@ DEFINE_LOG_CATEGORY(LogBM_PlayerState);
 void ABM_PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(ABM_PlayerState, BMPlayerID);
-	DOREPLIFETIME(ABM_PlayerState, Nickname);
+	DOREPLIFETIME(ABM_PlayerState, BMPlayerIndex);
 	DOREPLIFETIME(ABM_PlayerState, Points);
 	DOREPLIFETIME(ABM_PlayerState, QuestionChoices);
 	DOREPLIFETIME(ABM_PlayerState, CurrentQuestionAnswerSent);
@@ -26,9 +25,14 @@ float ABM_PlayerState::GetPoints() const
 	return Points;
 }
 
-void ABM_PlayerState::SC_AddPoints_Implementation(int32 inPoints)
+void ABM_PlayerState::SC_SetPlayerIndex_Implementation(int32 NewPlayerIndex)
 {
-	Points += inPoints;
+	BMPlayerIndex = NewPlayerIndex;
+}
+
+void ABM_PlayerState::SC_ChangePoints_Implementation(int32 IncrementPoints)
+{
+	Points += IncrementPoints;
 	if (HasAuthority() && GetNetMode() == NM_ListenServer)
 	{
 		OnRep_Points();
@@ -37,7 +41,7 @@ void ABM_PlayerState::SC_AddPoints_Implementation(int32 inPoints)
 
 void ABM_PlayerState::SC_AddTileToTerritory_Implementation()
 {
-	SC_AddPoints(200);
+	SC_ChangePoints(200);
 }
 
 void ABM_PlayerState::SC_RemoveTileFromTerritory_Implementation(ABM_TileBase* InTile)
@@ -51,7 +55,7 @@ void ABM_PlayerState::SC_RemoveTileFromTerritory_Implementation(ABM_TileBase* In
 		}
 		else
 		{
-			SC_AddPoints(-1 * Points);
+			SC_ChangePoints(-1 * Points);
 		}
 	}
 }
@@ -99,7 +103,7 @@ int32 ABM_PlayerState::GetWrongAnswersNumber()
 
 void ABM_PlayerState::OnRep_Points()
 {
-	OnPointsChanged.Broadcast(BMPlayerID, Points);
+	OnPointsChanged.Broadcast(BMPlayerIndex, Points);
 }
 
 TSet<ABM_TileBase*> ABM_PlayerState::GetNeighbors()
@@ -116,6 +120,6 @@ void ABM_PlayerState::BeginPlay()
 
 void ABM_PlayerState::PlayerColorChanged()
 {
-	UE_LOG(LogBM_PlayerState, Display, TEXT("OnRep_Color, ID: %d, Color: %s, Role: %s"), BMPlayerID, *UEnum::GetValueAsString(PlayerColor), *UEnum::GetValueAsString(GetLocalRole()));
+	UE_LOG(LogBM_PlayerState, Display, TEXT("OnRep_Color, ID: %d, Color: %s, Role: %s"), BMPlayerIndex, *UEnum::GetValueAsString(PlayerColor), *UEnum::GetValueAsString(GetLocalRole()));
 }
 

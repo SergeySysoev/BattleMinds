@@ -19,35 +19,6 @@ ABM_PlayerControllerBase::ABM_PlayerControllerBase()
 	bEnableMouseOverEvents = true;
 }
 
-bool ABM_PlayerControllerBase::HasValidCurrentClickedTile() const
-{
-	return IsValid(CurrentClickedTile);
-}
-
-
-void ABM_PlayerControllerBase::SC_RemoveCurrentTileFromTerritory_Implementation() const
-{
-	check(HasAuthority());
-	
-	if (IsValid(CurrentClickedTile))
-	{
-		Cast<ABM_PlayerState>(PlayerState)->SC_RemoveTileFromTerritory(CurrentClickedTile);
-	}
-}
-
-void ABM_PlayerControllerBase::SC_AssignCurrentTile_Implementation(ABM_TileBase* TargetTile)
-{
-	check(HasAuthority());
-	CurrentClickedTile = TargetTile;
-}
-
-void ABM_PlayerControllerBase::SC_ApplyDamageToClickedTile_Implementation(int32 DamageAmount) const
-{
-	if (IsValid(CurrentClickedTile))
-	{
-		CurrentClickedTile->SC_ApplyDamage(DamageAmount);
-	}
-}
 
 void ABM_PlayerControllerBase::CC_SetGameLength_Implementation(const EGameLength GameLength)
 {
@@ -57,52 +28,18 @@ void ABM_PlayerControllerBase::CC_SetGameLength_Implementation(const EGameLength
 	}
 }
 
-int32 ABM_PlayerControllerBase::GetPointsOfCurrentClickedTile() const
-{
-	return 200;
-}
-
 void ABM_PlayerControllerBase::BeginPlay()
 {
 	Super::BeginPlay();
-	Cast<ABM_PlayerState>(PlayerState)->OnCastleConquered.AddUniqueDynamic(this, &ThisClass::SC_BeginTransferTerritory);
 }
 
 FLinearColor ABM_PlayerControllerBase::GetPlayerColorByID(int32 PlayerID) const
 {
 	if(ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState()))
 	{
-		return LGameState->GetPlayerColorByID(PlayerID);
+		return LGameState->GetPlayerColorByIndex(PlayerID);
 	}
 	return FLinearColor::White;
-}
-
-void ABM_PlayerControllerBase::SC_BeginTransferTerritory_Implementation()
-{
-	if(ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState()))
-	{
-		LGameState->TransferDefendingPlayerTerritoryToAttacker();
-	}
-}
-
-void ABM_PlayerControllerBase::SC_AddCurrentTileToTerritory_Implementation(ETileStatus InTileStatus) const
-{
-	check(HasAuthority());
-	
-	if (IsValid(CurrentClickedTile))
-	{
-		Cast<ABM_PlayerState>(PlayerState)->SC_AddTileToTerritory();
-	}
-}
-
-void ABM_PlayerControllerBase::SC_CancelAttackForCurrentTile_Implementation() const
-{
-	check(HasAuthority());
-	
-	if (IsValid(CurrentClickedTile))
-	{
-		CurrentClickedTile->SC_CancelAttack();
-	}
 }
 
 void ABM_PlayerControllerBase::SC_AddAnsweredQuestionChoice_Implementation(FInstancedStruct InPlayerChoice)
@@ -116,7 +53,7 @@ void ABM_PlayerControllerBase::SC_AddAnsweredQuestionChoice_Implementation(FInst
 	BM_PlayerState->QuestionChoices.Add(InPlayerChoice);
 	if(ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState()))
 	{
-		LGameState->OnAnswerSent.Broadcast(BM_PlayerState->BMPlayerID);
+		LGameState->OnAnswerSent.Broadcast(BM_PlayerState->GetPlayerIndex());
 	}
 }
 
@@ -224,26 +161,18 @@ void ABM_PlayerControllerBase::CC_OpenQuestionWidget_Implementation(FInstancedSt
 	}
 }
 
-void ABM_PlayerControllerBase::SC_RequestToOpenQuestion_Implementation(EQuestionType QuestionType)
-{
-	if(ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState()))
-	{
-		LGameState->RequestToOpenQuestion(QuestionType);
-	}
-}
-
 void ABM_PlayerControllerBase::SC_TryClickTheTile_Implementation(FIntPoint TargetTile)
 {
-	ABM_PlayerState* BM_PlayerState = Cast<ABM_PlayerState>(this->PlayerState);
+	ABM_PlayerState* LPlayerState = Cast<ABM_PlayerState>(this->PlayerState);
 	ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState());
 	
-	if (!IsValid(BM_PlayerState) || !IsValid(LGameState))
+	if (!IsValid(LPlayerState) || !IsValid(LGameState))
 	{
 		return;
 	}
-	if (BM_PlayerState->IsPlayerTurn())
+	if (LPlayerState->IsPlayerTurn())
 	{
-		if (LGameState->GetCurrentPlayerAvailableTiles().Contains(TargetTile))
+		if (LGameState->GetPlayerAvailableTiles(LGameState->GetCurrentRound(), LPlayerState->GetPlayerIndex()).Contains(TargetTile))
 		{
 			LGameState->HandleClickedTile(TargetTile);
 		}

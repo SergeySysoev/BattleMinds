@@ -10,12 +10,18 @@
 
 class UBM_UWPlayerInfo;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerTurnUpdated);
+
 UCLASS()
 class BATTLEMINDS_API UBM_UWPlayerHUD : public UCommonUserWidget
 {
 	GENERATED_BODY()
 
 public:
+
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
+	FOnPlayerTurnUpdated OnPlayerTurnUpdated;
+	
 	UFUNCTION(BlueprintImplementableEvent)
 	void InitPlayersInfo(const TArray<FPlayerInfo>& PlayersHUDInfo);
 

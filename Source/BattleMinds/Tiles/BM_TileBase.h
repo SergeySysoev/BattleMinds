@@ -47,6 +47,9 @@ public:
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void SC_ChangeStatus(ETileStatus NewStatus);
 
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void SC_RevertStatus();
+
 	UFUNCTION(BlueprintCallable)
 	void SetTileEdgesColor(EColor NewColor);
 
@@ -57,13 +60,13 @@ public:
 	void SC_ChangeTileHP(int32 HPIncrement);
 	
 	UFUNCTION(BlueprintCallable)
-	int32 GetOwningPlayerID(){return OwnerPlayerID;};
+	int32 GetOwningPlayerIndex(){return OwnerPlayerIndex;};
 	
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintPure)
 	ETileStatus GetStatus() { return Status; };
 	
 	UFUNCTION(BlueprintPure)
-	FORCEINLINE int32 GetTileQuestionCount() const { return CurrentQuestionArray.Num(); };
+	int32 GetTileQuestionCount() const;
 
 	UFUNCTION(BlueprintPure)
 	EQuestionType GetTileNextQuestionType() const;
@@ -75,7 +78,7 @@ public:
 	void SC_CancelAttack();
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void SC_AddTileToPlayerTerritory(ETileStatus InStatus, int32 InPlayerID, EColor InPlayerColor);
+	void SC_AddTileToPlayerTerritory(ETileStatus InStatus, int32 InPlayerID, EColor InPlayerColor, EGameRound CurrentGameRound);
 	
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_RemoveTileFromPlayerTerritory();
@@ -100,6 +103,12 @@ public:
 
 	UFUNCTION(BlueprintPure)
 	FORCEINLINE FIntPoint GetAxial() const { return Axial; };
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE EGameRound GetAnnexedRound() const { return AnnexedRound; }
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE int32 GetOwnerPlayerIndex() const { return OwnerPlayerIndex; };
 	
 protected:
 	
@@ -148,6 +157,12 @@ protected:
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_BorderColor, BlueprintReadWrite, Category="Territory")
 	EColor BorderColor = EColor::Undefined;
 
+	/*
+	 * Game round in which this tile was annexed to a Player's territory
+	 * Depending on this value different amount of points will be incremented to Player's Score
+	 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Territory")
+	EGameRound AnnexedRound = EGameRound::End;
 	 /*
 	  * XY coordinate of the Hex tile for any Hex related functions
 	  */
@@ -160,8 +175,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Territory")
 	TArray<EQuestionType> DefaultQuestionArray;
 	
-	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Player")
-	int32 OwnerPlayerID = -1;
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Player")
+	int32 OwnerPlayerIndex = -1;
 	
 	UFUNCTION()
 	void OnRep_TileColor();
@@ -174,4 +189,9 @@ protected:
 public:
 	
 	virtual void Tick(float DeltaTime) override;
+
+private:
+
+	UPROPERTY()
+	ETileStatus CachedStatus;
 };

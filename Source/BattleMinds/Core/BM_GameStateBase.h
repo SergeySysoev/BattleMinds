@@ -15,6 +15,8 @@ class ABM_TileBase;
 class ABM_GameModeBase;
 class ABM_PlayerStateBase;
 
+DECLARE_LOG_CATEGORY_EXTERN(BMLogGameStateBase, Log, All);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAnswerSentSignature, int32, PlayerID);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPlayerPointsChanged, int32, PlayerID, float, NewScore);
 class ABM_PlayerState;
@@ -33,16 +35,19 @@ public:
 	FOnPlayerPointsChanged OnPlayerPointsChanged;
 
 	UFUNCTION(BlueprintPure)
-	FORCEINLINE int32 GetCurrentPlayerID() const { return CurrentPlayerCounter; }
+	FORCEINLINE int32 GetCurrentPlayerCounter() const { return CurrentPlayerCounter; }
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE int32 GetCurrentPlayerIndex() const { return CurrentPlayerIndex; }
 	
 	UFUNCTION(BlueprintPure)
 	FORCEINLINE EGameRound GetCurrentRound() const { return Round; }
 
 	UFUNCTION(BlueprintPure)
-	TArray<FIntPoint> GetCurrentPlayerAvailableTiles() const;
+	TArray<FIntPoint> GetPlayerAvailableTiles(EGameRound CurrentRound, int32 PlayerIndex) const;
 
 	UFUNCTION(BlueprintPure)
-	FLinearColor GetPlayerColorByID(int32 PlayerID) const;
+	FLinearColor GetPlayerColorByIndex(int32 PlayerIndex) const;
 
 	UFUNCTION()
 	void HandleClickedTile(FIntPoint InClickedTile);
@@ -66,10 +71,7 @@ public:
 	void PassTurnToTheNextPlayer();
 
 	UFUNCTION(BlueprintCallable)
-	void RequestToStartPlayerTurnTimer(int32 PlayerID);
-
-	UFUNCTION(BlueprintCallable)
-	ABM_PlayerControllerBase* GetPlayerController(int32 PlayerID);
+	ABM_PlayerControllerBase* GetPlayerController(int32 PlayerIndex);
 
 	UFUNCTION()
 	void InitGameState();
@@ -79,6 +81,9 @@ public:
 
 	UFUNCTION()
 	void TransferDefendingPlayerTerritoryToAttacker();
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE TArray<FPlayersCycle> GetPlayerCycles() const { return PlayerTurnsCycles;}
 	
 	FunctionVoidPtr OpenChooseQuestionPtr;
 	FunctionVoidPtr StartSiegePtr;
@@ -98,8 +103,17 @@ protected:
 	UPROPERTY(Replicated, EditDefaultsOnly, BlueprintReadWrite, Category="Game flow", meta=(BaseStruct = "Question"))
 	FInstancedStruct LastQuestion;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Players info")
+	/*
+	 * integer to iterate through PlayerCycles[i].Permutations array, always go from 0 to N
+	 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Players info")
 	int32 CurrentPlayerCounter = 0;
+
+	/*
+	 * index of player in PlayerArray, is set from PlayerCycles[i].Permutations array using CurrentPlayerCounter
+	 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Players info")
+	int32 CurrentPlayerIndex = 0;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Game flow")
 	FTimerHandle PlayerTurnHandle;
@@ -108,8 +122,12 @@ protected:
 	UPROPERTY(BlueprintReadWrite, Category="Players info", meta=(BaseStruct="PlayerChoice"))
 	TArray<FInstancedStruct> PlayersCurrentChoices;
 
+	/*
+	 * index of player in PlayerArray used when one player attacks another player tile
+	 * is set from Tile->OwningPlayerIndex property, equivalent of CurrentPlayerIndex
+	 */
 	UPROPERTY(BlueprintReadWrite, Category = "Players info")
-	int32 DefendingPlayerID;
+	int32 DefendingPlayerIndex;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Game flow", meta=(BaseStruct = "Question"))
 	TArray<FInstancedStruct> UsedQuestions;
@@ -223,10 +241,16 @@ protected:
 	int32 CountNotOwnedTiles();
 
 	UFUNCTION()
+	void UpdatePlayersTurnsWidget();
+	
+	UFUNCTION()
 	void WrapUpCurrentPlayersCycle();
 
 	UFUNCTION()
-	void UpdatePlayersTurnTimerAndNickname(int32 PlayerID);
+	void UpdatePlayerTurn();
+
+	UFUNCTION()
+	void UpdateGameMap();
 
 	UFUNCTION()
 	void HighlightAvailableTiles(int32 PlayerArrayIndex);
@@ -235,10 +259,10 @@ protected:
 	void StartPlayerTurnTimer(int32 PlayerArrayIndex);
 	
 	UFUNCTION(BlueprintCallable)
-	void ChooseFirstAvailableTileForPlayer(int32 PlayerID);
+	void ChooseFirstAvailableTileForPlayer(int32 PlayerIndex);
 
 	UFUNCTION()
-	void ForceChooseAvailableTile();
+	void ForceChooseAvailableTile(int32 PlayerArrayIndex);
 	
 	UFUNCTION(BlueprintCallable)
 	void CountResults();
@@ -257,7 +281,7 @@ protected:
 	void HandleSiegedTile(ABM_PlayerControllerBase* AttackingPlayerController, ABM_PlayerControllerBase* DefendingPlayerController,
 		bool QuestionWasAnsweredByAttacker);
 
-	UFUNCTION(NetMulticast, Unreliable)
+	UFUNCTION(BlueprintCallable, NetMulticast, Unreliable)
 	void MC_UpdatePoints(int32 PlayerID, float NewScore);
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

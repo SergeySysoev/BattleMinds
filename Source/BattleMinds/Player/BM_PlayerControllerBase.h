@@ -46,89 +46,56 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "User Widgets")
 	TSubclassOf<UBM_UWPlayerHUD> PlayerHUDClass;
 
-	UFUNCTION()
-	FORCEINLINE ABM_TileBase* GetCurrentClickedTile() const { return CurrentClickedTile; }
-
-	UFUNCTION()
-	bool HasValidCurrentClickedTile() const;
-	
-	UFUNCTION(BlueprintImplementableEvent)
-	void OpenQuestion();
-	
-	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void SC_RequestToOpenQuestion(EQuestionType QuestionType);
-
-	UFUNCTION(Server, Reliable, BlueprintCallable)
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category= "Questions")
 	void SC_AddAnsweredQuestionChoice(FInstancedStruct InPlayerChoice);
-
-	UFUNCTION(BlueprintImplementableEvent)
-	void SetPlayerBorderBlinking(bool IsEnabled);
 	
-	UFUNCTION(Client, Reliable, BlueprintCallable)
+	UFUNCTION(Client, Reliable, BlueprintCallable, Category= "Questions")
 	void CC_OpenQuestionWidget(FInstancedStruct LastQuestion, const TArray<int32>& AnsweringPlayers, AActor* NewViewTarget);
-	
-	UFUNCTION(BlueprintImplementableEvent)
-	void UpdateCurrentPlayerNickname(const int32 CurrentPlayerID);
-	
-	UFUNCTION(Client, Reliable, BlueprintCallable)
-	void CC_MarkAnsweredPlayers(int32 LastSentPlayer);
-	
-	UFUNCTION(Client, Reliable, BlueprintCallable)
+
+	UFUNCTION(Client, Reliable, BlueprintCallable, Category= "Questions")
 	void CC_RemoveQuestionWidget(bool bSwitchViewTargetBackToTiles = true);
 	
-	UFUNCTION(Client, Reliable, BlueprintCallable)
+	UFUNCTION(Client, Reliable, BlueprintCallable, Category= "Questions")
 	void CC_ShowResultsWidget(const TArray<APlayerState*>& PlayerArray);
 	
-	UFUNCTION(Client, Reliable, BlueprintCallable)
+	UFUNCTION(Client, Reliable, BlueprintCallable, Category= "Questions")
 	void CC_ShowCorrectAnswers(const TArray<FInstancedStruct>& PlayersChoices);
 	
-	UFUNCTION(BlueprintImplementableEvent)
-	void UpdateTurnTimer(EGameRound GameRound);
+	UFUNCTION(BlueprintImplementableEvent, Category= "HUD")
+	void SetPlayerBorderBlinking(bool IsEnabled);
 	
-	UFUNCTION(BlueprintImplementableEvent)
+	UFUNCTION(BlueprintImplementableEvent, Category= "HUD")
+	void UpdateCurrentPlayerNickname(const int32 CurrentPlayerID);
+
+	UFUNCTION(BlueprintImplementableEvent, Category= "HUD")
+	void UpdatePlayerTurnsAmount(const TArray<FPlayersCycle>& NewPlayerTurnsCycles);
+
+	UFUNCTION(BlueprintImplementableEvent, Category= "HUD")
+	void UpdatePlayerTurnWidget(const int32 CurrentCycle, const int32 CurrentPlayerCount);
+	
+	UFUNCTION(Client, Reliable, BlueprintCallable, Category= "Questions")
+	void CC_MarkAnsweredPlayers(int32 LastSentPlayer);
+
+	UFUNCTION(BlueprintImplementableEvent, Category= "HUD")
 	void ResetTurnTimer(EGameRound GameRound);
 
-	UFUNCTION(BlueprintImplementableEvent)
+	UFUNCTION(BlueprintImplementableEvent, Category= "HUD")
 	void StartCountdownTimer();
-	
-	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
-	void SC_TryClickTheTile(FIntPoint TargetTile);
 
-	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void SC_AssignCurrentTile(ABM_TileBase* TargetTile);
-	
-	UFUNCTION(Client, Reliable, BlueprintCallable)
+	UFUNCTION(Client, Reliable, BlueprintCallable, Category= "HUD")
 	void CC_InitPlayerHUD(const TArray<FPlayerInfo>& PlayersHUDInfo);
 
-	UFUNCTION(Client, Unreliable, BlueprintCallable)
+	UFUNCTION(Client, Unreliable, BlueprintCallable, Category= "HUD")
 	void CC_SetGameLength(const EGameLength GameLength);
 
-	UFUNCTION(Client, Unreliable, BlueprintCallable)
+	UFUNCTION(Client, Unreliable, BlueprintCallable, Category= "HUD")
 	void CC_ShowWarningPopup(const FText& InText);
 
-	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void SC_CancelAttackForCurrentTile() const;
-
-	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void SC_AddCurrentTileToTerritory(ETileStatus InTileStatus) const;
-
-	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void SC_RemoveCurrentTileFromTerritory() const;
-
-	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void SC_ApplyDamageToClickedTile(int32 DamageAmount = 1) const;
-
-	UFUNCTION(BlueprintPure)
-	int32 GetPointsOfCurrentClickedTile() const ;
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable, Category = "Controls")
+	void SC_TryClickTheTile(FIntPoint TargetTile);
 
 protected:
 	virtual void BeginPlay() override;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "Tiles")
-	ABM_TileBase* CurrentClickedTile = nullptr;
-
-	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void SC_BeginTransferTerritory();
 
 	UFUNCTION(BlueprintPure)
 	FLinearColor GetPlayerColorByID(int32 PlayerID) const;

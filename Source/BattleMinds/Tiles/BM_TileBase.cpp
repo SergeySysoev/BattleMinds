@@ -4,6 +4,8 @@
 #include "BM_TileBase.h"
 #include "BattleMinds/Player/BM_PlayerState.h"
 #include "Core/BM_GameInstance.h"
+#include "Core/BM_GameModeBase.h"
+#include "Core/BM_GameStateBase.h"
 #include "GameFramework/Actor.h"
 
 DEFINE_LOG_CATEGORY(LogBM_Tile);
@@ -54,12 +56,18 @@ void ABM_TileBase::SC_ChangeStatus_Implementation(ETileStatus NewStatus)
 			break;
 		default: break;
 	}
-	UE_LOG(LogBM_Tile, Warning, TEXT("Tile %s, New owner: %d"), *GetName(), OwnerPlayerID);
+	UE_LOG(LogBM_Tile, Warning, TEXT("Tile %s, New owner: %d"), *GetName(), OwnerPlayerIndex);
 }
 
 bool ABM_TileBase::SC_ChangeStatus_Validate(ETileStatus NewStatus)
 {
 	return true;
+}
+
+void ABM_TileBase::SC_RevertStatus_Implementation()
+{
+	ETileStatus LNewStatus = CachedStatus;
+	SC_ChangeStatus(LNewStatus);
 }
 
 void ABM_TileBase::SetTileEdgesColor(EColor NewColor)
@@ -95,6 +103,11 @@ void ABM_TileBase::MC_SetCastleVisibility_Implementation(bool bIsVisible)
 	}
 }
 
+int32 ABM_TileBase::GetTileQuestionCount() const
+{
+	return CurrentQuestionArray.Num();
+}
+
 EQuestionType ABM_TileBase::GetTileNextQuestionType() const
 {
 	if (CurrentQuestionArray.IsValidIndex(FMath::Abs(CurrentQuestionArray.Num() - TileHP)))
@@ -117,6 +130,7 @@ void ABM_TileBase::SC_AttackTile_Implementation(EColor InPlayerColor)
 {
 	if (HasAuthority())
 	{
+		CachedStatus = Status;
 		bIsAttacked = true;
 		SC_ChangeStatus(ETileStatus::Attacked);
 		BorderColor = InPlayerColor;
@@ -137,18 +151,19 @@ void ABM_TileBase::SC_RemoveTileFromPlayerTerritory_Implementation()
 	// TODO? reset Material/OwnerID/OwnerNickname
 }
 
-void ABM_TileBase::SC_AddTileToPlayerTerritory_Implementation(ETileStatus InStatus, int32 InPlayerID, EColor InPlayerColor)
+void ABM_TileBase::SC_AddTileToPlayerTerritory_Implementation(ETileStatus InStatus, int32 InPlayerID, EColor InPlayerColor, EGameRound CurrentGameRound)
 {
 	if (HasAuthority())
 	{
 		UE_LOG(LogBM_Tile, Warning, TEXT("Tile %d;%d was added to the Player #%d territory with status %s"),
 			Axial.X, Axial.Y, InPlayerID, *UEnum::GetValueAsString(InStatus));
 		bIsAttacked = false;
-		OwnerPlayerID = InPlayerID;
+		OwnerPlayerIndex = InPlayerID;
 		SC_ChangeStatus(InStatus);
 		TileColor = InPlayerColor;
 		OnRep_TileColor();
 		MC_SetBannerVisibility(false);
+		AnnexedRound = CurrentGameRound;	
 	}
 	OnBannerMeshSpawned.Clear();
 }
@@ -163,35 +178,12 @@ void ABM_TileBase::SC_CancelAttack_Implementation()
 	bIsAttacked = false;
 	MC_SetBannerVisibility(false);
 	OnBannerMeshSpawned.Clear();
-	if (OwnerPlayerID >= 0)
-	{
-		SC_ChangeStatus(ETileStatus::Controlled);
-	}
-	else
-	{
-		SC_ChangeStatus(ETileStatus::NotOwned);
-	}
+	SC_RevertStatus();
 }
 
 
 void ABM_TileBase::OnRep_TileColor()
 {
-	/*switch (Status)
-	{
-		case ETileStatus::NotOwned:
-			StaticMesh->SetMaterial(0, TileMeshDefaultMaterial);
-			break;
-		case ETileStatus::Castle:
-			CastleMesh->SetMaterial(0, CastleMaterial);
-			//CastleMesh->SetVisibility(true);
-		case ETileStatus::Controlled:
-			StaticMesh->SetMaterial(0, TileMeshMaterial);
-			//StaticMesh->SetVisibility(true);
-			break;
-		case ETileStatus::Attacked:
-			BannerMesh->SetMaterial(0, BannerMaterial);
-		default:break;
-	}*/
 	UBM_GameInstance* LGameInstance = Cast<UBM_GameInstance>(GetWorld()->GetGameInstance());
 	if (IsValid(LGameInstance))
 	{
@@ -261,7 +253,7 @@ void ABM_TileBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME(ABM_TileBase, Status);
 	DOREPLIFETIME(ABM_TileBase, bIsAttacked);
 	DOREPLIFETIME(ABM_TileBase, TileHP);
-	DOREPLIFETIME(ABM_TileBase, OwnerPlayerID);
+	DOREPLIFETIME(ABM_TileBase, OwnerPlayerIndex);
 	DOREPLIFETIME(ABM_TileBase, Axial);
 	DOREPLIFETIME_CONDITION(ABM_TileBase, TileColor, COND_SimulatedOnly);
 	DOREPLIFETIME_CONDITION(ABM_TileBase, BorderColor, COND_SimulatedOnly);

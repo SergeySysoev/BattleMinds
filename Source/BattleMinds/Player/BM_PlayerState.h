@@ -23,12 +23,6 @@ class BATTLEMINDS_API ABM_PlayerState : public ABM_PlayerStateBase
 	GENERATED_BODY()
 
 public:
-	/* Player index*/
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite,Replicated, Category= "Player Info")
-	int32 BMPlayerID;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Player Info")
-	FString Nickname;
 	
 	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Questions")
 	bool CurrentQuestionAnswerSent = false;
@@ -63,9 +57,15 @@ public:
 	
 	UFUNCTION(BlueprintPure)
 	float GetPoints() const;
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE int32 GetPlayerIndex() const { return BMPlayerIndex; }
+
+	UFUNCTION(Server, Reliable)
+	void SC_SetPlayerIndex(int32 NewPlayerIndex);
 	
 	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void SC_AddPoints(int32 inPoints);
+	void SC_ChangePoints(int32 IncrementPoints);
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_AddTileToTerritory();
@@ -97,6 +97,10 @@ public:
 protected:
 
 	virtual void BeginPlay() override;
+
+	/* Player index in PlayerArray of GameState*/
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite,Replicated, Category= "Player Info")
+	int32 BMPlayerIndex;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing=OnRep_Points, Category = "Player Info")
 	float Points;

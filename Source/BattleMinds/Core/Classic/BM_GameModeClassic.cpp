@@ -39,7 +39,7 @@ void ABM_GameModeClassic::StartGame()
 				FPlayerInfo LNewPlayerInfo;
 				LNewPlayerInfo.Nickname = LPS->GetPlayerNickname();
 				LNewPlayerInfo.Color = LPS->GetPlayerColor();
-				LNewPlayerInfo.PlayerID = LPS->BMPlayerID;
+				LNewPlayerInfo.PlayerID = LPS->GetPlayerIndex();
 				LPlayersHUDInfo.Add(LNewPlayerInfo);
 			}
 		}

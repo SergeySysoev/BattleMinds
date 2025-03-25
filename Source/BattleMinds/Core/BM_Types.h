@@ -197,7 +197,7 @@ struct FPlayerChoiceShot: public FPlayerChoice
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite, Category="Shot choice")
-	int32 Answer = 0;
+	int32 Answer = MAX_int32;
 
 	UPROPERTY(BlueprintReadWrite, Category="Shot choice")
 	int32 Difference = 0;
