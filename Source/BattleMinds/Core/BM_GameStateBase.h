@@ -250,6 +250,9 @@ protected:
 	void UpdatePlayerTurn();
 
 	UFUNCTION()
+	void StopHUDAnimations();
+
+	UFUNCTION()
 	void UpdateGameMap();
 
 	UFUNCTION()

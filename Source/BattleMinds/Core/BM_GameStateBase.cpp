@@ -56,7 +56,7 @@ void ABM_GameStateBase::CalculateAndSetMaxCyclesPerRound()
 
 void ABM_GameStateBase::InitGameState()
 {
-	Round = EGameRound::ChooseCastle;
+	SetNextGameRound(EGameRound::ChooseCastle);
 	TSubclassOf<ABM_TileManager> LTileManagerClass = ABM_TileManager::StaticClass();
 	TileManager = Cast<ABM_TileManager>(UGameplayStatics::GetActorOfClass(GetWorld(), LTileManagerClass));
 	TileManager->OnMapGeneratedNative.AddUObject(this, &ABM_GameStateBase::CalculateAndSetMaxCyclesPerRound);
@@ -273,6 +273,13 @@ void ABM_GameStateBase::SetNextGameRound(EGameRound NewRound)
 			break;
 		default: break;
 	}
+	for (const auto PlayerState : PlayerArray)
+	{
+		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
+		{
+			PlayerController->UpdateRoundWidget(NewRound);
+		}
+	}
 }
 
 void ABM_GameStateBase::StopAllTimers()
@@ -360,6 +367,7 @@ void ABM_GameStateBase::HandleClickedTile(FIntPoint InClickedTile)
 			break;
 		default: break;
 	}
+	StopHUDAnimations();
 }
 
 void ABM_GameStateBase::SetViewTargetForQuestion(EQuestionType QuestionType, TArray<FName> RowNames, int32 QuestionIndex) const
@@ -820,7 +828,6 @@ void ABM_GameStateBase::VerifyChooseAnswers()
 }
 
 PRAGMA_DISABLE_OPTIMIZATION
-
 void ABM_GameStateBase::VerifyShotAnswers()
 {
 	TArray<FPlayerChoiceShot> ShotChoices;
@@ -1001,7 +1008,8 @@ void ABM_GameStateBase::WrapUpCurrentPlayersCycle()
 	{
 		case EGameRound::ChooseCastle:
 			//All players set their castles, continue to SetTerritory round with 2 sec delay
-			Round = GetNextGameRound();
+			//Round = GetNextGameRound();
+			SetNextGameRound(EGameRound::SetTerritory);
 			ConstructPlayerTurnsCycles();
 			LNextRound.BindUObject(this, &ThisClass::PassTurnToTheNextPlayer);
 			DisableTileEdgesHighlight();
@@ -1036,6 +1044,7 @@ void ABM_GameStateBase::WrapUpCurrentPlayersCycle()
 			if (!PlayerTurnsCycles.IsValidIndex(CurrentPlayerTurnsCycle))
 			{
 				Round = GetNextGameRound();
+				SetNextGameRound(EGameRound::End);
 				FTimerHandle LCountResultsHandle;
 				GetWorld()->GetTimerManager().SetTimer(LCountResultsHandle,this, &ABM_GameStateBase::CountResults, 3.0f, false);
 				break;
@@ -1080,7 +1089,8 @@ void ABM_GameStateBase::PrepareNextTurn()
 				{
 					if (!PlayerTurnsCycles.IsValidIndex(CurrentPlayerTurnsCycle))
 					{
-						Round = EGameRound::FightForTheRestTiles;
+						//Round = EGameRound::FightForTheRestTiles;
+						SetNextGameRound(EGameRound::FightForTheRestTiles);
 						CurrentPlayerIndex = 0;
 						ConstructPlayerTurnsCycles();
 						UpdatePlayersTurnsWidget();
@@ -1093,7 +1103,8 @@ void ABM_GameStateBase::PrepareNextTurn()
 				}
 				else
 				{
-					Round = EGameRound::FightForTheRestTiles;
+					//Round = EGameRound::FightForTheRestTiles;
+					SetNextGameRound(EGameRound::FightForTheRestTiles);
 					CurrentPlayerIndex = 0;
 					ConstructPlayerTurnsCycles();
 					UpdatePlayersTurnsWidget();
@@ -1104,7 +1115,8 @@ void ABM_GameStateBase::PrepareNextTurn()
 			}
 			else
 			{
-				Round = EGameRound::FightForTerritory;
+				//Round = EGameRound::FightForTerritory;
+				SetNextGameRound(EGameRound::FightForTerritory);
 				CurrentPlayerIndex = 0;
 				ConstructPlayerTurnsCycles();
 				UpdatePlayersTurnsWidget();
@@ -1125,7 +1137,8 @@ void ABM_GameStateBase::PrepareNextTurn()
 			}
 			else
 			{
-				Round = EGameRound::FightForTerritory;
+				//Round = EGameRound::FightForTerritory;
+				SetNextGameRound(EGameRound::FightForTerritory);
 				CurrentPlayerIndex = 0;
 				ConstructPlayerTurnsCycles();
 				UpdatePlayersTurnsWidget();
@@ -1155,7 +1168,8 @@ void ABM_GameStateBase::PrepareNextTurn()
 			{
 				if (BMGameMode->GetNumberOfActivePlayers() < 2 || !PlayerTurnsCycles.IsValidIndex(CurrentPlayerTurnsCycle))
 				{
-					Round = GetNextGameRound();
+					//Round = GetNextGameRound();
+					SetNextGameRound(EGameRound::End);
 					FTimerHandle LCountResultsHandle;
 					GetWorld()->GetTimerManager().SetTimer(LCountResultsHandle,this, &ABM_GameStateBase::CountResults, 3.0f, false);
 				}
@@ -1183,8 +1197,20 @@ void ABM_GameStateBase::UpdatePlayerTurn()
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 		{
 			PlayerController->UpdatePlayerTurnWidget(CurrentPlayerTurnsCycle, CurrentPlayerCounter);
+			PlayerController->UpdateCurrentPlayerNickname(CurrentPlayerIndex);
 			Cast<ABM_PlayerState>(PlayerState)->CurrentQuestionAnswerSent = false;
 			PlayerController->ResetTurnTimer(Round);
+		}
+	}
+}
+
+void ABM_GameStateBase::StopHUDAnimations()
+{
+	for (const auto PlayerState : PlayerArray)
+	{
+		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
+		{
+			PlayerController->StopHUDAnimations();
 		}
 	}
 }

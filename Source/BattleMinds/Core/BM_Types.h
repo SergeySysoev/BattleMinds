@@ -16,6 +16,15 @@ enum class EGameLength : uint8
 };
 
 UENUM(BlueprintType)
+enum class EEventType : uint8
+{
+	TileUpdate,
+	PlayerPawnUpdate,
+	PlayerHUDUpdate,
+	MAX UMETA(Hidden)
+};
+
+UENUM(BlueprintType)
 enum class EQuestionCategories : uint8
 {
 	Science UMETA(DisplayedName = "Science"),

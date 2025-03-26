@@ -9,7 +9,7 @@
 
 void ABM_GameStateClassic::ForceSetGameRound(EGameRound NewRound)
 {
-	Round = NewRound;
+	SetNextGameRound(NewRound);
 	ConstructPlayerTurnsCycles();
 	switch (Round)
 	{

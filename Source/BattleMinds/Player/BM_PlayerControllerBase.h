@@ -72,6 +72,12 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent, Category= "HUD")
 	void UpdatePlayerTurnWidget(const int32 CurrentCycle, const int32 CurrentPlayerCount);
+
+	UFUNCTION(BlueprintImplementableEvent, Category= "HUD")
+	void StopHUDAnimations();
+
+	UFUNCTION(BlueprintImplementableEvent, Category= "HUD")
+	void UpdateRoundWidget(EGameRound NewRound);
 	
 	UFUNCTION(Client, Reliable, BlueprintCallable, Category= "Questions")
 	void CC_MarkAnsweredPlayers(int32 LastSentPlayer);
