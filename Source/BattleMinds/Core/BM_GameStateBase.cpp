@@ -827,7 +827,7 @@ void ABM_GameStateBase::VerifyChooseAnswers()
 	}
 }
 
-PRAGMA_DISABLE_OPTIMIZATION
+UE_DISABLE_OPTIMIZATION
 void ABM_GameStateBase::VerifyShotAnswers()
 {
 	TArray<FPlayerChoiceShot> ShotChoices;
@@ -930,7 +930,7 @@ void ABM_GameStateBase::VerifyShotAnswers()
 		}
 	}
 }
-PRAGMA_ENABLE_OPTIMIZATION
+UE_ENABLE_OPTIMIZATION
 
 void ABM_GameStateBase::ShowPlayerChoicesAndCorrectAnswer()
 {

@@ -33,6 +33,11 @@ ABM_TileBase::ABM_TileBase()
 	CastleMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Castle Mesh"));
 	CastleMesh->SetupAttachment(RootComponent);
 	CastleMesh->SetIsReplicated(true);
+
+	PointsWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("Points Widget"));
+	PointsWidget->SetupAttachment(RootComponent);
+	PointsWidget->SetHiddenInGame(true);
+	PointsWidget->SetIsReplicated(true);
 	
 	TileMeshMaterial = MaterialOwned;
 
@@ -84,6 +89,14 @@ void ABM_TileBase::MC_SetBorderVisibility_Implementation(bool bIsVisible)
 	if (IsValid(BorderStaticMesh))
 	{
 		BorderStaticMesh->SetVisibility(bIsVisible);
+	}
+}
+
+void ABM_TileBase::MC_SetPointsWidgetVisibility_Implementation(bool bIsVisible)
+{
+	if (IsValid(PointsWidget))
+	{
+		PointsWidget->SetHiddenInGame(!bIsVisible);
 	}
 }
 

@@ -142,7 +142,7 @@ EQuestionType ABM_TileManager::GetTileNextQuestionType(FIntPoint TileAxials)
 	return EQuestionType::Undefined;
 }
 
-void ABM_TileManager::HighlightTilesForPlayer(TArray<FIntPoint> TilesToHighlight, EColor InPlayerColor)
+void ABM_TileManager::HighlightTilesForPlayer(TArray<FIntPoint> TilesToHighlight, EColor InPlayerColor, EGameRound CurrentRound)
 {
 	for (FIntPoint LTileAxials : TilesToHighlight)
 	{
@@ -151,6 +151,23 @@ void ABM_TileManager::HighlightTilesForPlayer(TArray<FIntPoint> TilesToHighlight
 		{
 			LTileToHighlight->SetTileEdgesColor(InPlayerColor);
 			LTileToHighlight->MC_SetBorderVisibility(true);
+			if (LTileToHighlight->GetStatus() == ETileStatus::NotOwned)
+			{
+				ABM_GameModeBase* LGameMode = Cast<ABM_GameModeBase>(GetWorld()->GetAuthGameMode());
+				if (IsValid(LGameMode))
+				{
+					LTileToHighlight->SetPointsWidgetValue(LGameMode->GetPointsOfTile(CurrentRound));	
+				}
+				else
+				{
+					LTileToHighlight->SetPointsWidgetValue(200);
+				}
+			}
+			else
+			{
+				LTileToHighlight->SetPointsWidgetValue(GetPointsOfTile(LTileAxials));
+			}
+			LTileToHighlight->MC_SetPointsWidgetVisibility(true);
 		}
 	}
 }
@@ -162,6 +179,7 @@ void ABM_TileManager::UnhighlightTiles()
 		if (IsValid(LTile.Value))
 		{
 			LTile.Value->MC_SetBorderVisibility(false);
+			LTile.Value->MC_SetPointsWidgetVisibility(false);
 		}
 	}
 }
@@ -195,7 +213,7 @@ void ABM_TileManager::SC_HighlightAvailableTiles_Implementation(EGameRound GameR
 			break;
 		default: break;
 	}
-	HighlightTilesForPlayer(CurrentPlayerAvailableTiles, InPlayerColor);
+	HighlightTilesForPlayer(CurrentPlayerAvailableTiles, InPlayerColor, GameRound);
 }
 
 TArray<ABM_TileBase*> ABM_TileManager::GetCurrentPlayerAvailableTiles(int32 PlayerID)

@@ -105,7 +105,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	UFUNCTION(BlueprintCallable, Category = "Tile operations")
-	void HighlightTilesForPlayer(TArray<FIntPoint> TilesToHighlight, EColor InPlayerColor);
+	void HighlightTilesForPlayer(TArray<FIntPoint> TilesToHighlight, EColor InPlayerColor, EGameRound CurrentRound);
 
 	UFUNCTION(BlueprintPure, Category = "Tile operations")
 	EQuestionType GetTileNextQuestionType(FIntPoint TileAxials);

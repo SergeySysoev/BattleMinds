@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Components/BoxComponent.h"
+#include "Components/WidgetComponent.h"
 #include "Core/BM_Types.h"
 #include "BM_TileBase.generated.h"
 
@@ -52,6 +53,12 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetTileEdgesColor(EColor NewColor);
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	void SetPointsWidgetValue(int32 Points);
+
+	UFUNCTION(NetMulticast, Unreliable, BlueprintCallable)
+	void MC_SetPointsWidgetVisibility(bool bIsVisible);
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_AttackTile(EColor InPlayerColor);
@@ -126,6 +133,9 @@ protected:
 	
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
     UStaticMeshComponent* CastleMesh = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	UWidgetComponent* PointsWidget = nullptr;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Visuals")
 	TObjectPtr<UMaterialInterface> TileMeshMaterial;
@@ -162,7 +172,7 @@ protected:
 	 * Depending on this value different amount of points will be incremented to Player's Score
 	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Territory")
-	EGameRound AnnexedRound = EGameRound::End;
+	EGameRound AnnexedRound = EGameRound::ChooseCastle;
 	 /*
 	  * XY coordinate of the Hex tile for any Hex related functions
 	  */
