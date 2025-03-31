@@ -2,7 +2,6 @@
 
 
 #include "Developer/BM_TestCreateWidget.h"
-#include "WidgetBlueprint.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 
 UUserWidget* UBM_TestCreateWidget::CreateChosenWidget_Implementation()
@@ -12,7 +11,7 @@ UUserWidget* UBM_TestCreateWidget::CreateChosenWidget_Implementation()
 
 void UBM_TestCreateWidget::CreateWidgetsList(FString Path)
 {
-	WidgetClassMap.Empty();
+	/*WidgetClassMap.Empty();
 	// Доступ к реестру ассетов
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
 
@@ -37,5 +36,5 @@ void UBM_TestCreateWidget::CreateWidgetsList(FString Path)
 				}
 			}
 		}
-	}
+	}*/
 }

@@ -949,8 +949,8 @@ void ABM_GameStateBase::ShowPlayerChoicesAndCorrectAnswer()
 
 void ABM_GameStateBase::HandleSiegedTile(ABM_PlayerControllerBase* AttackingPlayerController, ABM_PlayerControllerBase* DefendingPlayerController, bool QuestionWasAnsweredByAttacker)
 {
-	ABM_PlayerState* AttackingPlayerState = Cast<ABM_PlayerState>(AttackingPlayerController);
-	ABM_PlayerState* DefendingPlayerState = Cast<ABM_PlayerState>(DefendingPlayerController);
+	ABM_PlayerState* AttackingPlayerState = AttackingPlayerController->GetPlayerState<ABM_PlayerState>();
+	ABM_PlayerState* DefendingPlayerState = DefendingPlayerController->GetPlayerState<ABM_PlayerState>();
 	switch (LastQuestion.GetPtr<FQuestion>()->Type)
 	{
 		case EQuestionType::Choose:
@@ -991,12 +991,36 @@ void ABM_GameStateBase::MC_UpdatePoints_Implementation(int32 PlayerID, float New
 
 void ABM_GameStateBase::UpdatePlayersTurnsWidget()
 {
+	TArray<FPlayersCycleUI> LPlayerCyclesUI;
+	ConvertPlayerCyclesToPlayerCyclesUI(LPlayerCyclesUI);
 	for (const auto PlayerState : PlayerArray)
 	{
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 		{
-			PlayerController->UpdatePlayerTurnsAmount(PlayerTurnsCycles);
+			PlayerController->UpdatePlayerTurnsAmount(LPlayerCyclesUI);
 		}
+	}
+}
+
+void ABM_GameStateBase::ConvertPlayerCyclesToPlayerCyclesUI(TArray<FPlayersCycleUI>& OutPlayersCyclesUI)
+{
+	TMap<int32, FUniqueNetIdRepl> PlayerIdsMap;
+	TMap<int32, EColor> PlayerColorsMap;
+	for (int32 i = 0; i < PlayerArray.Num(); i++)
+	{
+		PlayerIdsMap.Add(i, PlayerArray[i]->GetUniqueId());
+		PlayerColorsMap.Add(i, Cast<ABM_PlayerStateBase>(PlayerArray[i])->GetPlayerColor());
+	}
+	for (const auto LPlayerCycle : PlayerTurnsCycles)
+	{
+		FPlayersCycleUI LPlayerCycleUI;
+		LPlayerCycleUI.CycleNumber = LPlayerCycle.CycleNumber;
+		for (const auto LPermutationValue : LPlayerCycle.PlayersPermutation.Values)
+		{
+			LPlayerCycleUI.PlayersPermutation.Values.Add(FPermutationUIValue(PlayerIdsMap.FindRef(LPermutationValue),
+				PlayerColorsMap.FindRef(LPermutationValue)));
+		}
+		OutPlayersCyclesUI.Add(LPlayerCycleUI);
 	}
 }
 

@@ -242,6 +242,9 @@ protected:
 
 	UFUNCTION()
 	void UpdatePlayersTurnsWidget();
+
+	UFUNCTION()
+	void ConvertPlayerCyclesToPlayerCyclesUI(TArray<FPlayersCycleUI>& OutPlayersCyclesUI);
 	
 	UFUNCTION()
 	void WrapUpCurrentPlayersCycle();

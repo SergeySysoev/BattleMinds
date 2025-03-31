@@ -36,15 +36,6 @@ TArray<FPermutation> UBM_Types::GenerateNumberOfPermutations(TArray<int32>& Elem
 	TArray<FPermutation> LResults;
 	TArray<int32> LCurrent;
 	Backtrack(LCurrent, ElementsOfPermutations, LAllPermutations);
-	/*while (LAllPermutations.Num() < NumberOfPermutations)
-	{
-		int32 LRemaining = NumberOfPermutations - LAllPermutations.Num();
-		int32 LCopyCount = FMath::Min(LRemaining, LAllPermutations.Num());
-		for (int32 LIndex = 0; LIndex < LCopyCount; LIndex++)
-		{
-			LAllPermutations.Add(LAllPermutations[LIndex]);	
-		}
-	}*/
 	if (LAllPermutations.Num() < NumberOfPermutations)
 	{
 		LResults.Append(LAllPermutations);

@@ -8,6 +8,10 @@
 #include "Core/BM_Types.h"
 #include "BM_GameInstance.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogBM_GameInstance, Log, All);
+
+class UAdvancedSessionsLibrary;
+
 UCLASS()
 class BATTLEMINDS_API UBM_GameInstance : public UAdvancedFriendsGameInstance
 {
@@ -78,5 +82,36 @@ public:
 	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game Settings")
 	EGameLength GameLength = EGameLength::Long;
-	
+
+	UFUNCTION(BlueprintCallable)
+	void SetLocalPlayerNickname(const FString& InLocalNickname);
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE FString GetLocalPlayerName() const { return LocalNickname; }
+
+	UFUNCTION(BlueprintCallable)
+	void SetLocalPlayerUniqueNetId(const FUniqueNetIdRepl& InUniqueNetId);
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE FUniqueNetIdRepl GetLocalPlayerUniqueNetId() const { return UniqueNetIdRepl; }
+
+	UFUNCTION(BlueprintCallable)
+	void AddPlayerAvatar(FUniqueNetIdRepl PlayerUniqueNetId, EAvatarSize AvatarSize, UTexture2D* Avatar);
+
+	UFUNCTION(BlueprintPure)
+	UTexture2D* GetPlayerAvatarOfSize(FUniqueNetIdRepl PlayerUniqueNetId, EAvatarSize AvatarSize);
+
+	UFUNCTION(BlueprintCallable)
+	void ClearPlayerAvatarsMap();
+
+private:
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player Settings", meta = (AllowPrivateAccess = "true"))
+	FString LocalNickname = "";
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player Settings", meta = (AllowPrivateAccess = "true"))
+	FUniqueNetIdRepl UniqueNetIdRepl;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player Settings", meta = (AllowPrivateAccess = "true"))
+	TMap<FUniqueNetIdRepl, FPlayerAvatars> PlayerAvatars;
 };

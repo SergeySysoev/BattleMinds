@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "Core/BM_Types.h"
 #include "GameFramework/PlayerState.h"
-#include "Net/UnrealNetwork.h"
 #include "BM_PlayerStateBase.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogBM_PlayerStateBase, Display, All);
@@ -35,6 +34,10 @@ public:
 	UFUNCTION(BlueprintPure)
 	FORCEINLINE FString GetPlayerNickname() const { return PlayerNickname; }
 
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE bool IsPlayerStateInitialized() const { return bAvatarInitialized && bNicknameInitialized; }
+	
+
 protected:
 	
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_Color, Category = "Player Info")
@@ -45,7 +48,7 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Player Info")
 	FString PlayerNickname = "NewUser";
-
+	
 	virtual void CopyProperties(APlayerState* PlayerState) override;
 
 	virtual void OverrideWith(APlayerState* PlayerState) override;
@@ -56,4 +59,12 @@ protected:
 	void OnRep_Color();
 
 	virtual void PlayerColorChanged();
+
+private:
+
+	UPROPERTY(Replicated)
+	bool bNicknameInitialized = false;
+
+	UPROPERTY(Replicated)
+	bool bAvatarInitialized = false;
 };

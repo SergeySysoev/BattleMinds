@@ -5,6 +5,7 @@
 #include "BattleMinds/Tiles/BM_TileBase.h"
 #include "BattleMinds/Player/BM_PlayerState.h"
 #include "Blueprint/UserWidget.h"
+#include "Core/BM_GameInstance.h"
 #include "Core/BM_GameModeBase.h"
 #include "Core/BM_GameStateBase.h"
 #include "Tiles/BM_TileBase.h"
@@ -28,6 +29,27 @@ void ABM_PlayerControllerBase::CC_SetGameLength_Implementation(const EGameLength
 	}
 }
 
+void ABM_PlayerControllerBase::SC_SetPlayerInfo_Implementation(const FString& InPlayerNickname)
+{
+	ABM_PlayerStateBase* LPlayerStateBase = GetPlayerState<ABM_PlayerStateBase>();
+	if (IsValid(LPlayerStateBase))
+	{
+		LPlayerStateBase->SetPlayerNickname(InPlayerNickname);
+	}
+}
+
+void ABM_PlayerControllerBase::SetPlayerInfoFromGI()
+{
+	if (IsLocalController())
+	{
+		UBM_GameInstance* LGameInstance = GetGameInstance<UBM_GameInstance>();
+		if (IsValid(LGameInstance))
+		{
+			SC_SetPlayerInfo(LGameInstance->GetLocalPlayerName());
+		}
+	}
+}
+
 void ABM_PlayerControllerBase::BeginPlay()
 {
 	Super::BeginPlay();
@@ -40,6 +62,15 @@ FLinearColor ABM_PlayerControllerBase::GetPlayerColorByID(int32 PlayerID) const
 		return LGameState->GetPlayerColorByIndex(PlayerID);
 	}
 	return FLinearColor::White;
+}
+
+FUniqueNetIdRepl ABM_PlayerControllerBase::GetPlayerUniqueNetIdByPlayerId(int32 PlayerID) const
+{
+	if(ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState()))
+	{
+		return LGameState->PlayerArray[PlayerID]->GetUniqueId();
+	}
+	return FUniqueNetIdRepl();
 }
 
 void ABM_PlayerControllerBase::SC_AddAnsweredQuestionChoice_Implementation(FInstancedStruct InPlayerChoice)

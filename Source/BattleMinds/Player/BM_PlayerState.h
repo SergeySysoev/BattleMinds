@@ -4,8 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "BM_PlayerStateBase.h"
-#include "GameFramework/PlayerState.h"
-#include "Net/UnrealNetwork.h"
 #include "Core/BM_Types.h"
 #include "Tiles/BM_TileBase.h"
 #include "BM_PlayerState.generated.h"

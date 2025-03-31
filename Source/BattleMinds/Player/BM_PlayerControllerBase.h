@@ -9,6 +9,7 @@
 #include "UI/BM_UWResults.h"
 #include "BM_PlayerControllerBase.generated.h"
 
+class UBM_GameInstance;
 class UBM_UWQuestion;
 class ABM_TileBase;
 class ABM_PlayerState;
@@ -68,7 +69,7 @@ public:
 	void UpdateCurrentPlayerNickname(const int32 CurrentPlayerID);
 
 	UFUNCTION(BlueprintImplementableEvent, Category= "HUD")
-	void UpdatePlayerTurnsAmount(const TArray<FPlayersCycle>& NewPlayerTurnsCycles);
+	void UpdatePlayerTurnsAmount(const TArray<FPlayersCycleUI> & NewPlayerTurnsCycles);
 
 	UFUNCTION(BlueprintImplementableEvent, Category= "HUD")
 	void UpdatePlayerTurnWidget(const int32 CurrentCycle, const int32 CurrentPlayerCount);
@@ -100,9 +101,19 @@ public:
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable, Category = "Controls")
 	void SC_TryClickTheTile(FIntPoint TargetTile);
 
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "Player Info")
+	void SC_SetPlayerInfo(const FString& InPlayerNickname);
+
+	UFUNCTION(BlueprintCallable, Category = "Player Info")
+	void SetPlayerInfoFromGI();
+
 protected:
 	virtual void BeginPlay() override;
 
 	UFUNCTION(BlueprintPure)
 	FLinearColor GetPlayerColorByID(int32 PlayerID) const;
+
+	UFUNCTION(BlueprintPure)
+	FUniqueNetIdRepl GetPlayerUniqueNetIdByPlayerId(int32 PlayerID) const;
+	
 };

@@ -6,6 +6,7 @@
 #include "InstancedStruct.h"
 #include "Engine/DataTable.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "GameFramework/OnlineReplStructs.h"
 #include "BM_Types.generated.h"
 
 UENUM(BlueprintType)
@@ -467,7 +468,10 @@ struct FPlayerConnectionInfo
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Connection Info")
 	bool bIsReady;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Connection Info")
+	FUniqueNetIdRepl UniqueNetIdRepl;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Connection Info")
 	int32 PlayerID;
+	
 };
 
 USTRUCT(BlueprintType)
@@ -541,8 +545,35 @@ struct FPlayerInfo
 	UPROPERTY(BlueprintReadOnly)
 	EColor Color;
 
+	/* Index in PlayerArray of GameState*/
 	UPROPERTY(BlueprintReadOnly)
 	int32 PlayerID;
+	
+	UPROPERTY(BlueprintReadOnly)
+	FUniqueNetIdRepl UniqueNetIdRepl;
+};
+
+UENUM(BlueprintType)
+enum class EAvatarSize : uint8
+{
+	Small,
+	Medium,
+	Large
+};
+
+USTRUCT(BlueprintType)
+struct FPlayerAvatars
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Avatars")
+	UTexture2D* AvatarSmall = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Avatars")
+	UTexture2D* AvatarMedium = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Avatars")
+	UTexture2D* AvatarLarge = nullptr;
 };
 
 USTRUCT(BlueprintType)
@@ -552,6 +583,35 @@ struct FPermutation
 
 	UPROPERTY(BlueprintReadWrite, Category="Permutation Info")
 	TArray<int32> Values;
+};
+
+USTRUCT(BlueprintType)
+struct FPermutationUIValue
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(BlueprintReadWrite, Category="Permutation UI Info")
+	FUniqueNetIdRepl UniqueNetId;
+
+	UPROPERTY(BlueprintReadWrite, Category="Permutation UI Info")
+	EColor Color;
+	
+	FPermutationUIValue() : UniqueNetId(FUniqueNetIdRepl()), Color(EColor::Black) {};
+	
+	FPermutationUIValue(const FUniqueNetIdRepl& InUniqueNetId, EColor InColor)
+	{
+		UniqueNetId = InUniqueNetId;
+		Color = InColor;
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FPermutationUI
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, Category="Permutation Info")
+	TArray<FPermutationUIValue> Values;
 };
 
 USTRUCT(BlueprintType)
@@ -576,6 +636,29 @@ struct FPlayersCycle
 		bIsCompleted = InIsCompleted;
 	}
 };
+
+USTRUCT(BlueprintType)
+struct FPlayersCycleUI
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, Category="Player Cycle Info")
+	int32 CycleNumber = 0;
+
+	UPROPERTY(BlueprintReadWrite, Category="Player Cycle Info")
+	FPermutationUI PlayersPermutation;
+
+	UPROPERTY(BlueprintReadWrite, Category="Player Cycle Info")
+	FLinearColor BorderColor;
+
+	FPlayersCycleUI() {};
+	FPlayersCycleUI(const int32 InCycleNumber, const FPermutationUI& InPermutation)
+	{
+		CycleNumber = InCycleNumber;
+		PlayersPermutation = InPermutation;
+	}
+};
+
 
 class ABM_GameStateBase;
 

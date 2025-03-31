@@ -34,13 +34,19 @@ void ABM_GameModeClassic::StartGame()
 		for (const auto LPlayerState: GetGameState<ABM_GameStateBase>()->PlayerArray)
 		{
 			ABM_PlayerState* LPS = Cast<ABM_PlayerState>(LPlayerState);
-			if (IsValid(LPS))
+			ABM_PlayerControllerBase* LPlayerController = Cast<ABM_PlayerControllerBase>(LPlayerState->GetPlayerController());
+			if (IsValid(LPlayerController))
 			{
-				FPlayerInfo LNewPlayerInfo;
-				LNewPlayerInfo.Nickname = LPS->GetPlayerNickname();
-				LNewPlayerInfo.Color = LPS->GetPlayerColor();
-				LNewPlayerInfo.PlayerID = LPS->GetPlayerIndex();
-				LPlayersHUDInfo.Add(LNewPlayerInfo);
+				LPlayerController->SetPlayerInfoFromGI();
+				if (IsValid(LPS))
+				{
+					FPlayerInfo LNewPlayerInfo;
+					LNewPlayerInfo.Nickname = LPS->GetPlayerNickname();
+					LNewPlayerInfo.Color = LPS->GetPlayerColor();
+					LNewPlayerInfo.PlayerID = LPS->GetPlayerIndex();
+					LNewPlayerInfo.UniqueNetIdRepl = LPS->GetUniqueId();
+					LPlayersHUDInfo.Add(LNewPlayerInfo);
+				}
 			}
 		}
 		for (const auto LPlayerState: GetGameState<ABM_GameStateBase>()->PlayerArray)

@@ -1,6 +1,7 @@
 ﻿// Battle Minds, 2022. All rights reserved.
 
 #include "BM_PlayerStateBase.h"
+#include "Net/UnrealNetwork.h"
 
 DEFINE_LOG_CATEGORY(LogBM_PlayerStateBase);
 
@@ -11,14 +12,22 @@ void ABM_PlayerStateBase::SetPlayerColor_Implementation(EColor NewColor)
 
 void ABM_PlayerStateBase::SetPlayerAvatar(UTexture2D* NewAvatar)
 {
-	PlayerAvatar = NewAvatar;
+	if (IsValid(NewAvatar))
+	{
+		PlayerAvatar = NewAvatar;
+		bAvatarInitialized = true;
+	}
+	else
+	{
+		bAvatarInitialized = false;
+	}
 }
 
 void ABM_PlayerStateBase::SetPlayerNickname(FString NewNickname)
 {
 	PlayerNickname = NewNickname;
+	bNicknameInitialized = true;
 }
-
 
 void ABM_PlayerStateBase::CopyProperties(APlayerState* PlayerState)
 {
@@ -48,6 +57,8 @@ void ABM_PlayerStateBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 	DOREPLIFETIME(ABM_PlayerStateBase, PlayerColor);
 	DOREPLIFETIME(ABM_PlayerStateBase, PlayerAvatar);
 	DOREPLIFETIME(ABM_PlayerStateBase, PlayerNickname);
+	DOREPLIFETIME(ABM_PlayerStateBase, bNicknameInitialized);
+	DOREPLIFETIME(ABM_PlayerStateBase, bAvatarInitialized);
 }
 
 void ABM_PlayerStateBase::OnRep_Color()
