@@ -384,8 +384,7 @@ void ABM_GameStateBase::SetViewTargetForQuestion(EQuestionType QuestionType, TAr
 			TObjectPtr<AActor> LNewViewTarget = nullptr;
 			LNewViewTarget = Cast<AActor>(BMGameMode->GetQuestionCamera(QuestionType));
 			PlayerController->SetPlayerBorderBlinking(false);
-			PlayerController->CC_OpenQuestionWidget(LastQuestion, AnsweringPlayers, LNewViewTarget);
-			
+			PlayerController->CC_OpenQuestionWidget(LastQuestion, AnsweringPlayers, LNewViewTarget, BMGameMode->GetQuestionTimer());
 		}
 	}
 }
@@ -406,15 +405,15 @@ void ABM_GameStateBase::StartPlayerTurnTimer(int32 PlayerArrayIndex)
 			PlayerController->ResetTurnTimer(Round);
 		}
 	}
-	
+	float LTurnSeconds = BMGameMode->GetTurnTimer();
 	for (const auto PlayerState : PlayerArray)
 	{
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 		{
-			PlayerController->StartCountdownTimer();
+			PlayerController->StartCountdownTimer(LTurnSeconds);
 		}
 	}
-	float LTurnSeconds = BMGameMode->GetTurnTimer();
+	
 	FTimerDelegate LAutoChooseTileDelegate;
 	LAutoChooseTileDelegate.BindUObject(this, &ABM_GameStateBase::ForceChooseAvailableTile, CurrentPlayerIndex);
 	GetWorld()->GetTimerManager().SetTimer(PlayerTurnHandle, LAutoChooseTileDelegate, LTurnSeconds, false);

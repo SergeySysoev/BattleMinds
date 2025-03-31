@@ -122,4 +122,7 @@ protected:
 	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void InitPlayer(APlayerController* NewPlayer);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void InitGameSettings();
 };

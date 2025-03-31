@@ -160,7 +160,7 @@ void ABM_PlayerControllerBase::CC_RemoveQuestionWidget_Implementation(bool bSwit
 	}
 }
 
-void ABM_PlayerControllerBase::CC_OpenQuestionWidget_Implementation(FInstancedStruct LastQuestion, const TArray<int32>& AnsweringPlayers, AActor* NewViewTarget)
+void ABM_PlayerControllerBase::CC_OpenQuestionWidget_Implementation(FInstancedStruct LastQuestion, const TArray<int32>& AnsweringPlayers, AActor* NewViewTarget, float QuestionTimerLength)
 {
 	if (!LastQuestion.GetPtr<FQuestion>())
 	{
@@ -186,6 +186,7 @@ void ABM_PlayerControllerBase::CC_OpenQuestionWidget_Implementation(FInstancedSt
 	QuestionWidget->LastQuestion = LastQuestion;
 	QuestionWidget->AnsweringPlayers.Empty();
 	QuestionWidget->AnsweringPlayers.Append(AnsweringPlayers);
+	QuestionWidget->SetQuestionTimerLength(QuestionTimerLength);
 	if (QuestionWidget)
 	{
 		QuestionWidget->AddToViewport(0);

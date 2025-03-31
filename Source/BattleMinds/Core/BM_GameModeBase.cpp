@@ -102,6 +102,7 @@ void ABM_GameModeBase::BeginPlay()
 		}
 		SelectedGameLength = LGameInstance->GameLength;
 	}
+	InitGameSettings();
 	
 }
 
@@ -134,4 +135,9 @@ void ABM_GameModeBase::HandleStartingNewPlayer_Implementation(APlayerController*
 		NumberOfActivePlayers++;
 	}
 	Super::HandleStartingNewPlayer_Implementation(NewPlayer);
+}
+
+void ABM_GameModeBase::InitGameSettings_Implementation()
+{
+	
 }

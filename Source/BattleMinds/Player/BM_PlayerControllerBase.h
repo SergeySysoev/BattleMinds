@@ -51,7 +51,7 @@ public:
 	void SC_AddAnsweredQuestionChoice(FInstancedStruct InPlayerChoice);
 	
 	UFUNCTION(Client, Reliable, BlueprintCallable, Category= "Questions")
-	void CC_OpenQuestionWidget(FInstancedStruct LastQuestion, const TArray<int32>& AnsweringPlayers, AActor* NewViewTarget);
+	void CC_OpenQuestionWidget(FInstancedStruct LastQuestion, const TArray<int32>& AnsweringPlayers, AActor* NewViewTarget, float QuestionTimerLength);
 
 	UFUNCTION(Client, Reliable, BlueprintCallable, Category= "Questions")
 	void CC_RemoveQuestionWidget(bool bSwitchViewTargetBackToTiles = true);
@@ -87,7 +87,7 @@ public:
 	void ResetTurnTimer(EGameRound GameRound);
 
 	UFUNCTION(BlueprintImplementableEvent, Category= "HUD")
-	void StartCountdownTimer();
+	void StartCountdownTimer(float TimerValue);
 
 	UFUNCTION(Client, Reliable, BlueprintCallable, Category= "HUD")
 	void CC_InitPlayerHUD(const TArray<FPlayerInfo>& PlayersHUDInfo);

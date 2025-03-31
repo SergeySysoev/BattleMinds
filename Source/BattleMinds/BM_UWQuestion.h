@@ -28,4 +28,7 @@ public:
 	
 	UFUNCTION(BlueprintImplementableEvent)
 	void MarkAnsweredPlayers(int32 AnsweredPlayerID);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void SetQuestionTimerLength(float NewLength);
 };

@@ -37,6 +37,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
 	void SetGameLength(EGameLength GameLength);
 
+	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
+	void SetTurnTimerLength(float NewLength);
+
 protected:
 
 	/* Map of WBP_PlayerInfo widgets for each Player*/

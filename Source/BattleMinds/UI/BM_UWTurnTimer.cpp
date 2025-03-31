@@ -28,7 +28,7 @@ void UBM_UWTurnTimer::ResetTimer()
 }
 void UBM_UWTurnTimer::UpdateTimer()
 {
-	TimerCurrent += TimerTotal/100.0;
+	TimerCurrent += 1/TimerTotal;
 	if (IsValid(TimerMaterialDynamic))
 	{
 		TimerMaterialDynamic->SetScalarParameterValue(FName(TEXT("Percent")), TimerCurrent);
