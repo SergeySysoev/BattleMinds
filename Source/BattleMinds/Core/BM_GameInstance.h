@@ -83,6 +83,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game Settings")
 	EGameLength GameLength = EGameLength::Long;
 
+	const FString GraphicsSaveSlotName = TEXT("GraphicsSaveSlot");
+	const int32 GraphicsSaveSlotIndex = 0;
+
 	UFUNCTION(BlueprintCallable)
 	void SetLocalPlayerNickname(const FString& InLocalNickname);
 
@@ -104,6 +107,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ClearPlayerAvatarsMap();
 
+	virtual void Init() override;
 private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player Settings", meta = (AllowPrivateAccess = "true"))
@@ -114,4 +118,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player Settings", meta = (AllowPrivateAccess = "true"))
 	TMap<FUniqueNetIdRepl, FPlayerAvatars> PlayerAvatars;
+
+	void InitGraphicsSettings() const;
 };
