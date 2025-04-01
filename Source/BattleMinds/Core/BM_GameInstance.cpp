@@ -84,13 +84,13 @@ void UBM_GameInstance::InitGraphicsSettings() const
 
 	if (bShouldRunBenchmark)
 	{
-		UE_LOG(LogTemp, Log, TEXT("First launch benchmark"));
+		UE_LOG(LogBM_GameInstance, Log, TEXT("First launch benchmark"));
 
 		if (UGameUserSettings* LSettings = GEngine->GetGameUserSettings())
 		{
 			LSettings->RunHardwareBenchmark();
 			LSettings->ApplyHardwareBenchmarkResults();
-			LSettings->ApplySettings(false); // false = не требует перезапуска
+			LSettings->ApplySettings(false);
 			LSettings->SaveSettings();
 		}
 
@@ -99,6 +99,6 @@ void UBM_GameInstance::InitGraphicsSettings() const
 	}
 	else
 	{
-		UE_LOG(LogTemp, Log, TEXT("Graphic settings were initialized earlier"));
+		UE_LOG(LogBM_GameInstance, Log, TEXT("Graphic settings were initialized earlier"));
 	}
 }

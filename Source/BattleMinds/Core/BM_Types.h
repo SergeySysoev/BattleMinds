@@ -180,7 +180,7 @@ struct FPlayerChoiceChoose: public FPlayerChoice
 {
 	GENERATED_BODY()
 
-	UPROPERTY(BlueprintReadWrite, Category="Choose choice")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Choose choice")
 	int32 AnswerID = -1;
 
 	FPlayerChoiceChoose() {}
@@ -206,13 +206,13 @@ struct FPlayerChoiceShot: public FPlayerChoice
 {
 	GENERATED_BODY()
 
-	UPROPERTY(BlueprintReadWrite, Category="Shot choice")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Shot choice")
 	int32 Answer = MAX_int32;
 
-	UPROPERTY(BlueprintReadWrite, Category="Shot choice")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Shot choice")
 	int32 Difference = 0;
 
-	UPROPERTY(BlueprintReadWrite, Category="Shot choice")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Shot choice")
 	bool bAnswered = false;
 	
 	FPlayerChoiceShot() {}
@@ -349,19 +349,19 @@ struct FQuestionResult
 	 * 7) received points
 	 */
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 QuestionNumber = -1;
 
-	UPROPERTY(BlueprintReadWrite, meta=(BaseStruct = "Question"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BaseStruct = "Question"))
 	FInstancedStruct Question;
 
-	UPROPERTY(BlueprintReadWrite, meta=(BaseStruct = "PlayerChoice"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(BaseStruct = "PlayerChoice"))
 	TArray<FInstancedStruct> PlayerChoices;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bWasAnswered = false;
 	
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 ReceivedPoints = 0;
 };
 
