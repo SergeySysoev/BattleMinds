@@ -280,6 +280,10 @@ void ABM_GameStateBase::SetNextGameRound(EGameRound NewRound)
 			PlayerController->UpdateRoundWidget(NewRound);
 		}
 	}
+	if (IsValid(TileManager))
+	{
+		TileManager->SwitchToNextRound(NewRound);
+	}
 }
 
 void ABM_GameStateBase::StopAllTimers()
@@ -497,6 +501,52 @@ void ABM_GameStateBase::TransferDefendingPlayerTerritoryToAttacker()
 		ABM_PlayerControllerBase* DefendingPlayer = Cast<ABM_PlayerControllerBase>(PlayerArray[DefendingPlayerIndex]->GetPlayerController());
 		ABM_PlayerState* DefendingPlayerState = Cast<ABM_PlayerState>(DefendingPlayer->PlayerState);
 		
+	}
+}
+
+void ABM_GameStateBase::StartPostQuestionPhase()
+{
+	for (const auto PlayerState : PlayerArray)
+	{
+		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
+		{
+			if (CurrentSiegeTileQuestionCount <= 0)
+			{
+				PlayerController->CC_RemoveQuestionWidget(true);
+			}
+			else
+			{
+				PlayerController->CC_RemoveQuestionWidget(false);
+			}
+		}
+	}
+	CurrentPostQuestionReadyActors = 0;
+	ExpectedPostQuestionReadyActors = OnQuestionCompleted.GetAllObjects().Num();
+	UE_LOG(LogTemp, Log, TEXT("PostQuestion Phase started. Expecting %d listeners."), ExpectedPostQuestionReadyActors);
+	OnQuestionCompleted.Broadcast();
+	if (ExpectedPostQuestionReadyActors == 0)
+	{
+		CheckPostQuestionPhaseComplete();
+	}
+}
+
+void ABM_GameStateBase::NotifyPostQuestionPhaseReady()
+{
+	++CurrentPostQuestionReadyActors;
+
+	UE_LOG(LogTemp, Display, TEXT("PostQuestionListener confirmed (%d/%d"),CurrentPostQuestionReadyActors, ExpectedPostQuestionReadyActors);
+	CheckPostQuestionPhaseComplete();
+}
+
+void ABM_GameStateBase::CheckPostQuestionPhaseComplete()
+{
+	if (CurrentPostQuestionReadyActors >= ExpectedPostQuestionReadyActors)
+	{
+		UE_LOG(LogTemp, Log, TEXT("All listeners ready. Proceeding logic."));
+		CurrentPostQuestionReadyActors = 0;
+		ExpectedPostQuestionReadyActors = 0;
+		// Process to the next turn after 3 seconds
+		GetWorld()->GetTimerManager().SetTimer(PauseHandle,this,&ABM_GameStateBase::PrepareNextTurn, 3.0f, false);
 	}
 }
 
@@ -941,9 +991,7 @@ void ABM_GameStateBase::ShowPlayerChoicesAndCorrectAnswer()
 		}
 	}
 	GetWorld()->GetTimerManager().ClearTimer(PauseHandle);
-	
-	// Process to the next turn after 3 seconds
-	GetWorld()->GetTimerManager().SetTimer(PauseHandle,this,&ABM_GameStateBase::PrepareNextTurn, 3.0f, false);
+	GetWorld()->GetTimerManager().SetTimer(PauseHandle, this, &ThisClass::StartPostQuestionPhase, 3.f);
 }
 
 void ABM_GameStateBase::HandleSiegedTile(ABM_PlayerControllerBase* AttackingPlayerController, ABM_PlayerControllerBase* DefendingPlayerController, bool QuestionWasAnsweredByAttacker)
@@ -1080,20 +1128,6 @@ void ABM_GameStateBase::WrapUpCurrentPlayersCycle()
 
 void ABM_GameStateBase::PrepareNextTurn()
 {
-	for (const auto PlayerState : PlayerArray)
-	{
-		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
-		{
-			if (CurrentSiegeTileQuestionCount <= 0)
-			{
-				PlayerController->CC_RemoveQuestionWidget(true);
-			}
-			else
-			{
-				PlayerController->CC_RemoveQuestionWidget(false);
-			}
-		}
-	}
 	switch (Round)
 	{
 		case EGameRound::SetTerritory:

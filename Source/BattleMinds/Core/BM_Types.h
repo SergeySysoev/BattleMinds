@@ -151,6 +151,10 @@ struct FPlayerChoice
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Choice settings")
 	int32 PlayerID = 0;
 
+	/* BMPlayerID of the player whose choice this is*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Choice settings")
+	FUniqueNetIdRepl PlayerUniqueNetId;
+
 	/* Index of the Question in UsedQuestion set located in GameMode*/
 	UPROPERTY(BlueprintReadWrite, Category="Choice setting")
 	int32 QuestionID = 0;
@@ -159,9 +163,10 @@ struct FPlayerChoice
 	FTimespan ElapsedTime = FTimespan::Zero();
 
 	FPlayerChoice() {}
-	FPlayerChoice(int32 inPlayerID, FTimespan inElapsedTime)
+	FPlayerChoice(int32 inPlayerID, const FUniqueNetIdRepl& inPlayerUniqueNetId, FTimespan inElapsedTime)
 	{
 		PlayerID = inPlayerID;
+		PlayerUniqueNetId = inPlayerUniqueNetId;
 		ElapsedTime = inElapsedTime;
 	}
 
@@ -185,9 +190,9 @@ struct FPlayerChoiceChoose: public FPlayerChoice
 
 	FPlayerChoiceChoose() {}
 	
-	FPlayerChoiceChoose(int32 inPlayerID, FTimespan inElapsedTime, int32 inAnswerID)
+	FPlayerChoiceChoose(int32 inPlayerID, const FUniqueNetIdRepl& inPlayerUniqueNetId, FTimespan inElapsedTime, int32 inAnswerID)
 	{
-		FPlayerChoice(inPlayerID, inElapsedTime);
+		FPlayerChoice(inPlayerID, inPlayerUniqueNetId, inElapsedTime);
 		AnswerID = inAnswerID;
 	}
 	
@@ -217,9 +222,9 @@ struct FPlayerChoiceShot: public FPlayerChoice
 	
 	FPlayerChoiceShot() {}
 
-	FPlayerChoiceShot(int32 inPlayerID, FTimespan inElapsedTime, int32 inAnswer)
+	FPlayerChoiceShot(int32 inPlayerID, const FUniqueNetIdRepl& inPlayerUniqueNetId, FTimespan inElapsedTime, int32 inAnswer)
 	{
-		FPlayerChoice(inPlayerID, inElapsedTime);
+		FPlayerChoice(inPlayerID, inPlayerUniqueNetId, inElapsedTime);
 		Answer = inAnswer;
 	}
 	

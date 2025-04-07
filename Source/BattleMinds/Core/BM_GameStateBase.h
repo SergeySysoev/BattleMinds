@@ -19,6 +19,8 @@ DECLARE_LOG_CATEGORY_EXTERN(BMLogGameStateBase, Log, All);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAnswerSentSignature, int32, PlayerID);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPlayerPointsChanged, int32, PlayerID, float, NewScore);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnQuestionCompleted);
+
 class ABM_PlayerState;
 
 UCLASS()
@@ -32,7 +34,12 @@ public:
 	FAnswerSentSignature OnAnswerSent;
 	
 	UPROPERTY(BlueprintAssignable, BlueprintReadOnly, BlueprintCallable, Category = "Players info")
+	FOnQuestionCompleted OnQuestionCompleted;
+	
+	UPROPERTY(BlueprintAssignable, BlueprintReadOnly, BlueprintCallable, Category = "Players info")
 	FOnPlayerPointsChanged OnPlayerPointsChanged;
+
+	
 
 	UFUNCTION(BlueprintPure)
 	FORCEINLINE int32 GetCurrentPlayerCounter() const { return CurrentPlayerCounter; }
@@ -84,6 +91,9 @@ public:
 
 	UFUNCTION(BlueprintPure)
 	FORCEINLINE TArray<FPlayersCycle> GetPlayerCycles() const { return PlayerTurnsCycles;}
+	
+	UFUNCTION(BlueprintCallable)
+	void NotifyPostQuestionPhaseReady();
 	
 	FunctionVoidPtr OpenChooseQuestionPtr;
 	FunctionVoidPtr StartSiegePtr;
@@ -178,6 +188,12 @@ protected:
 	TMap<EGameRound, int32> MaxCyclesPerRound;
 
 	virtual void BeginPlay() override;
+
+	UFUNCTION(BlueprintCallable)
+	void StartPostQuestionPhase();
+
+	UFUNCTION()
+	void CheckPostQuestionPhaseComplete();
 
 	UFUNCTION()
 	void ConstructPlayerTurnsCycles();
@@ -294,4 +310,11 @@ protected:
 
 	virtual void CalculateAndSetMaxCyclesPerRound();
 
+private:
+
+	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess=true))
+	int32 CurrentPostQuestionReadyActors;
+
+	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess=true))
+	int32 ExpectedPostQuestionReadyActors;
 };

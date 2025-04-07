@@ -15,6 +15,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCastleMeshSpawned);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnBannerMeshSpawned);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCastleDestroyed);
 DECLARE_MULTICAST_DELEGATE(FOnBannerMeshSpawnedNative);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTileMaterialSwitched);
 
 class UStaticMeshComponent;
 class ABM_PlayerControllerBase;
@@ -44,6 +45,9 @@ public:
 	FOnCastleDestroyed OnCastleDestroyed;
 	
 	FOnBannerMeshSpawnedNative OnBannerMeshSpawnedNative;
+
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
+	FOnTileMaterialSwitched OnTileMaterialSwitched;
 	
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void SC_ChangeStatus(ETileStatus NewStatus);
@@ -57,7 +61,7 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void SetPointsWidgetValue(int32 Points);
 
-	UFUNCTION(NetMulticast, Unreliable, BlueprintCallable)
+	UFUNCTION(Client, Unreliable, BlueprintCallable)
 	void MC_SetPointsWidgetVisibility(bool bIsVisible);
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
@@ -116,6 +120,9 @@ public:
 
 	UFUNCTION(BlueprintPure)
 	FORCEINLINE int32 GetOwnerPlayerIndex() const { return OwnerPlayerIndex; };
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	void SwitchTileMeshMaterialColor();
 	
 protected:
 	
@@ -190,6 +197,9 @@ protected:
 	
 	UFUNCTION()
 	void OnRep_TileColor();
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void OnRep_TileColorMeshChangeOR();
 
 	UFUNCTION()
 	void OnRep_BorderColor();

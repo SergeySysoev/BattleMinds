@@ -132,7 +132,6 @@ EQuestionType ABM_TileBase::GetTileNextQuestionType() const
 
 void ABM_TileBase::SpawnBannerMesh_Implementation()
 {
-	OnBannerMeshSpawnedNative.Broadcast();
 }
 
 void ABM_TileBase::SpawnCastleMesh_Implementation()
@@ -208,9 +207,14 @@ void ABM_TileBase::OnRep_TileColor()
 		TileMeshMaterial = LGameInstance->TileMeshMaterials.FindRef(TileColor);
 		if (IsValid(TileMeshMaterial))
 		{
-			StaticMesh->SetMaterial(0, TileMeshMaterial);
+			OnRep_TileColorMeshChangeOR();
 		}
 	}
+}
+
+void ABM_TileBase::OnRep_TileColorMeshChangeOR_Implementation()
+{
+	StaticMesh->SetMaterial(0, TileMeshMaterial);
 }
 
 void ABM_TileBase::OnRep_BorderColor()
@@ -221,7 +225,6 @@ void ABM_TileBase::OnRep_BorderColor()
 		EdgesMaterial = LGameInstance->BorderMeshMaterials.FindRef(BorderColor);
 		if (IsValid(EdgesMaterial))
 		{
-			//UE_LOG(LogBM_Tile, Warning, TEXT("ABM_TileBase::OnRep_BorderColor, Border Material: %s"), *EdgesMaterial->GetName());
 			BorderStaticMesh->SetMaterial(0, EdgesMaterial);
 		}
 		else
@@ -231,7 +234,6 @@ void ABM_TileBase::OnRep_BorderColor()
 		BannerMaterial = LGameInstance->BannerMaterials.FindRef(BorderColor);
 		if (IsValid(BannerMaterial))
 		{
-			//UE_LOG(LogBM_Tile, Warning, TEXT("ABM_TileBase::OnRep_BorderColor, Banner Material: %s"), *BannerMaterial->GetName());
 			BannerMesh->SetMaterial(0, BannerMaterial);
 		}
 		else

@@ -14,6 +14,7 @@ class ABM_GameStateBase;
 
 DECLARE_MULTICAST_DELEGATE(FOnMapGeneratedNative);
 
+
 UCLASS()
 class BATTLEMINDS_API ABM_TileManager : public AActor
 {
@@ -100,6 +101,9 @@ public:
 	UFUNCTION(BlueprintPure)
 	int32 GetPointsOfCurrentClickedTile(int32 PlayerIndex);
 
+	UFUNCTION(BlueprintCallable)
+	void SwitchToNextRound(EGameRound NewRound);
+
 protected:
 	
 	virtual void BeginPlay() override;
@@ -138,4 +142,21 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Tile operations")
 	TArray<FIntPoint> CurrentPlayerAvailableTiles;
+
+	UFUNCTION(BlueprintCallable)
+	void SwitchTileMaterial();
+
+private:
+
+	UFUNCTION()
+	void CheckForTileMaterialsSwitched();
+
+	UPROPERTY()
+	TArray<FIntPoint> TilesToSwitchMaterial;
+
+	UPROPERTY()
+	int32 CurrentTilesWithSwitchedMaterial = 0;
+
+	UPROPERTY()
+	int32 ExpectedTilesWithSwitchedMaterial = 0;
 };

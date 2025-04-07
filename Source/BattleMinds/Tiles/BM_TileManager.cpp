@@ -35,6 +35,7 @@ int32 ABM_TileManager::GetTileOwnerID(FIntPoint TileAxials) const
 
 void ABM_TileManager::SC_AddClickedTileToTheTerritory_Implementation(int32 PlayerID, ETileStatus NewStatus, EColor NewColor, EGameRound CurrentGameRound)
 {
+	TilesToSwitchMaterial.Add(ClickedTiles.FindRef(PlayerID));
 	SC_SetTileOwner(ClickedTiles.FindRef(PlayerID),NewStatus, PlayerID, NewColor, CurrentGameRound);
 }
 
@@ -126,10 +127,29 @@ int32 ABM_TileManager::GetPointsOfCurrentClickedTile(int32 PlayerIndex)
 	return 200;
 }
 
+void ABM_TileManager::SwitchToNextRound(EGameRound NewRound)
+{
+	switch (NewRound)
+	{
+		case EGameRound::SetTerritory:
+			TilesToSwitchMaterial.Empty();
+			ClickedTiles.Empty();
+			break;
+		default:
+			TilesToSwitchMaterial.Empty();
+			ClickedTiles.Empty();
+			break;
+	}
+}
+
 void ABM_TileManager::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState());
+	if (IsValid(LGameState))
+	{
+		LGameState->OnQuestionCompleted.AddUniqueDynamic(this, &ThisClass::SwitchTileMaterial);
+	}
 }
 
 EQuestionType ABM_TileManager::GetTileNextQuestionType(FIntPoint TileAxials)
@@ -264,6 +284,37 @@ TArray<FIntPoint> ABM_TileManager::GetShapeBorder(TArray<FIntPoint> Shape)
 	return AvailableTiles;
 }
 
+void ABM_TileManager::SwitchTileMaterial()
+{
+	ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState());
+	if (IsValid(LGameState))
+	{
+		ExpectedTilesWithSwitchedMaterial = TilesToSwitchMaterial.Num();
+		for (const auto LTileAxials : TilesToSwitchMaterial)
+		{
+			const auto LTileBase = Tiles.FindRef(LTileAxials);
+			LTileBase->SwitchTileMeshMaterialColor();
+			LTileBase->OnTileMaterialSwitched.AddUniqueDynamic(this, &ThisClass::CheckForTileMaterialsSwitched);
+		}
+	}
+}
+
+void ABM_TileManager::CheckForTileMaterialsSwitched()
+{
+	++CurrentTilesWithSwitchedMaterial;
+	if (CurrentTilesWithSwitchedMaterial >= ExpectedTilesWithSwitchedMaterial)
+	{
+		TilesToSwitchMaterial.Empty();
+		ExpectedTilesWithSwitchedMaterial = 0;
+		CurrentTilesWithSwitchedMaterial = 0;
+		ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState());
+		if (IsValid(LGameState))
+		{
+			LGameState->NotifyPostQuestionPhaseReady();
+		}
+	}
+}
+
 void ABM_TileManager::SC_SetTileOwner_Implementation(FIntPoint TileAxials, ETileStatus NewStatus, int32 NewOwnerID, EColor NewOwnerColor, EGameRound CurrentGameRound)
 {
 	ABM_TileBase* LTileToChange = Tiles.FindRef(TileAxials);
@@ -281,7 +332,6 @@ void ABM_TileManager::SC_AttackTile_Implementation(FIntPoint TileAxials, EColor 
 		LTileToChange->SC_AttackTile(InPlayerColor);
 	}
 }
-
 
 void ABM_TileManager::Tick(float DeltaTime)
 {
