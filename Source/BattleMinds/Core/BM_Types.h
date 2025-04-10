@@ -7,7 +7,10 @@
 #include "Engine/DataTable.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "GameFramework/OnlineReplStructs.h"
+#include "Net/Serialization/FastArraySerializer.h"
 #include "BM_Types.generated.h"
+
+class ABM_TileBase;
 
 UENUM(BlueprintType)
 enum class EGameLength : uint8
@@ -17,12 +20,29 @@ enum class EGameLength : uint8
 };
 
 UENUM(BlueprintType)
-enum class EEventType : uint8
+enum class EQuestionResult : uint8
 {
-	TileUpdate,
-	PlayerPawnUpdate,
-	PlayerHUDUpdate,
-	MAX UMETA(Hidden)
+	ShotQuestionNeeded,
+	TileDefended,
+	TileDamaged,
+	TileCaptured
+};
+
+USTRUCT(BlueprintType)
+struct FPostQuestionPhaseInfo
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TMap<int32, EQuestionResult> QuestionResultsPerPlayer;
+
+	FPostQuestionPhaseInfo(){};
+	explicit FPostQuestionPhaseInfo(const TMap<int32, EQuestionResult>& InQuestionResultsPerPlayer)
+	{
+		QuestionResultsPerPlayer = InQuestionResultsPerPlayer;
+	}
+
+	bool ContainsResultType(EQuestionResult ResultTypeToCheck);
 };
 
 UENUM(BlueprintType)
@@ -664,6 +684,59 @@ struct FPlayersCycleUI
 	}
 };
 
+USTRUCT()
+struct FTileBaseItem : public FFastArraySerializerItem
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	ABM_TileBase* TileBase = nullptr;
+	
+	FTileBaseItem() {}
+	FTileBaseItem(ABM_TileBase* InTile) : TileBase(InTile) {}
+};
+
+USTRUCT()
+struct FTileBaseArray : public FFastArraySerializer
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TArray<FTileBaseItem> Items;
+
+	// Владелец (обязательно, если реплицировать в Actor)
+	class UObject* Owner = nullptr;
+
+	bool NetDeltaSerialize(FNetDeltaSerializeInfo& DeltaParams)
+	{
+		return FastArrayDeltaSerialize<FTileBaseItem, FTileBaseArray>(Items, DeltaParams, *this);
+	}
+
+	// Вызов при добавлении нового элемента
+	void PostReplicatedAdd(const TArrayView<int32>& AddedIndices, int32 FinalSize)
+	{
+		UE_LOG(LogTemp, Log, TEXT("FTileBaseItem Added"));
+	}
+
+	void PostReplicatedChange(const TArrayView<int32>& ChangedIndices, int32 FinalSize)
+	{
+		UE_LOG(LogTemp, Log, TEXT("FTileBaseItem Changed"));
+	}
+
+	void PostReplicatedRemove(const TArrayView<int32>& RemovedIndices, int32 FinalSize)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("FTileBaseItem Removed %d elements"), RemovedIndices.Num());
+	}
+};
+
+template<>
+struct TStructOpsTypeTraits<FTileBaseArray> : public TStructOpsTypeTraitsBase2<FTileBaseArray>
+{
+	enum
+	{
+		WithNetDeltaSerializer = true,
+	};
+};
 
 class ABM_GameStateBase;
 

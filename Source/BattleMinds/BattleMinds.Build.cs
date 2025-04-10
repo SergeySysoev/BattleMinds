@@ -10,12 +10,12 @@ public class BattleMinds : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[]
 		{
-			"Core", "CoreUObject", "Engine", "InputCore", "CoreOnline"
+			"Core", "CoreUObject", "Engine", "InputCore", "CoreOnline", "NetCore", "EnhancedInput"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { 
 			"OnlineSubsystemSteam", 
-			"StructUtils", "AdvancedSessions", 
+			"StructUtils", "AdvancedSessions", "UMGEditor"
 			 });
 
 		PublicIncludePaths.AddRange(new string[]

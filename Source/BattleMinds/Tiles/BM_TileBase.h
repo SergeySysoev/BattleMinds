@@ -13,9 +13,10 @@ DECLARE_LOG_CATEGORY_EXTERN(LogBM_Tile, Display, All);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCastleMeshSpawned);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnBannerMeshSpawned);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCastleDestroyed);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCastleDestroyed, int32, OwnerPlayerIndex);
 DECLARE_MULTICAST_DELEGATE(FOnBannerMeshSpawnedNative);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTileMaterialSwitched);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCastleTowerDamaged);
 
 class UStaticMeshComponent;
 class ABM_PlayerControllerBase;
@@ -31,9 +32,6 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category="Status")
 	bool bIsAttacked = false;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category="Neighbours")
-	TArray<TObjectPtr<ABM_TileBase>> NeighbourTiles;
 
 	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnCastleMeshSpawned OnCastleMeshSpawned;
@@ -43,6 +41,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnCastleDestroyed OnCastleDestroyed;
+
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
+	FOnCastleTowerDamaged OnCastleTowerDamaged;
 	
 	FOnBannerMeshSpawnedNative OnBannerMeshSpawnedNative;
 
@@ -61,14 +62,14 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void SetPointsWidgetValue(int32 Points);
 
-	UFUNCTION(Client, Unreliable, BlueprintCallable)
+	UFUNCTION(BlueprintCallable)
+	void SetPointsWidgetVisibility(bool bIsVisible);
+
+	UFUNCTION(NetMulticast, Unreliable, BlueprintCallable, Category="Visuals")
 	void MC_SetPointsWidgetVisibility(bool bIsVisible);
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_AttackTile(EColor InPlayerColor);
-
-	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void SC_ChangeTileHP(int32 HPIncrement);
 	
 	UFUNCTION(BlueprintCallable)
 	int32 GetOwningPlayerIndex(){return OwnerPlayerIndex;};
@@ -112,6 +113,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SC_ApplyDamage(int32 InDamageAmount);
 
+	UFUNCTION(NetMulticast, Unreliable, BlueprintCallable)
+	void MC_DamageTile();
+
+	UFUNCTION(BlueprintNativeEvent)
+	void PlayTileDamageAnimation();
+
 	UFUNCTION(BlueprintPure)
 	FORCEINLINE FIntPoint GetAxial() const { return Axial; };
 
@@ -140,6 +147,12 @@ protected:
 	
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
     UStaticMeshComponent* CastleMesh = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	UStaticMeshComponent* FirstTowerMesh = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	UStaticMeshComponent* SecondTowerMesh = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	UWidgetComponent* PointsWidget = nullptr;
@@ -212,6 +225,6 @@ public:
 
 private:
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	ETileStatus CachedStatus;
 };

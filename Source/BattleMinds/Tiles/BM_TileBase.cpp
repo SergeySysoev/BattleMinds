@@ -4,7 +4,6 @@
 #include "BM_TileBase.h"
 #include "BattleMinds/Player/BM_PlayerState.h"
 #include "Core/BM_GameInstance.h"
-#include "Core/BM_GameModeBase.h"
 #include "Core/BM_GameStateBase.h"
 #include "GameFramework/Actor.h"
 
@@ -33,6 +32,13 @@ ABM_TileBase::ABM_TileBase()
 	CastleMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Castle Mesh"));
 	CastleMesh->SetupAttachment(RootComponent);
 	CastleMesh->SetIsReplicated(true);
+
+	FirstTowerMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("First Tower Mesh"));
+	FirstTowerMesh->SetupAttachment(CastleMesh);
+	FirstTowerMesh->SetIsReplicated(true);
+	SecondTowerMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Second Tower Mesh"));
+	SecondTowerMesh->SetupAttachment(CastleMesh);
+	SecondTowerMesh->SetIsReplicated(true);
 
 	PointsWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("Points Widget"));
 	PointsWidget->SetupAttachment(RootComponent);
@@ -71,8 +77,7 @@ bool ABM_TileBase::SC_ChangeStatus_Validate(ETileStatus NewStatus)
 
 void ABM_TileBase::SC_RevertStatus_Implementation()
 {
-	ETileStatus LNewStatus = CachedStatus;
-	SC_ChangeStatus(LNewStatus);
+	Status = CachedStatus;
 }
 
 void ABM_TileBase::SetTileEdgesColor(EColor NewColor)
@@ -89,6 +94,14 @@ void ABM_TileBase::MC_SetBorderVisibility_Implementation(bool bIsVisible)
 	if (IsValid(BorderStaticMesh))
 	{
 		BorderStaticMesh->SetVisibility(bIsVisible);
+	}
+}
+
+void ABM_TileBase::SetPointsWidgetVisibility(bool bIsVisible)
+{
+	if (IsValid(PointsWidget))
+	{
+		PointsWidget->SetHiddenInGame(!bIsVisible);
 	}
 }
 
@@ -110,28 +123,32 @@ void ABM_TileBase::MC_SetBannerVisibility_Implementation(bool bIsVisible)
 
 void ABM_TileBase::MC_SetCastleVisibility_Implementation(bool bIsVisible)
 {
-	if (IsValid(CastleMesh))
+	if (IsValid(CastleMesh) && IsValid(FirstTowerMesh) && IsValid(SecondTowerMesh))
 	{
 		CastleMesh->SetVisibility(bIsVisible);
+		FirstTowerMesh->SetVisibility(bIsVisible);
+		SecondTowerMesh->SetVisibility(bIsVisible);
 	}
 }
 
 int32 ABM_TileBase::GetTileQuestionCount() const
 {
-	return CurrentQuestionArray.Num();
+	return TileHP;
 }
 
 EQuestionType ABM_TileBase::GetTileNextQuestionType() const
 {
-	if (CurrentQuestionArray.IsValidIndex(FMath::Abs(CurrentQuestionArray.Num() - TileHP)))
+	int32 LQuestionIndex = FMath::Abs(CurrentQuestionArray.Num() - TileHP);
+	if (CurrentQuestionArray.IsValidIndex(LQuestionIndex))
 	{
-		return CurrentQuestionArray[TileHP-1];
+		return CurrentQuestionArray[LQuestionIndex];
 	}
-	return EQuestionType::Undefined;
+	return EQuestionType::Choose;
 }
 
 void ABM_TileBase::SpawnBannerMesh_Implementation()
 {
+	OnBannerMeshSpawnedNative.Broadcast();
 }
 
 void ABM_TileBase::SpawnCastleMesh_Implementation()
@@ -150,11 +167,6 @@ void ABM_TileBase::SC_AttackTile_Implementation(EColor InPlayerColor)
 		MC_SetBannerVisibility(true);
 		SpawnBannerMesh();
 	}
-}
-
-void ABM_TileBase::SC_ChangeTileHP_Implementation(int32 HPIncrement)
-{
-	TileHP+= HPIncrement;
 }
 
 void ABM_TileBase::SC_RemoveTileFromPlayerTerritory_Implementation()
@@ -193,7 +205,6 @@ void ABM_TileBase::SC_CancelAttack_Implementation()
 	SC_RevertStatus();
 }
 
-
 void ABM_TileBase::OnRep_TileColor()
 {
 	UBM_GameInstance* LGameInstance = Cast<UBM_GameInstance>(GetWorld()->GetGameInstance());
@@ -203,6 +214,8 @@ void ABM_TileBase::OnRep_TileColor()
 		if (IsValid(CastleMaterial))
 		{
 			CastleMesh->SetMaterial(0, CastleMaterial);
+			FirstTowerMesh->SetMaterial(0, CastleMaterial);
+			SecondTowerMesh->SetMaterial(0, CastleMaterial);
 		}
 		TileMeshMaterial = LGameInstance->TileMeshMaterials.FindRef(TileColor);
 		if (IsValid(TileMeshMaterial))
@@ -251,10 +264,17 @@ void ABM_TileBase::BeginPlay()
 void ABM_TileBase::SC_ApplyDamage(int32 InDamageAmount)
 {
 	TileHP -= InDamageAmount;
-	if (TileHP <= 0)
+	if (TileHP <= 0 && CachedStatus == ETileStatus::Castle)
 	{
-		OnCastleDestroyed.Broadcast();
+		OnCastleDestroyed.Broadcast(OwnerPlayerIndex);
 	}
+}
+
+void ABM_TileBase::PlayTileDamageAnimation_Implementation() {}
+
+void ABM_TileBase::MC_DamageTile_Implementation()
+{
+	PlayTileDamageAnimation();
 }
 
 void ABM_TileBase::Tick(float DeltaTime)

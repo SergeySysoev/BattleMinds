@@ -7,12 +7,14 @@
 #include "Net/UnrealNetwork.h"
 #include "UI/BM_UWPlayerHUD.h"
 #include "UI/BM_UWResults.h"
+#include "InputMappingContext.h"
 #include "BM_PlayerControllerBase.generated.h"
 
 class UBM_GameInstance;
 class UBM_UWQuestion;
 class ABM_TileBase;
 class ABM_PlayerState;
+class UEnhancedInputLocalPlayerSubsystem;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogBM_PlayerController, Display, All);
 
@@ -54,7 +56,7 @@ public:
 	void CC_OpenQuestionWidget(FInstancedStruct LastQuestion, const TArray<int32>& AnsweringPlayers, AActor* NewViewTarget, float QuestionTimerLength);
 
 	UFUNCTION(Client, Reliable, BlueprintCallable, Category= "Questions")
-	void CC_RemoveQuestionWidget(bool bSwitchViewTargetBackToTiles = true);
+	void CC_RemoveQuestionWidget(bool bSwitchViewTargetBackToTiles = true, AActor* NewViewTarget = nullptr);
 	
 	UFUNCTION(Client, Reliable, BlueprintCallable, Category= "Questions")
 	void CC_ShowResultsWidget(const TArray<APlayerState*>& PlayerArray);
@@ -97,7 +99,7 @@ public:
 
 	UFUNCTION(Client, Unreliable, BlueprintCallable, Category= "HUD")
 	void CC_ShowWarningPopup(const FText& InText);
-
+	
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable, Category = "Controls")
 	void SC_TryClickTheTile(FIntPoint TargetTile);
 
@@ -107,6 +109,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Player Info")
 	void SetPlayerInfoFromGI();
 
+	UFUNCTION(BlueprintNativeEvent, Category = "Inputs")
+	void SetInputEnabled(bool bIsEnabled);
+
+	UFUNCTION(Client, Reliable, Category = "Inputs")
+	void CC_SetInputEnabled(bool bIsEnabled);
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -115,5 +123,10 @@ protected:
 
 	UFUNCTION(BlueprintPure)
 	FUniqueNetIdRepl GetPlayerUniqueNetIdByPlayerId(int32 PlayerID) const;
-	
+
+	UPROPERTY(EditDefaultsOnly, Category="Inputs")
+	TSoftObjectPtr<UInputMappingContext> EssentialIMC = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category="Inputs")
+	TSoftObjectPtr<UInputMappingContext> ClassicIMC = nullptr;
 };

@@ -2,13 +2,14 @@
 
 #include "BM_PlayerControllerBase.h"
 #include "BM_UWQuestion.h"
-#include "BattleMinds/Tiles/BM_TileBase.h"
 #include "BattleMinds/Player/BM_PlayerState.h"
 #include "Blueprint/UserWidget.h"
 #include "Core/BM_GameInstance.h"
 #include "Core/BM_GameModeBase.h"
 #include "Core/BM_GameStateBase.h"
-#include "Tiles/BM_TileBase.h"
+#include "Kismet/GameplayStatics.h"
+#include "Tiles/BM_TileManager.h"
+#include "EnhancedInputSubsystems.h"
 #include "UI/BM_UWResults.h"
 
 DEFINE_LOG_CATEGORY(LogBM_PlayerController);
@@ -19,7 +20,6 @@ ABM_PlayerControllerBase::ABM_PlayerControllerBase()
 	bEnableClickEvents = true;
 	bEnableMouseOverEvents = true;
 }
-
 
 void ABM_PlayerControllerBase::CC_SetGameLength_Implementation(const EGameLength GameLength)
 {
@@ -50,16 +50,53 @@ void ABM_PlayerControllerBase::SetPlayerInfoFromGI()
 	}
 }
 
+void ABM_PlayerControllerBase::SetInputEnabled_Implementation(bool bIsEnabled)
+{
+	if (ULocalPlayer* LocalPlayer = Cast<ULocalPlayer>(Player))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* InputSystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
+		{
+			if (bIsEnabled)
+			{
+				InputSystem->AddMappingContext(ClassicIMC.LoadSynchronous(), 1);
+			}
+			else
+			{
+				UInputMappingContext* LLoadedClassicIMC = ClassicIMC.LoadSynchronous();
+				if (InputSystem->HasMappingContext(LLoadedClassicIMC))
+				{
+					InputSystem->RemoveMappingContext(LLoadedClassicIMC);
+				}
+			}
+		}
+	}
+}
+
+void ABM_PlayerControllerBase::CC_SetInputEnabled_Implementation(bool bIsEnabled)
+{
+	SetInputEnabled(bIsEnabled);
+}
+
 void ABM_PlayerControllerBase::BeginPlay()
 {
 	Super::BeginPlay();
+	if (ULocalPlayer* LocalPlayer = Cast<ULocalPlayer>(Player))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* InputSystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
+		{
+			if (!EssentialIMC.IsNull())
+			{
+				InputSystem->AddMappingContext(EssentialIMC.LoadSynchronous(), 0);
+			}
+		}
+	}
 }
 
 FLinearColor ABM_PlayerControllerBase::GetPlayerColorByID(int32 PlayerID) const
 {
 	if(ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState()))
 	{
-		return LGameState->GetPlayerColorByIndex(PlayerID);
+		return LGameState->GetPlayerLinearColorByIndex(PlayerID);
 	}
 	return FLinearColor::White;
 }
@@ -146,17 +183,16 @@ void ABM_PlayerControllerBase::CC_ShowCorrectAnswers_Implementation(const TArray
 	}
 }
 
-void ABM_PlayerControllerBase::CC_RemoveQuestionWidget_Implementation(bool bSwitchViewTargetBackToTiles)
+void ABM_PlayerControllerBase::CC_RemoveQuestionWidget_Implementation(bool bSwitchViewTargetBackToTiles, AActor* NewViewTarget)
 {
 	if (QuestionWidget)
 	{
 		QuestionWidget->RemoveFromParent();
 	}
-	if (PlayerHUD && bSwitchViewTargetBackToTiles)
+	if (bSwitchViewTargetBackToTiles)
 	{
-		//PlayerHUD->SetVisibility(ESlateVisibility::Visible);
 		PlayerHUD->ShowAllWidgets();
-		SetViewTargetWithBlend(GetPawn(), 0.5);
+		SetViewTargetWithBlend(GetPawn(), 0.f);
 	}
 }
 
@@ -173,7 +209,7 @@ void ABM_PlayerControllerBase::CC_OpenQuestionWidget_Implementation(FInstancedSt
 	}
 	if (IsValid(NewViewTarget))
 	{
-		SetViewTargetWithBlend(NewViewTarget, 0.5);	
+		SetViewTargetWithBlend(NewViewTarget, 0.f);	
 	}
 	if (LastQuestion.GetPtr<FQuestion>()->Type == EQuestionType::Choose)
 	{
@@ -197,14 +233,15 @@ void ABM_PlayerControllerBase::SC_TryClickTheTile_Implementation(FIntPoint Targe
 {
 	ABM_PlayerState* LPlayerState = Cast<ABM_PlayerState>(this->PlayerState);
 	ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState());
-	
+	TSubclassOf<ABM_TileManager> LTileManagerClass = ABM_TileManager::StaticClass();
+	ABM_TileManager* LTileManager = Cast<ABM_TileManager>(UGameplayStatics::GetActorOfClass(GetWorld(), LTileManagerClass));
 	if (!IsValid(LPlayerState) || !IsValid(LGameState))
 	{
 		return;
 	}
 	if (LPlayerState->IsPlayerTurn())
 	{
-		if (LGameState->GetPlayerAvailableTiles(LGameState->GetCurrentRound(), LPlayerState->GetPlayerIndex()).Contains(TargetTile))
+		if (LTileManager->IsTileAvailable(TargetTile))
 		{
 			LGameState->HandleClickedTile(TargetTile);
 		}

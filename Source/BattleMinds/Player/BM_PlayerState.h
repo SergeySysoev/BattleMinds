@@ -25,10 +25,6 @@ public:
 	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Questions")
 	bool CurrentQuestionAnswerSent = false;
 
-	/* Number of turns this player will make in the game, calculated based on number of players in lobby*/
-	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Questions")
-	int32 NumberOfTurns;
-
 	/* Based on how many points Player received, calculated in GameState */
 	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Questions")
 	int32 TotalPlace;

@@ -19,7 +19,7 @@ DECLARE_LOG_CATEGORY_EXTERN(BMLogGameStateBase, Log, All);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAnswerSentSignature, int32, PlayerID);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPlayerPointsChanged, int32, PlayerID, float, NewScore);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnQuestionCompleted);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnQuestionCompleted, FPostQuestionPhaseInfo, PostQuestionPhaseInfo);
 
 class ABM_PlayerState;
 
@@ -38,14 +38,15 @@ public:
 	
 	UPROPERTY(BlueprintAssignable, BlueprintReadOnly, BlueprintCallable, Category = "Players info")
 	FOnPlayerPointsChanged OnPlayerPointsChanged;
-
 	
-
 	UFUNCTION(BlueprintPure)
 	FORCEINLINE int32 GetCurrentPlayerCounter() const { return CurrentPlayerCounter; }
 
 	UFUNCTION(BlueprintPure)
 	FORCEINLINE int32 GetCurrentPlayerIndex() const { return CurrentPlayerIndex; }
+
+	UFUNCTION(BlueprintPure)
+	bool IsPlayerTurn(int32 PlayerIndex) const;
 	
 	UFUNCTION(BlueprintPure)
 	FORCEINLINE EGameRound GetCurrentRound() const { return Round; }
@@ -54,7 +55,10 @@ public:
 	TArray<FIntPoint> GetPlayerAvailableTiles(EGameRound CurrentRound, int32 PlayerIndex) const;
 
 	UFUNCTION(BlueprintPure)
-	FLinearColor GetPlayerColorByIndex(int32 PlayerIndex) const;
+	FLinearColor GetPlayerLinearColorByIndex(int32 PlayerIndex) const;
+
+	UFUNCTION(BlueprintPure)
+	EColor GetPlayerColorByIndex(int32 PlayerIndex) const;
 
 	UFUNCTION()
 	void HandleClickedTile(FIntPoint InClickedTile);
@@ -64,6 +68,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void ClearPlayerTurnTimer();
+
+	UFUNCTION()
+	void EliminatePlayer(int32 PlayerIndex);
 
 	UFUNCTION(BlueprintCallable)
 	void RequestToOpenQuestion(EQuestionType QuestionType);
@@ -94,8 +101,11 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void NotifyPostQuestionPhaseReady();
+
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void SC_ChangePointsOfPlayer(int32 PlayerIndex, int32 PointsIncrement);
 	
-	FunctionVoidPtr OpenChooseQuestionPtr;
+	FunctionVoidPtr OpenNextQuestionPtr;
 	FunctionVoidPtr StartSiegePtr;
 	FunctionVoidPtr PassTurnToNextPlayerPtr;
 
@@ -114,10 +124,10 @@ protected:
 	FInstancedStruct LastQuestion;
 
 	/*
-	 * integer to iterate through PlayerCycles[i].Permutations array, always go from 0 to N
+	 * integer to iterate through PlayerCycles[i].Permutations array, always go from 0 to Number of players
 	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Players info")
-	int32 CurrentPlayerCounter = 0;
+	int32 CurrentPlayerCounter = -1;
 
 	/*
 	 * index of player in PlayerArray, is set from PlayerCycles[i].Permutations array using CurrentPlayerCounter
@@ -141,10 +151,6 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite, Category = "Game flow", meta=(BaseStruct = "Question"))
 	TArray<FInstancedStruct> UsedQuestions;
-	
-	/* Order of Player's turn in IDs*/
-	UPROPERTY(BlueprintReadOnly, Category = "Players info")
-	TArray<int32> PlayerTurns;
 
 	UPROPERTY()
 	TArray<int32> AnsweringPlayers;
@@ -160,20 +166,17 @@ protected:
 	
 	int32 NumberOfSentAnswers = 0;
 
+	UPROPERTY(BlueprintReadOnly, Category="Game flow")
+	int32 RemainingPlayers = 0;
+
+	UPROPERTY(BlueprintReadOnly, Category="Game flow")
+	TArray<int32> RemainingPlayerIndices;
+
 	UPROPERTY(BlueprintReadWrite)
 	const ABM_GameModeBase* BMGameMode = nullptr;
-
-	UPROPERTY(BlueprintReadOnly)
-	int32 TotalSetTerritoryTurns = 0;
-
-	UPROPERTY(BlueprintReadOnly)
-	int32 TotalFightForTerritoryTurns = 0;
-
+	
 	UPROPERTY(BlueprintReadOnly)
 	int32 CurrentSiegeTileQuestionCount = 0;
-
-	UPROPERTY(BlueprintReadOnly)
-	int32 TotalSiegeTileQuestionCount = 0;
 
 	UPROPERTY(BlueprintReadWrite)
 	ABM_TileManager* TileManager = nullptr;
@@ -190,7 +193,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	UFUNCTION(BlueprintCallable)
-	void StartPostQuestionPhase();
+	void StartPostQuestionPhase(bool bSkipToPostQuestionComplete = false);
 
 	UFUNCTION()
 	void CheckPostQuestionPhaseComplete();
@@ -205,13 +208,16 @@ protected:
 	void UnbindAllOnBannerSpawnedTiles();
 
 	UFUNCTION(BlueprintPure)
-	int32 GetNextPlayerArrayIndex() const;
+	int32 GetNextPlayerArrayIndex();
 	
 	UFUNCTION(BlueprintPure)
-	int32 GetPreviousPlayerArrayIndex() const;
+	int32 GetPreviousPlayerArrayIndex();
 
 	UFUNCTION()
 	void StopPlayerTurnTimer();
+
+	UFUNCTION(BlueprintCallable)
+	void OpenNextQuestion();
 	
 	// Move Players Cameras to Question Location
 	UFUNCTION()
@@ -242,10 +248,10 @@ protected:
 	void VerifyAnswers();
 	
 	UFUNCTION()
-	void VerifyChooseAnswers();
+	TMap<int32, EQuestionResult> VerifyChooseAnswers();
 	
 	UFUNCTION()
-	void VerifyShotAnswers();
+	TMap<int32, EQuestionResult> VerifyShotAnswers();
 	
 	UFUNCTION()
 	EGameRound GetNextGameRound() const;
@@ -299,9 +305,14 @@ protected:
 	UFUNCTION()
 	void StopAllTimers();
 
+	/*
+	 * AnsweredPlayer = 0 - no one gave the right answer
+	 * AnsweredPlayer = 1 - Attacker was right
+	 * AnsweredPlayer = 2 - Defender was right
+	 */
 	UFUNCTION()
-	void HandleSiegedTile(ABM_PlayerControllerBase* AttackingPlayerController, ABM_PlayerControllerBase* DefendingPlayerController,
-		bool QuestionWasAnsweredByAttacker);
+	void HandleSiegedTile(
+		uint8 AnsweredPlayer);
 
 	UFUNCTION(BlueprintCallable, NetMulticast, Unreliable)
 	void MC_UpdatePoints(int32 PlayerID, float NewScore);
@@ -317,4 +328,7 @@ private:
 
 	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess=true))
 	int32 ExpectedPostQuestionReadyActors;
+
+	UPROPERTY(BlueprintReadOnly, meta=(AllowPrivateAccess=true))
+	TMap<int32, EQuestionResult> QuestionResults;
 };

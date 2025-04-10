@@ -15,7 +15,7 @@ void ABM_GameStateClassic::ForceSetGameRound(EGameRound NewRound)
 	{
 		case EGameRound::ChooseCastle:
 			StopAllTimers();
-			CurrentPlayerCounter = 0;
+			CurrentPlayerCounter = -1;
 			PassTurnToTheNextPlayer();
 			break;
 		case EGameRound::SetTerritory:
@@ -32,7 +32,7 @@ void ABM_GameStateClassic::ForceSetGameRound(EGameRound NewRound)
 				}
 				TileManager->AutoAssignTerritoryWithEmptyTiles(true, PlayerColors, 1);
 			}
-			CurrentPlayerCounter = 0;
+			CurrentPlayerCounter = -1;
 			CurrentPlayerIndex = 0;
 			WrapUpCurrentPlayersCycle();
 			break;
@@ -49,7 +49,7 @@ void ABM_GameStateClassic::ForceSetGameRound(EGameRound NewRound)
 				TileManager->AutoAssignTerritory(true, PlayerColors);
 				
 			}
-			CurrentPlayerCounter = 0;
+			CurrentPlayerCounter = -1;
 			PassTurnToTheNextPlayer();
 			break;
 		default: break;

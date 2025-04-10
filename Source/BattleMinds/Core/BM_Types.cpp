@@ -3,6 +3,18 @@
 
 #include "Core/BM_Types.h"
 
+bool FPostQuestionPhaseInfo::ContainsResultType(EQuestionResult ResultTypeToCheck)
+{
+	for (const auto LQuestionResult : QuestionResultsPerPlayer)
+	{
+		if (LQuestionResult.Value == ResultTypeToCheck)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 EColor UBM_Types::GetColorStringAsEnum(FString InColor)
 {
 	int32 LEnumValue = FCString::Atoi((*InColor));
