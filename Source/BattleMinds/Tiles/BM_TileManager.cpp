@@ -42,6 +42,10 @@ void ABM_TileManager::SC_AddClickedTileToTheTerritory_Implementation(int32 Playe
 {
 	TilesToSwitchMaterial.Add(ClickedTiles.FindRef(PlayerID));
 	SC_SetTileOwner(ClickedTiles.FindRef(PlayerID),NewStatus, PlayerID, NewColor, CurrentGameRound);
+	if (CurrentGameRound == EGameRound::FightForTheRestTiles)
+	{
+		OnTileAddedNative.Execute();
+	}
 }
 
 void ABM_TileManager::SC_CancelAttackOnClickedTile_Implementation(int32 PlayerID)
@@ -315,55 +319,111 @@ TArray<FIntPoint> ABM_TileManager::GetShapeBorder(TArray<FIntPoint> Shape)
 
 void ABM_TileManager::HandlePostQuestionPhase(FPostQuestionPhaseInfo PostQuestionPhaseInfo)
 {
+	ExpectedTilesToHandlePostQuestion = 0;
+	CurrentTilesToHandlePostQuestion = 0;
 	if (HasAuthority())
 	{
-		if (PostQuestionPhaseInfo.ContainsResultType(EQuestionResult::TileDamaged))
+		switch (PostQuestionPhaseInfo.GameRound)
 		{
-			// Play Castle Damage animation
-			if (IsValid(CurrentClickedTile))
-			{
-				CurrentClickedTile->MC_DamageTile();
-				CurrentTilesToHandlePostQuestion = 0;
-				ExpectedTilesToHandlePostQuestion = 1;
-				if (!CurrentClickedTile->OnCastleTowerDamaged.IsAlreadyBound(this, &ThisClass::CheckForTilePostQuestionHandled))
-				{
-					CurrentClickedTile->OnCastleTowerDamaged.AddDynamic(this, &ThisClass::CheckForTilePostQuestionHandled);	
-				}
-			}
-			return;
+			case EGameRound::SetTerritory:
+				PostQuestionPhaseSetTerritory(PostQuestionPhaseInfo);
+			break;
+			case EGameRound::FightForTheRestTiles:
+				PostQuestionPhaseFightForTheRestTiles(PostQuestionPhaseInfo);
+			break;
+			case EGameRound::FightForTerritory:
+				PostQuestionPhaseFightForTerritory(PostQuestionPhaseInfo);
+			default:break;
 		}
-		if (PostQuestionPhaseInfo.ContainsResultType(EQuestionResult::TileDefended))
-		{
-			// Play Successful Defence animation
-			CurrentTilesToHandlePostQuestion = ExpectedTilesToHandlePostQuestion = 0; 
-			CheckForTilePostQuestionHandled();
-			return;
-		}
-		if (PostQuestionPhaseInfo.ContainsResultType(EQuestionResult::TileCaptured))
-		{
-			CurrentClickedTile->MC_DamageTile();
-			if (bCastleCaptured)
-			{
-				/*if (!CurrentClickedTile->OnCastleTowerDamaged.IsAlreadyBound(this, &ThisClass::SC_TransferTerritory))
-				{
-					CurrentClickedTile->OnCastleTowerDamaged.AddDynamic(this, &ThisClass::SC_TransferTerritory);	
-				}*/
-				SC_TransferTerritory(CastlePreviousOwnerIndex);
-			}
-			else
-			{
-				SwitchTileMaterial();
-			}
-			return;
-		}
-		CurrentTilesToHandlePostQuestion = ExpectedTilesToHandlePostQuestion = 0; 
-		CheckForTilePostQuestionHandled();
 	}
 }
 
-void ABM_TileManager::SwitchTileMaterial()
+void ABM_TileManager::PostQuestionPhaseSetTerritory(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo)
 {
+	for (const auto LQuestionResult : PostQuestionPhaseInfo.QuestionResultsPerPlayer)
+	{
+		switch (LQuestionResult.Value)
+		{
+			case EQuestionResult::TileDefended:
+			{
+				if (ClickedTiles.Contains(LQuestionResult.Key))
+				{
+					/* Attacking Player wasn't able to capture the Tile
+					 * Call SC_CancelAttack for this Player
+					 * and don't include it for ExpectedTilesToHandlePostQuestion
+					 */
+					SC_CancelAttackOnClickedTile(LQuestionResult.Key);
+				}
+			}
+			break;
+			case EQuestionResult::TileCaptured:
+			{
+				if (ClickedTiles.Contains(LQuestionResult.Key))
+				{
+					SC_AddClickedTileToTheTerritory(LQuestionResult.Key,
+									ETileStatus::Controlled,
+									PostQuestionPhaseInfo.PlayerColors.FindRef(LQuestionResult.Key),
+									PostQuestionPhaseInfo.GameRound);
+				}
+			}
+			break;
+			default:break;
+		}
+	}
+	SwitchTilesMaterial();
+}
+
+void ABM_TileManager::PostQuestionPhaseFightForTheRestTiles(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo)
+{
+	OnTileAddedNative.BindUObject(this, &ThisClass::SwitchTilesMaterial);
+}
+
+void ABM_TileManager::PostQuestionPhaseFightForTerritory(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo)
+{
+	if (PostQuestionPhaseInfo.ContainsResultType(EQuestionResult::TileDefended))
+	{
+		if (IsValid(CurrentClickedTile))
+		{
+			/* Attacking Player wasn't able to capture the Tile
+			 * Call SC_CancelAttack for this Player
+			 */
+			CurrentClickedTile->SC_CancelAttack();
+			CheckForTilePostQuestionHandled();
+			return;
+		}
+	}
+	if (PostQuestionPhaseInfo.ContainsResultType(EQuestionResult::TileCaptured))
+	{
+		if (bCastleCaptured)
+		{
+			CurrentClickedTile->OnCastleTowerDamaged.RemoveAll(this);
+			CurrentClickedTile->OnCastleTowerDamaged.AddDynamic(this, &ThisClass::SC_TransferTerritory);
+			CurrentClickedTile->MC_DamageTile();
+			return;
+		}
+		TArray<int32> LPlayerIndices;
+		PostQuestionPhaseInfo.QuestionResultsPerPlayer.GenerateKeyArray(LPlayerIndices);
+		SC_AddClickedTileToTheTerritory(LPlayerIndices[0],
+								ETileStatus::Controlled,
+								PostQuestionPhaseInfo.PlayerColors.FindRef(LPlayerIndices[0]),
+								PostQuestionPhaseInfo.GameRound);
+		SwitchTilesMaterial();
+		return;
+	}
+}
+
+void ABM_TileManager::SwitchTilesMaterial()
+{
+	if (OnTileAddedNative.IsBound())
+	{
+		OnTileAddedNative.Unbind();
+	}
 	ExpectedTilesToHandlePostQuestion = TilesToSwitchMaterial.Num();
+	if (ExpectedTilesToHandlePostQuestion <= 0)
+	{
+		CheckForTilePostQuestionHandled();
+		return;
+	}
 	for (const auto LTileAxials : TilesToSwitchMaterial)
 	{
 		const auto LTileBase = Tiles.FindRef(LTileAxials);
@@ -375,9 +435,9 @@ void ABM_TileManager::SwitchTileMaterial()
 	}
 }
 
-void ABM_TileManager::SC_TransferTerritory(int32 OldOwnerIndex)
+void ABM_TileManager::SC_TransferTerritory()
 {
-	TArray<FIntPoint> LTilesToTransfer = GetPlayerOwnedTilesAxials(OldOwnerIndex);
+	TArray<FIntPoint> LTilesToTransfer = GetPlayerOwnedTilesAxials(CastlePreviousOwnerIndex);
 	TPair<int32, EColor> LPlayerInfo = GetCurrentPlayerInfo();
 	int32 LAmountOfPoints = 0;
 	for (FIntPoint LTileAxials : LTilesToTransfer)
@@ -393,9 +453,9 @@ void ABM_TileManager::SC_TransferTerritory(int32 OldOwnerIndex)
 	if (IsValid(LGameState))
 	{
 		LGameState->SC_ChangePointsOfPlayer(LPlayerInfo.Key, LAmountOfPoints);
-		LGameState->SC_ChangePointsOfPlayer(OldOwnerIndex, -LAmountOfPoints);
+		LGameState->SC_ChangePointsOfPlayer(CastlePreviousOwnerIndex, -LAmountOfPoints);
 	}
-	SwitchTileMaterial();
+	SwitchTilesMaterial();
 }
 
 void ABM_TileManager::OnCastleDestroyed_Implementation(int32 OwnerPlayerIndex)
@@ -410,8 +470,6 @@ void ABM_TileManager::CheckForTilePostQuestionHandled()
 	if (CurrentTilesToHandlePostQuestion >= ExpectedTilesToHandlePostQuestion)
 	{
 		TilesToSwitchMaterial.Empty();
-		ExpectedTilesToHandlePostQuestion = 0;
-		CurrentTilesToHandlePostQuestion = 0;
 		if (bCastleCaptured)
 		{
 			ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState());

@@ -14,6 +14,8 @@ class ABM_GameStateBase;
 
 DECLARE_MULTICAST_DELEGATE(FOnMapGeneratedNative);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerCastleDestroyed, int32, PlayerIndex);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnClickedTileMaterialChanged);
+DECLARE_DELEGATE(FOnTileAddedNative);
 
 UCLASS()
 class BATTLEMINDS_API ABM_TileManager : public AActor
@@ -25,8 +27,13 @@ public:
 	
 	FOnMapGeneratedNative OnMapGeneratedNative;
 
+	FOnTileAddedNative OnTileAddedNative;
+
 	UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = "TileManager")
 	FOnPlayerCastleDestroyed OnPlayerCastleDestroyed;
+
+	UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = "TileManager")
+	FOnClickedTileMaterialChanged OnClickedTileMaterialChanged;
 
 	virtual void Tick(float DeltaTime) override;
 
@@ -166,12 +173,21 @@ protected:
 	
 	UFUNCTION(BlueprintCallable)
 	void HandlePostQuestionPhase(FPostQuestionPhaseInfo PostQuestionPhaseInfo);
+
+	UFUNCTION()
+	void PostQuestionPhaseSetTerritory(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo);
+
+	UFUNCTION()
+	void PostQuestionPhaseFightForTheRestTiles(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo);
+
+	UFUNCTION()
+	void PostQuestionPhaseFightForTerritory(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo);
 	
 	UFUNCTION(BlueprintCallable)
-	void SwitchTileMaterial();
+	void SwitchTilesMaterial();
 
 	UFUNCTION(BlueprintCallable)
-	void SC_TransferTerritory(int32 OldOwnerIndex);
+	void SC_TransferTerritory();
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Tile operations")
 	void OnCastleDestroyed(int32 OwnerPlayerIndex);

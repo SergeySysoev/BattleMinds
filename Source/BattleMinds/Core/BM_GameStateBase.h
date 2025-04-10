@@ -85,6 +85,9 @@ public:
 	void PassTurnToTheNextPlayer();
 
 	UFUNCTION(BlueprintCallable)
+	void PassTurnToTheShotQuestionWinner();
+
+	UFUNCTION(BlueprintCallable)
 	ABM_PlayerControllerBase* GetPlayerController(int32 PlayerIndex);
 
 	UFUNCTION()
@@ -331,4 +334,7 @@ private:
 
 	UPROPERTY(BlueprintReadOnly, meta=(AllowPrivateAccess=true))
 	TMap<int32, EQuestionResult> QuestionResults;
+
+	UPROPERTY()
+	int32 FightForTheRestTileWinnerIndex = -1;
 };

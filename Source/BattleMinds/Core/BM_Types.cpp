@@ -3,7 +3,7 @@
 
 #include "Core/BM_Types.h"
 
-bool FPostQuestionPhaseInfo::ContainsResultType(EQuestionResult ResultTypeToCheck)
+bool FPostQuestionPhaseInfo::ContainsResultType(EQuestionResult ResultTypeToCheck) const
 {
 	for (const auto LQuestionResult : QuestionResultsPerPlayer)
 	{

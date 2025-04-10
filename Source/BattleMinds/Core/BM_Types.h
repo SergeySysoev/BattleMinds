@@ -28,6 +28,32 @@ enum class EQuestionResult : uint8
 	TileCaptured
 };
 
+UENUM(BlueprintType)
+enum class EGameRound : uint8
+{
+	ChooseCastle,
+	SetTerritory,
+	FightForTheRestTiles,
+	FightForTerritory,
+	End
+};
+
+UENUM(BlueprintType)
+enum class EColor : uint8
+{
+	Undefined,
+	Red,
+	Green,
+	Blue,
+	Pink,
+	Orange,
+	White,
+	Black,
+	Purple,
+	Brown,
+	MAX UMETA(Hidden)
+};
+
 USTRUCT(BlueprintType)
 struct FPostQuestionPhaseInfo
 {
@@ -36,13 +62,22 @@ struct FPostQuestionPhaseInfo
 	UPROPERTY()
 	TMap<int32, EQuestionResult> QuestionResultsPerPlayer;
 
+	UPROPERTY()
+	TMap<int32, EColor> PlayerColors;
+
+	UPROPERTY()
+	EGameRound GameRound = EGameRound::End;
+
 	FPostQuestionPhaseInfo(){};
-	explicit FPostQuestionPhaseInfo(const TMap<int32, EQuestionResult>& InQuestionResultsPerPlayer)
+	explicit FPostQuestionPhaseInfo(const TMap<int32, EQuestionResult>& InQuestionResultsPerPlayer,
+		const TMap<int32,EColor>& InPlayerColors, const EGameRound& InGameRound)
 	{
 		QuestionResultsPerPlayer = InQuestionResultsPerPlayer;
+		PlayerColors = InPlayerColors;
+		GameRound = InGameRound;
 	}
 
-	bool ContainsResultType(EQuestionResult ResultTypeToCheck);
+	bool ContainsResultType(EQuestionResult ResultTypeToCheck) const;
 };
 
 UENUM(BlueprintType)
@@ -95,22 +130,6 @@ struct FTileQuestionCount
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	int32 Count;
-};
-
-UENUM(BlueprintType)
-enum class EColor : uint8
-{
-	Undefined,
-	Red,
-	Green,
-	Blue,
-	Pink,
-	Orange,
-	White,
-	Black,
-	Purple,
-	Brown,
-	MAX UMETA(Hidden)
 };
 
 
@@ -388,16 +407,6 @@ struct FQuestionResult
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 ReceivedPoints = 0;
-};
-
-UENUM(BlueprintType)
-enum class EGameRound : uint8
-{
-	ChooseCastle,
-	SetTerritory,
-	FightForTheRestTiles,
-	FightForTerritory,
-	End
 };
 
 USTRUCT(BlueprintType)
