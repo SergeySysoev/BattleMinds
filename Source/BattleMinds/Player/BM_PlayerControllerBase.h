@@ -8,6 +8,7 @@
 #include "UI/BM_UWPlayerHUD.h"
 #include "UI/BM_UWResults.h"
 #include "InputMappingContext.h"
+#include "Interfaces/BMPostQuestionPhase.h"
 #include "BM_PlayerControllerBase.generated.h"
 
 class UBM_GameInstance;
@@ -21,7 +22,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogBM_PlayerController, Display, All);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSetTimerDelegate);
 
 UCLASS()
-class BATTLEMINDS_API ABM_PlayerControllerBase : public APlayerController
+class BATTLEMINDS_API ABM_PlayerControllerBase : public APlayerController, public IBMPostQuestionPhase
 {
 	GENERATED_BODY()
 
@@ -49,6 +50,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "User Widgets")
 	TSubclassOf<UBM_UWPlayerHUD> PlayerHUDClass;
 
+	UFUNCTION(Client, Reliable, BlueprintCallable, Category= "Questions")
+	void CC_SetViewTargetWithBlend(AActor* NewViewTarget, float BlendTime);
+	
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category= "Questions")
 	void SC_AddAnsweredQuestionChoice(FInstancedStruct InPlayerChoice);
 	
@@ -129,4 +133,8 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category="Inputs")
 	TSoftObjectPtr<UInputMappingContext> ClassicIMC = nullptr;
+	
+	virtual void PostQuestionPhaseFightForTerritory(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo) override;
+	
+	virtual void CheckPostQuestionPhaseHandled() override;
 };

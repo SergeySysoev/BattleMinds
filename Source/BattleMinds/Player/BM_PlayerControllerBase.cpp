@@ -21,6 +21,11 @@ ABM_PlayerControllerBase::ABM_PlayerControllerBase()
 	bEnableMouseOverEvents = true;
 }
 
+void ABM_PlayerControllerBase::CC_SetViewTargetWithBlend_Implementation(AActor* NewViewTarget, float BlendTime)
+{
+	SetViewTargetWithBlend(NewViewTarget, BlendTime);
+}
+
 void ABM_PlayerControllerBase::CC_SetGameLength_Implementation(const EGameLength GameLength)
 {
 	if (IsValid(PlayerHUD))
@@ -89,6 +94,11 @@ void ABM_PlayerControllerBase::BeginPlay()
 				InputSystem->AddMappingContext(EssentialIMC.LoadSynchronous(), 0);
 			}
 		}
+	}
+	ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState());
+	if (IsValid(LGameState))
+	{
+		LGameState->OnQuestionCompleted.AddUniqueDynamic(this, &ThisClass::HandlePostQuestionPhase);
 	}
 }
 
@@ -262,4 +272,29 @@ void ABM_PlayerControllerBase::SC_TryClickTheTile_Implementation(FIntPoint Targe
 bool ABM_PlayerControllerBase::SC_TryClickTheTile_Validate(FIntPoint TargetTile)
 {
 	return true;
+}
+
+void ABM_PlayerControllerBase::PostQuestionPhaseFightForTerritory(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo)
+{
+	if (PostQuestionPhaseInfo.ContainsResultType(EQuestionResult::TileDamaged)||
+		PostQuestionPhaseInfo.ContainsResultType(EQuestionResult::TileCaptured))
+	{
+		TArray<ABM_TileBase*> LClickedTiles;
+		PostQuestionPhaseInfo.PlayerClickedTiles.GenerateValueArray(LClickedTiles);
+		ABM_TileBase* LClickedTile = LClickedTiles[0];
+		if (IsValid(LClickedTile))
+		{
+			CC_SetViewTargetWithBlend(LClickedTile, 0.f);
+		}
+	}
+	CheckPostQuestionPhaseHandled();
+}
+
+void ABM_PlayerControllerBase::CheckPostQuestionPhaseHandled()
+{
+	ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState());
+	if (IsValid(LGameState))
+	{
+		LGameState->NotifyPostQuestionPhaseReady();
+	}
 }

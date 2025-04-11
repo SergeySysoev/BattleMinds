@@ -132,6 +132,9 @@ public:
 	UFUNCTION(BlueprintPure)
 	bool IsTileAvailable(FIntPoint TileAxials) const;
 
+	UFUNCTION(BlueprintPure)
+	TMap<int32, ABM_TileBase*> GetClickedTiles();
+
 protected:
 	
 	virtual void BeginPlay() override;

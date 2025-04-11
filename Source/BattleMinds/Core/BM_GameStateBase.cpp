@@ -260,7 +260,7 @@ void ABM_GameStateBase::SetDefendingPlayer(FIntPoint InClickedTile)
 {
 	check(HasAuthority());
 	DefendingPlayerIndex = TileManager->GetTileOwnerID(InClickedTile);
-	//TileManager->HandleClickedTile(DefendingPlayerIndex, InClickedTile);
+	TileManager->HandleClickedTile(DefendingPlayerIndex, InClickedTile);
 }
 
 void ABM_GameStateBase::ClearPlayerTurnTimer()
@@ -1099,7 +1099,8 @@ void ABM_GameStateBase::StartPostQuestionPhase(bool bSkipToPostQuestionComplete)
 		{
 			LPlayerColors.Add(LAnsweringPlayerIndex, Cast<ABM_PlayerState>(PlayerArray[LAnsweringPlayerIndex])->GetPlayerColor());	
 		}
-		FPostQuestionPhaseInfo PostQuestionPhaseInfo = FPostQuestionPhaseInfo(QuestionResults, LPlayerColors, Round);
+		TMap<int32, ABM_TileBase*> LClickedTiles = TileManager->GetClickedTiles();
+		FPostQuestionPhaseInfo PostQuestionPhaseInfo = FPostQuestionPhaseInfo(QuestionResults, LPlayerColors, Round, LClickedTiles);
 		OnQuestionCompleted.Broadcast(PostQuestionPhaseInfo);
 		if (Round == EGameRound::FightForTheRestTiles)
 		{

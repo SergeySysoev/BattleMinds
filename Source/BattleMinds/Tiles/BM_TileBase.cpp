@@ -6,6 +6,7 @@
 #include "Core/BM_GameInstance.h"
 #include "Core/BM_GameStateBase.h"
 #include "GameFramework/Actor.h"
+#include "GameFramework/SpringArmComponent.h"
 
 DEFINE_LOG_CATEGORY(LogBM_Tile);
 
@@ -16,6 +17,11 @@ ABM_TileBase::ABM_TileBase()
 
 	USceneComponent* Root = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
 	RootComponent = Root;
+
+	TileSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("TileSpringArm"));
+	TileSpringArm->SetupAttachment(Root);
+	TileCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("TileCamera"));
+	TileCamera->SetupAttachment(TileSpringArm);
 	
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Tile Mesh"));
 	StaticMesh->SetupAttachment(RootComponent);
@@ -290,6 +296,7 @@ void ABM_TileBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME(ABM_TileBase, TileHP);
 	DOREPLIFETIME(ABM_TileBase, OwnerPlayerIndex);
 	DOREPLIFETIME(ABM_TileBase, Axial);
+	DOREPLIFETIME(ABM_TileBase, CachedStatus);
 	DOREPLIFETIME_CONDITION(ABM_TileBase, TileColor, COND_SimulatedOnly);
 	DOREPLIFETIME_CONDITION(ABM_TileBase, BorderColor, COND_SimulatedOnly);
 }

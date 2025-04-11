@@ -3,12 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Camera/CameraComponent.h"
 #include "GameFramework/Actor.h"
 #include "Components/BoxComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Core/BM_Types.h"
 #include "BM_TileBase.generated.h"
 
+class USpringArmComponent;
 DECLARE_LOG_CATEGORY_EXTERN(LogBM_Tile, Display, All);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCastleMeshSpawned);
@@ -132,6 +134,12 @@ public:
 	void SwitchTileMeshMaterialColor();
 	
 protected:
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	USpringArmComponent* TileSpringArm = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	UCameraComponent* TileCamera = nullptr;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	UStaticMeshComponent* StaticMesh = nullptr;
@@ -225,6 +233,6 @@ public:
 
 private:
 
-	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, Replicated, meta = (AllowPrivateAccess = "true"))
 	ETileStatus CachedStatus;
 };

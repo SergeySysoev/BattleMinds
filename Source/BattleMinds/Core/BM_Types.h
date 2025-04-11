@@ -59,22 +59,35 @@ struct FPostQuestionPhaseInfo
 {
 	GENERATED_BODY()
 
-	UPROPERTY()
+	/*
+	 * Key - PlayerIndex
+	 * Value - Player Question result
+	 */
+	UPROPERTY(BlueprintReadOnly)
 	TMap<int32, EQuestionResult> QuestionResultsPerPlayer;
 
-	UPROPERTY()
+	/*
+	 * Key - PlayerIndex
+	 * Value - Tile that was clicked by the Player
+	 */
+	UPROPERTY(BlueprintReadOnly)
+	TMap<int32, ABM_TileBase*> PlayerClickedTiles;
+	
+	UPROPERTY(BlueprintReadOnly)
 	TMap<int32, EColor> PlayerColors;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	EGameRound GameRound = EGameRound::End;
 
 	FPostQuestionPhaseInfo(){};
 	explicit FPostQuestionPhaseInfo(const TMap<int32, EQuestionResult>& InQuestionResultsPerPlayer,
-		const TMap<int32,EColor>& InPlayerColors, const EGameRound& InGameRound)
+		const TMap<int32,EColor>& InPlayerColors, const EGameRound& InGameRound,
+		const TMap<int32, ABM_TileBase*>& InPlayerClickedTiles)
 	{
 		QuestionResultsPerPlayer = InQuestionResultsPerPlayer;
 		PlayerColors = InPlayerColors;
 		GameRound = InGameRound;
+		PlayerClickedTiles = InPlayerClickedTiles;
 	}
 
 	bool ContainsResultType(EQuestionResult ResultTypeToCheck) const;

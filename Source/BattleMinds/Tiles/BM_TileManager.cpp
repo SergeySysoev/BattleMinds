@@ -223,6 +223,16 @@ bool ABM_TileManager::IsTileAvailable(FIntPoint TileAxials) const
 	return CurrentPlayerAvailableTilesAxials.Contains(TileAxials);
 }
 
+TMap<int32, ABM_TileBase*> ABM_TileManager::GetClickedTiles()
+{
+	TMap<int32, ABM_TileBase*> LClickedTiles;
+	for (const auto LTileAxilas : ClickedTiles)
+	{
+		LClickedTiles.Add(LTileAxilas.Key, Tiles.FindRef(LTileAxilas.Value));
+	}
+	return LClickedTiles;
+}
+
 void ABM_TileManager::UnhighlightTiles()
 {
 	for (auto LTile : Tiles)
@@ -265,14 +275,14 @@ TArray<FIntPoint> ABM_TileManager::GetCurrentPlayerAvailableTilesAxials(EGameRou
 			 *  если клеток нет, то уменьшить радиус на 1
 			 *  если радиус == 0, то дать любую клетку из границы
 			 */
-				CurrentPlayerAvailableTilesAxials = GetTilesAvailableForCastle();
+			CurrentPlayerAvailableTilesAxials = GetTilesAvailableForCastle();
 		break;
 		case EGameRound::SetTerritory:
 			/*
 			 * 1) Найти все клетки, у которых OwnerID == PlayerID
 			 * 2) Найти всех соседей этих клеток в пределах карты
 			 */
-				CurrentPlayerAvailableTilesAxials = GetTilesAvailableForExpansion(PlayerIndex);
+			CurrentPlayerAvailableTilesAxials = GetTilesAvailableForExpansion(PlayerIndex);
 		break;
 		case EGameRound::FightForTheRestTiles:
 			CurrentPlayerAvailableTilesAxials = GetUncontrolledTiles();
@@ -391,6 +401,13 @@ void ABM_TileManager::PostQuestionPhaseFightForTerritory(const FPostQuestionPhas
 			CheckForTilePostQuestionHandled();
 			return;
 		}
+	}
+	if (PostQuestionPhaseInfo.ContainsResultType(EQuestionResult::TileDamaged))
+	{
+		CurrentClickedTile->OnCastleTowerDamaged.RemoveAll(this);
+		CurrentClickedTile->OnCastleTowerDamaged.AddDynamic(this, &ThisClass::CheckForTilePostQuestionHandled);
+		CurrentClickedTile->MC_DamageTile();
+		return;
 	}
 	if (PostQuestionPhaseInfo.ContainsResultType(EQuestionResult::TileCaptured))
 	{
