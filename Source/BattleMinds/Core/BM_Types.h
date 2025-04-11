@@ -279,6 +279,8 @@ struct FPlayerChoiceShot: public FPlayerChoice
 		FPlayerChoice(inPlayerID, inPlayerUniqueNetId, inElapsedTime);
 		Answer = inAnswer;
 	}
+	FPlayerChoiceShot(const FPlayerChoiceShot& Other) : FPlayerChoice(Other), Answer(Other.Answer),
+	Difference(Other.Difference), bAnswered(Other.bAnswered) {}
 	
 	FORCEINLINE bool operator<(const FPlayerChoiceShot &Other) const
 	{
@@ -305,7 +307,22 @@ struct FPlayerChoiceShot: public FPlayerChoice
 		}
 		return false;
 	}
+
+	bool operator==(const FPlayerChoiceShot &Other) const
+	{
+		return Equals(Other);
+	}
+	bool Equals(const FPlayerChoiceShot& Other) const;
 };
+#if UE_BUILD_DEBUG
+uint32 GetTypeHash(const FPlayerChoiceShot& Thing);
+#else // optimize by inlining in shipping and development builds
+FORCEINLINE uint32 GetTypeHash(const FPlayerChoiceShot& Thing)
+{
+	uint32 Hash = FCrc::MemCrc32(&Thing, sizeof(FPlayerChoiceShot));
+	return Hash;
+}
+#endif
 
 /*
  * UI only struct for Question Category info

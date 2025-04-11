@@ -3,6 +3,14 @@
 
 #include "Core/BM_Types.h"
 
+#if UE_BUILD_DEBUG
+uint32 GetTypeHash(const FPlayerChoiceShot& Thing);
+{
+	uint32 Hash = FCrc::MemCrc32(&Thing, sizeof(FPlayerChoiceShot));
+	return Hash;
+}
+#endif
+
 bool FPostQuestionPhaseInfo::ContainsResultType(EQuestionResult ResultTypeToCheck) const
 {
 	for (const auto LQuestionResult : QuestionResultsPerPlayer)
@@ -13,6 +21,16 @@ bool FPostQuestionPhaseInfo::ContainsResultType(EQuestionResult ResultTypeToChec
 		}
 	}
 	return false;
+}
+
+bool FPlayerChoiceShot::Equals(const FPlayerChoiceShot& Other) const
+{
+	return Answer == Other.Answer &&
+		Difference == Other.Difference &&
+		bAnswered == Other.bAnswered &&
+		PlayerID == Other.PlayerID &&
+		PlayerUniqueNetId == Other.PlayerUniqueNetId &&
+		ElapsedTime == Other.ElapsedTime;
 }
 
 EColor UBM_Types::GetColorStringAsEnum(FString InColor)

@@ -179,6 +179,12 @@ void ABM_GameStateBase::StopPlayerTurnTimer()
 
 void ABM_GameStateBase::OpenNextQuestion()
 {
+	ABM_PlayerState* LCurrentPlayerState = Cast<ABM_PlayerState>(PlayerArray[CurrentPlayerIndex]);
+	ABM_PlayerControllerBase* LCurrentPlayerController = Cast<ABM_PlayerControllerBase>(LCurrentPlayerState->GetPlayerController());
+	if (IsValid(LCurrentPlayerState) && IsValid(LCurrentPlayerController))
+	{
+		LCurrentPlayerController->CC_SetInputEnabled(false);
+	}
 	if (IsValid(TileManager))
 	{
 		OpenQuestion(TileManager->GetNextQuestionTypeOfClickedTile());
@@ -534,6 +540,12 @@ void ABM_GameStateBase::HighlightAvailableTiles(int32 PlayerArrayIndex)
 
 void ABM_GameStateBase::ForceChooseAvailableTile(int32 PlayerArrayIndex)
 {
+	ABM_PlayerState* LCurrentPlayerState = Cast<ABM_PlayerState>(PlayerArray[CurrentPlayerIndex]);
+	ABM_PlayerControllerBase* LCurrentPlayerController = Cast<ABM_PlayerControllerBase>(LCurrentPlayerState->GetPlayerController());
+	if (IsValid(LCurrentPlayerState) && IsValid(LCurrentPlayerController))
+	{
+		LCurrentPlayerController->CC_SetInputEnabled(false);
+	}
 	if (IsValid(TileManager) && PlayerArray.IsValidIndex(PlayerArrayIndex))
 	{
 		ChooseFirstAvailableTileForPlayer(PlayerArrayIndex);	
@@ -929,9 +941,11 @@ TMap<int32, EQuestionResult> ABM_GameStateBase::VerifyShotAnswers()
 {
 	TArray<FPlayerChoiceShot> ShotChoices;
 	TMap<int32, EQuestionResult> LQuestionResults;
-	for (const auto LPlayerChoice : PlayersCurrentChoices)
+	TMap<FPlayerChoiceShot, int32> LSortedToOriginalIndices;
+	for (int32 i = 0; i < PlayersCurrentChoices.Num(); i++)
 	{
-		ShotChoices.Add(LPlayerChoice.Get<FPlayerChoiceShot>());
+		ShotChoices.Add(PlayersCurrentChoices[i].Get<FPlayerChoiceShot>());
+		LSortedToOriginalIndices.Add(PlayersCurrentChoices[i].Get<FPlayerChoiceShot>(), i);
 	}
 	// Sort Answers by Difference and ElapsedTime (overriden < operator in FPlayerChoiceShot)
 	if (ShotChoices.Num() > 1)
@@ -975,6 +989,11 @@ TMap<int32, EQuestionResult> ABM_GameStateBase::VerifyShotAnswers()
 		}
 		if(IsValid(WinnerPlayerState))
 		{
+			int32 LOriginalIndex = LSortedToOriginalIndices.FindRef(ShotChoices[0]);
+			if (PlayersCurrentChoices.IsValidIndex(LOriginalIndex))
+			{
+				PlayersCurrentChoices[LOriginalIndex].GetMutable<FPlayerChoiceShot>().bAnswered = true;
+			}
 			int32 LPoints = TileManager->GetPointsOfCurrentClickedTile(CurrentPlayerIndex);
 			WinnerPlayerState->SC_ChangePoints(LPoints);
 			LQuestionResults.Add(ShotChoices[0].PlayerID, EQuestionResult::TileCaptured);
@@ -988,6 +1007,11 @@ TMap<int32, EQuestionResult> ABM_GameStateBase::VerifyShotAnswers()
 		ABM_PlayerState* LAttackingPlayerState = Cast<ABM_PlayerState>(PlayerArray[CurrentPlayerIndex]);
 		ABM_PlayerState* LDefendingPlayerState = Cast<ABM_PlayerState>(PlayerArray[DefendingPlayerIndex]);
 		int32 LWinnerIndex = ShotChoices[0].PlayerID;
+		int32 LOriginalIndex = LSortedToOriginalIndices.FindRef(ShotChoices[0]);
+		if (PlayersCurrentChoices.IsValidIndex(LOriginalIndex))
+		{
+			PlayersCurrentChoices[LOriginalIndex].GetMutable<FPlayerChoiceShot>().bAnswered = true;
+		}
 		if (IsValid(LAttackingPlayerState) && IsValid(LDefendingPlayerState))
 		{
 			if (CurrentPlayerIndex == LWinnerIndex)		// Attacking Player was right
@@ -1130,6 +1154,14 @@ void ABM_GameStateBase::CheckPostQuestionPhaseComplete()
 		UE_LOG(LogTemp, Log, TEXT("All listeners ready. Proceeding logic."));
 		CurrentPostQuestionReadyActors = 0;
 		ExpectedPostQuestionReadyActors = 0;
+		for (auto LPlayerState : PlayerArray)
+		{
+			ABM_PlayerControllerBase* LPlayerController = Cast<ABM_PlayerControllerBase>(LPlayerState->GetPlayerController());
+			if (IsValid(LPlayerController))
+			{
+				LPlayerController->CC_SetViewTargetWithBlend(LPlayerController->GetPawn(), 0.2f);
+			}
+		}
 		// Process to the next turn after 3 seconds
 		GetWorld()->GetTimerManager().SetTimer(PauseHandle,this, &ABM_GameStateBase::PrepareNextTurn, 3.0f, false);
 	}
@@ -1221,6 +1253,7 @@ void ABM_GameStateBase::WrapUpCurrentPlayersCycle()
 				GetWorld()->GetTimerManager().SetTimer(LCountResultsHandle,this, &ABM_GameStateBase::CountResults, 3.0f, false);
 				break;
 			}
+			++CurrentPlayerTurnsCycle;
 			PassTurnToTheNextPlayer();
 		}
 			break;
