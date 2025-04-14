@@ -14,6 +14,7 @@ void ABM_PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(ABM_PlayerState, BMPlayerIndex);
 	DOREPLIFETIME(ABM_PlayerState, Points);
 	DOREPLIFETIME(ABM_PlayerState, QuestionChoices);
+	DOREPLIFETIME(ABM_PlayerState, bHasTurn);
 	DOREPLIFETIME(ABM_PlayerState, CurrentQuestionAnswerSent);
 	DOREPLIFETIME(ABM_PlayerState, TotalPlace);
 	DOREPLIFETIME(ABM_PlayerState, QuestionResults);

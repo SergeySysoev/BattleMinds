@@ -44,8 +44,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void HandleClickedTile(int32 PlayerID, FIntPoint ClickedTileAxials);
 
+	UFUNCTION(BlueprintCallable)
+	void ToggleShowPreviewMeshOnTiles(bool bShow);
+	
 	UFUNCTION(BlueprintPure)
 	int32 GetTileOwnerID(FIntPoint TileAxials) const;
+
+	UFUNCTION(BlueprintPure)
+	ABM_TileBase* GetTileByAxials(FIntPoint TileAxials);
 	
 	UFUNCTION(BlueprintPure, Category = "Tile operations")
 	TArray<ABM_TileBase*> GetCurrentPlayerAvailableTiles();
@@ -135,6 +141,21 @@ public:
 	UFUNCTION(BlueprintPure)
 	TMap<int32, ABM_TileBase*> GetClickedTiles();
 
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE ABM_TileBase* GetFirstAvailableTile() { return FirstAvailableTile; };
+
+	UFUNCTION(BlueprintPure)
+	ABM_TileBase* GetFirstAvailableForPlayerTile();
+
+	UFUNCTION(BlueprintPure)
+	ABM_TileBase* GetTileFromClientsMap(FIntPoint TileAxials);
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE FIntPoint GetFirstAvailableTileAxials() { return FirstAvailableTileAxials; };
+
+	UFUNCTION(Server, Unreliable, Category = "Tile operations")
+	void SC_ResetFirstAvailableTile();
+
 protected:
 	
 	virtual void BeginPlay() override;
@@ -171,6 +192,15 @@ protected:
 	UPROPERTY()
 	TMap<int32, FIntPoint> ClickedTiles;
 
+	UPROPERTY(Transient, BlueprintReadOnly, Category = "Tiles")
+	TMap<FIntPoint, ABM_TileBase*> ClientTilesMap;
+
+	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Tiles")
+	ABM_TileBase* FirstAvailableTile = nullptr;
+
+	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Tiles")
+	FIntPoint FirstAvailableTileAxials;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Tile operations")
 	TArray<FIntPoint> CurrentPlayerAvailableTilesAxials;
 	
@@ -194,6 +224,11 @@ protected:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Tile operations")
 	void OnCastleDestroyed(int32 OwnerPlayerIndex);
+
+	UFUNCTION(NetMulticast, Unreliable, Category = "Tiles")
+	void MC_OnMapGenerated();
+	
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
 

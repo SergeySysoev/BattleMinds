@@ -3,8 +3,10 @@
 
 #include "BM_TileManager.h"
 #include "BM_TileBase.h"
+#include "EngineUtils.h"
 #include "Core/BM_GameModeBase.h"
 #include "Core/BM_GameStateBase.h"
+#include "Kismet/GameplayStatics.h"
 
 ABM_TileManager::ABM_TileManager()
 {
@@ -14,11 +16,31 @@ ABM_TileManager::ABM_TileManager()
 
 void ABM_TileManager::GenerateMap_Implementation(int32 NumberOfPlayers)
 {
-	for (const auto LTile: Tiles)
+	if (HasAuthority())
 	{
-		LTile.Value->OnCastleDestroyed.AddDynamic(this, &ABM_TileManager::OnCastleDestroyed);
+		for (const auto LTile: Tiles)
+		{
+			LTile.Value->SetOwner(this);
+			LTile.Value->OnCastleDestroyed.AddDynamic(this, &ABM_TileManager::OnCastleDestroyed);
+		}
+		OnMapGeneratedNative.Broadcast();
 	}
-	OnMapGeneratedNative.Broadcast();
+}
+
+ABM_TileBase* ABM_TileManager::GetTileByAxials(FIntPoint TileAxials)
+{
+	TSubclassOf<ABM_TileBase> LTileClass = ABM_TileBase::StaticClass();
+	TArray<AActor*> LFoundTiles;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), LTileClass, LFoundTiles);
+	for (const auto LTile: LFoundTiles)
+	{
+		ABM_TileBase* LFoundTile = Cast<ABM_TileBase>(LTile);
+		if (IsValid(LFoundTile) && LFoundTile->GetAxial() == TileAxials)
+		{
+			return LFoundTile;
+		}
+	}
+	return nullptr;	
 }
 
 void ABM_TileManager::HandleClickedTile(int32 PlayerID, FIntPoint ClickedTileAxials)
@@ -26,6 +48,26 @@ void ABM_TileManager::HandleClickedTile(int32 PlayerID, FIntPoint ClickedTileAxi
 	if (Tiles.Contains(ClickedTileAxials))
 	{
 		ClickedTiles.Add(PlayerID, ClickedTileAxials);
+	}
+	ToggleShowPreviewMeshOnTiles(false);
+}
+
+void ABM_TileManager::ToggleShowPreviewMeshOnTiles(bool bShow)
+{
+	if (HasAuthority())
+	{
+		/*for (const auto LTile: Tiles)
+		{
+			LTile.Value->SC_ToggleShowPreviewMesh(bShow);
+		}*/
+		for (const auto LTileAxials : CurrentPlayerAvailableTilesAxials)
+		{
+			ABM_TileBase* LAvailableTile = Tiles.FindRef(LTileAxials);
+			if (IsValid(LAvailableTile))
+			{
+				LAvailableTile->SC_ToggleShowPreviewMesh(bShow);
+			}
+		}
 	}
 }
 
@@ -82,7 +124,6 @@ void ABM_TileManager::BindGameStateToTileBannerMeshSpawned(FIntPoint TileAxials,
 	ABM_TileBase* LTile = Tiles.FindRef(TileAxials);
 	ABM_GameStateBase* LGameState = GetWorld()->GetGameState<ABM_GameStateBase>();
 	LTile->OnBannerMeshSpawnedNative.AddUObject(LGameState, FunctionPointer);
-	
 }
 
 void ABM_TileManager::UnbindAllOnBannerSpawnedDelegates()
@@ -168,6 +209,13 @@ void ABM_TileManager::SwitchToNextRound(EGameRound NewRound)
 	}
 }
 
+void ABM_TileManager::SC_ResetFirstAvailableTile_Implementation()
+{
+	FirstAvailableTile = nullptr;
+	FirstAvailableTileAxials.X = 0;
+	FirstAvailableTileAxials.Y = 0;
+}
+
 void ABM_TileManager::BeginPlay()
 {
 	Super::BeginPlay();
@@ -175,6 +223,21 @@ void ABM_TileManager::BeginPlay()
 	if (IsValid(LGameState))
 	{
 		LGameState->OnQuestionCompleted.AddUniqueDynamic(this, &ThisClass::HandlePostQuestionPhase);
+	}
+	OnMapGeneratedNative.AddUObject(this, &ThisClass::MC_OnMapGenerated);
+}
+
+void ABM_TileManager::MC_OnMapGenerated_Implementation()
+{
+	ClientTilesMap.Empty();
+	for (TActorIterator<ABM_TileBase> It(GetWorld()); It; ++It)
+	{
+		ABM_TileBase* LTile = *It;
+		if (IsValid(LTile) && LTile->GetOwner() == this)
+		{
+			ClientTilesMap.Add(LTile->GetAxial(), LTile);
+		}
+		
 	}
 }
 
@@ -193,6 +256,11 @@ void ABM_TileManager::HighlightTilesForPlayer(TArray<FIntPoint> TilesToHighlight
 	for (FIntPoint LTileAxials : TilesToHighlight)
 	{
 		ABM_TileBase* LTileToHighlight = Tiles.FindRef(LTileAxials);
+		if (!IsValid(FirstAvailableTile))
+		{
+			FirstAvailableTile = LTileToHighlight;
+			FirstAvailableTileAxials = LTileAxials;
+		}
 		if (IsValid(LTileToHighlight))
 		{
 			LTileToHighlight->SetTileEdgesColor(InPlayerColor);
@@ -233,6 +301,20 @@ TMap<int32, ABM_TileBase*> ABM_TileManager::GetClickedTiles()
 	return LClickedTiles;
 }
 
+ABM_TileBase* ABM_TileManager::GetFirstAvailableForPlayerTile()
+{
+	return GetTileByAxials(GetFirstAvailableTileAxials());
+}
+
+ABM_TileBase* ABM_TileManager::GetTileFromClientsMap(FIntPoint TileAxials)
+{
+	if (ClientTilesMap.Contains(TileAxials))
+	{
+		return ClientTilesMap.FindRef(TileAxials);
+	}
+	return nullptr;
+}
+
 void ABM_TileManager::UnhighlightTiles()
 {
 	for (auto LTile : Tiles)
@@ -243,12 +325,14 @@ void ABM_TileManager::UnhighlightTiles()
 			LTile.Value->MC_SetPointsWidgetVisibility(false);
 		}
 	}
+	ToggleShowPreviewMeshOnTiles(false);
 }
 
 void ABM_TileManager::SC_HighlightAvailableTiles_Implementation(EGameRound GameRound, int32 PlayerID, EColor InPlayerColor)
 {
 	GetCurrentPlayerAvailableTilesAxials(GameRound, PlayerID);
 	HighlightTilesForPlayer(CurrentPlayerAvailableTilesAxials, InPlayerColor, GameRound);
+	ToggleShowPreviewMeshOnTiles(true);
 }
 
 TArray<ABM_TileBase*> ABM_TileManager::GetCurrentPlayerAvailableTiles()
@@ -481,6 +565,13 @@ void ABM_TileManager::OnCastleDestroyed_Implementation(int32 OwnerPlayerIndex)
 	CastlePreviousOwnerIndex = OwnerPlayerIndex;;
 }
 
+void ABM_TileManager::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ABM_TileManager, FirstAvailableTile);
+	DOREPLIFETIME(ABM_TileManager, FirstAvailableTileAxials);
+}
+
 void ABM_TileManager::CheckForTilePostQuestionHandled()
 {
 	++CurrentTilesToHandlePostQuestion;
@@ -500,6 +591,9 @@ void ABM_TileManager::CheckForTilePostQuestionHandled()
 		ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState());
 		if (IsValid(LGameState))
 		{
+			FirstAvailableTile = nullptr;
+			FirstAvailableTileAxials.X = 0;
+			FirstAvailableTileAxials.Y = 0;
 			LGameState->NotifyPostQuestionPhaseReady();
 		}
 	}

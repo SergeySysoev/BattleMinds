@@ -43,6 +43,36 @@ void ABM_PlayerControllerBase::SC_SetPlayerInfo_Implementation(const FString& In
 	}
 }
 
+void ABM_PlayerControllerBase::CC_CheckForTileUnderCursor_Implementation(const FIntPoint& FirstTileAxials)
+{
+	FHitResult LHit;
+	TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjectTypes;
+	TraceObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
+	GetHitResultUnderCursorForObjects(TraceObjectTypes, false, LHit);
+	if (Cast<ABM_TileBase>(LHit.GetActor()))
+	{
+		ABM_TileBase* LTileUnderCursor = Cast<ABM_TileBase>(LHit.GetActor());
+		LTileUnderCursor->ShowPreviewMesh(LTileUnderCursor);
+		CachedTileWithPreview = LTileUnderCursor;
+	}
+	else
+	{
+		TSubclassOf<ABM_TileManager> LTileManagerClass = ABM_TileManager::StaticClass();
+		ABM_TileManager* LTileManager = Cast<ABM_TileManager>(UGameplayStatics::GetActorOfClass(GetWorld(), LTileManagerClass));
+		if (IsValid(LTileManager))
+		{
+			ABM_TileBase* LFirstAvailableTile = LTileManager->GetTileFromClientsMap(FirstTileAxials);
+			if (IsValid(LFirstAvailableTile))
+			{
+				UE_LOG(LogBM_PlayerController, Warning, TEXT("First available tile axials: %d,%d "),
+					LFirstAvailableTile->GetAxial().X, LFirstAvailableTile->GetAxial().Y);
+				LFirstAvailableTile->ForceShowPreviewMesh(LFirstAvailableTile);
+				CachedTileWithPreview = LFirstAvailableTile;
+			}
+		}
+	}
+}
+
 void ABM_PlayerControllerBase::SetPlayerInfoFromGI()
 {
 	if (IsLocalController())

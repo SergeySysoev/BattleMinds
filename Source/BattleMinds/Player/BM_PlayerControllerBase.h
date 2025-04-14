@@ -81,6 +81,9 @@ public:
 	void UpdatePlayerTurnWidget(const int32 CurrentCycle, const int32 CurrentPlayerCount);
 
 	UFUNCTION(BlueprintImplementableEvent, Category= "HUD")
+	void UpdateCurrentPlayerTurnSlot(const int32 CurrentPlayerCounter, FUniqueNetIdRepl PlayerUniqueNetId, EColor PlayerColor);
+
+	UFUNCTION(BlueprintImplementableEvent, Category= "HUD")
 	void StopHUDAnimations();
 
 	UFUNCTION(BlueprintImplementableEvent, Category= "HUD")
@@ -103,6 +106,9 @@ public:
 
 	UFUNCTION(Client, Unreliable, BlueprintCallable, Category= "HUD")
 	void CC_ShowWarningPopup(const FText& InText);
+
+	UFUNCTION(Client, Reliable, BlueprintCallable, Category= "Tiles")
+	void CC_CheckForTileUnderCursor(const FIntPoint& FirstTileAxials);
 	
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable, Category = "Controls")
 	void SC_TryClickTheTile(FIntPoint TargetTile);
@@ -118,6 +124,9 @@ public:
 
 	UFUNCTION(Client, Reliable, Category = "Inputs")
 	void CC_SetInputEnabled(bool bIsEnabled);
+
+	UFUNCTION(BlueprintPure, Category = "Tiles")
+	FORCEINLINE ABM_TileBase* GetCachedTileWithPreview() {return CachedTileWithPreview;}
 
 protected:
 	virtual void BeginPlay() override;
@@ -137,4 +146,7 @@ protected:
 	virtual void PostQuestionPhaseFightForTerritory(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo) override;
 	
 	virtual void CheckPostQuestionPhaseHandled() override;
+
+	UPROPERTY(BlueprintReadOnly, Category="Tiles")
+	TObjectPtr<ABM_TileBase> CachedTileWithPreview;
 };

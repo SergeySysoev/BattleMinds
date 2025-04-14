@@ -30,7 +30,7 @@ void ABM_GameStateClassic::ForceSetGameRound(EGameRound NewRound)
 					ABM_PlayerState* LBMPlayerState = Cast<ABM_PlayerState>(LPlayerState);
 					PlayerColors.Add(LBMPlayerState->GetPlayerIndex(), LBMPlayerState->GetPlayerColor());
 				}
-				TileManager->AutoAssignTerritoryWithEmptyTiles(true, PlayerColors, 1);
+				TileManager->AutoAssignTerritoryWithEmptyTiles(true, PlayerColors, 4);
 			}
 			CurrentPlayerCounter = -1;
 			CurrentPlayerIndex = 0;

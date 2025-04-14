@@ -132,6 +132,21 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void SwitchTileMeshMaterialColor();
+
+	UFUNCTION(Server, Unreliable, BlueprintCallable)
+	void SC_ToggleShowPreviewMesh(bool bShow);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void ShowPreviewMesh(AActor* HoveredActor);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void ForceShowPreviewMesh(AActor* HoveredActor);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void HidePreviewMesh(AActor* HoveredActor);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void HidePreviewMeshOnClick(AActor* HoveredActor, FKey PressedButton);
 	
 protected:
 
@@ -152,9 +167,15 @@ protected:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
     USkeletalMeshComponent* BannerMesh = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+    USkeletalMeshComponent* BannerPreviewMesh = nullptr;
 	
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
     UStaticMeshComponent* CastleMesh = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	UStaticMeshComponent* CastlePreviewMesh = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	UStaticMeshComponent* FirstTowerMesh = nullptr;
@@ -215,9 +236,15 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Player")
 	int32 OwnerPlayerIndex = -1;
+
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_ShowPreviewMesh, BlueprintReadWrite, Category = "Player")
+	bool bShowPreviewMesh = false;
 	
 	UFUNCTION()
 	void OnRep_TileColor();
+
+	UFUNCTION()
+	void OnRep_ShowPreviewMesh();
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void OnRep_TileColorMeshChangeOR();
