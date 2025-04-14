@@ -438,7 +438,6 @@ void ABM_GameStateBase::HandleClickedTile(FIntPoint InClickedTile)
 	check(HasAuthority());
 	ABM_PlayerControllerBase* LCurrentPlayerController = GetPlayerController(CurrentPlayerIndex);
 	ABM_PlayerState* LCurrentPlayerState = LCurrentPlayerController->GetPlayerState<ABM_PlayerState>();
-	LCurrentPlayerState->SetPlayerTurn(false);
 	TileManager->HandleClickedTile(CurrentPlayerIndex, InClickedTile);
 	switch (Round)
 	{
@@ -451,6 +450,7 @@ void ABM_GameStateBase::HandleClickedTile(FIntPoint InClickedTile)
 			LCurrentPlayerState->SC_ChangePoints(TileManager->GetPointsOfTile(InClickedTile));
 			MC_UpdatePoints(LCurrentPlayerState->GetPlayerIndex(),LCurrentPlayerState->GetPoints());
 			//CurrentPlayerCounter++;
+			LCurrentPlayerState->SetPlayerTurn(false);
 			DisableTileEdgesHighlight();
 			StopPlayerTurnTimer();
 			TileManager->BindPassTurnToTileCastleMeshSpawned(InClickedTile);
@@ -459,6 +459,7 @@ void ABM_GameStateBase::HandleClickedTile(FIntPoint InClickedTile)
 			/* Spawn Attacking Banner Mesh on Clicked Tile, pass Turn to the next player, after all players choose their tile
 			 the GameState will open the question */
 			{
+				LCurrentPlayerState->SetPlayerTurn(false);
 				DisableTileEdgesHighlight();
 				StopPlayerTurnTimer();
 				TileManager->SC_AttackTile(InClickedTile, LCurrentPlayerState->GetPlayerColor());
@@ -470,18 +471,24 @@ void ABM_GameStateBase::HandleClickedTile(FIntPoint InClickedTile)
 			{
 				DisableTileEdgesHighlight();
 				StopPlayerTurnTimer();
+				LCurrentPlayerState->SC_ChangePoints(BMGameMode->GetPointsOfTile(EGameRound::FightForTheRestTiles));
 				TileManager->SC_AddClickedTileToTheTerritory(CurrentPlayerIndex, ETileStatus::Controlled, LCurrentPlayerState->GetPlayerColor(), Round);
+				MC_UpdatePoints(CurrentPlayerIndex, LCurrentPlayerState->GetPoints());
+				LCurrentPlayerState->SetPlayerTurn(false);
 			}
 			break;
 		case EGameRound::FightForTerritory:
 			// TODO: need to check if the click was on the owning Tile (for fortification)
 			//  in that case no question is needed
-			TileManager->SC_AttackTile(InClickedTile, LCurrentPlayerState->GetPlayerColor());
-			CurrentSiegeTileQuestionCount = TileManager->GetTileQuestionsCount(InClickedTile);
-			SetDefendingPlayer(InClickedTile);
-			DisableTileEdgesHighlight();
-			StopPlayerTurnTimer();
-			TileManager->BindGameStateToTileBannerMeshSpawned(InClickedTile, OpenNextQuestionPtr);
+			{
+				LCurrentPlayerState->SetPlayerTurn(false);
+				TileManager->SC_AttackTile(InClickedTile, LCurrentPlayerState->GetPlayerColor());
+				CurrentSiegeTileQuestionCount = TileManager->GetTileQuestionsCount(InClickedTile);
+				SetDefendingPlayer(InClickedTile);
+				DisableTileEdgesHighlight();
+				StopPlayerTurnTimer();
+				TileManager->BindGameStateToTileBannerMeshSpawned(InClickedTile, OpenNextQuestionPtr);
+			}
 			break;
 		default: break;
 	}
@@ -828,6 +835,7 @@ void ABM_GameStateBase::GatherPlayersAnswers()
 void ABM_GameStateBase::VerifyAnswers()
 {
 	bShotQuestionIsNeeded = false;
+	PlayersToUpdatePoints.Empty();
 	//Verify Players answers:
 	QuestionResults.Empty();
 	if (LastQuestion.GetPtr<FQuestion>())
@@ -880,7 +888,8 @@ TMap<int32, EQuestionResult> ABM_GameStateBase::VerifyChooseAnswers()
 					ConstructQuestionResult(LCurrentPlayerState, UsedQuestions.Num(), LastQuestion, PlayersCurrentChoices, LPoints, true);
 					LCurrentPlayerState->SC_ChangePoints(LPoints);
 					//TileManager->SC_AddClickedTileToTheTerritory(LPlayerID, ETileStatus::Controlled, LCurrentPlayerState->GetPlayerColor(), Round);
-					MC_UpdatePoints(LPlayerID,LCurrentPlayerState->GetPoints());
+					//MC_UpdatePoints(LPlayerID,LCurrentPlayerState->GetPoints());
+					PlayersToUpdatePoints.Add(LPlayerID);
 					LQuestionResults.Add(LPlayerID, EQuestionResult::TileCaptured);
 				}
 			}
@@ -1006,12 +1015,11 @@ TMap<int32, EQuestionResult> ABM_GameStateBase::VerifyShotAnswers()
 			{
 				PlayersCurrentChoices[LOriginalIndex].GetMutable<FPlayerChoiceShot>().bAnswered = true;
 			}
-			int32 LPoints = TileManager->GetPointsOfCurrentClickedTile(CurrentPlayerIndex);
-			WinnerPlayerState->SC_ChangePoints(LPoints);
 			LQuestionResults.Add(ShotChoices[0].PlayerID, EQuestionResult::TileCaptured);
 			//TileManager->SC_AddClickedTileToTheTerritory(ShotChoices[0].PlayerID, ETileStatus::Controlled, WinnerPlayerState->GetPlayerColor(), Round);
-			MC_UpdatePoints(WinnerPlayerState->GetPlayerIndex(),WinnerPlayerState->GetPoints());
-			ConstructQuestionResult(WinnerPlayerState, UsedQuestions.Num(), LastQuestion, PlayersCurrentChoices, LPoints, true);
+			//MC_UpdatePoints(WinnerPlayerState->GetPlayerIndex(),WinnerPlayerState->GetPoints());
+			PlayersToUpdatePoints.Add(WinnerPlayerState->GetPlayerIndex());
+			ConstructQuestionResult(WinnerPlayerState, UsedQuestions.Num(), LastQuestion, PlayersCurrentChoices, BMGameMode->GetPointsOfTile(EGameRound::FightForTheRestTiles), true);
 		}
 	}
 	if (Round == EGameRound::FightForTerritory)
@@ -1082,7 +1090,6 @@ void ABM_GameStateBase::HandleSiegedTile(uint8 AnsweredPlayer)
 		case 0:
 			ConstructQuestionResult(DefendingPlayerState, UsedQuestions.Num(), LastQuestion, PlayersCurrentChoices, 0, false);
 			ConstructQuestionResult(AttackingPlayerState, UsedQuestions.Num(), LastQuestion, PlayersCurrentChoices, 0, false);
-			//TileManager->SC_CancelAttackOnClickedTile(CurrentPlayerIndex);
 			break;
 		case 1:
 			LPoints = TileManager->GetPointsOfCurrentClickedTile(CurrentPlayerIndex);
@@ -1099,8 +1106,10 @@ void ABM_GameStateBase::HandleSiegedTile(uint8 AnsweredPlayer)
 				DefendingPlayerState->SC_ChangePoints(-LPoints);
 				AttackingPlayerState->SC_ChangePoints(LPoints);
 				//TileManager->SC_AddClickedTileToTheTerritory(CurrentPlayerIndex, ETileStatus::Controlled, AttackingPlayerState->GetPlayerColor(), Round);
-				MC_UpdatePoints(DefendingPlayerIndex,DefendingPlayerState->GetPoints());
-				MC_UpdatePoints(CurrentPlayerIndex,AttackingPlayerState->GetPoints());
+				/*MC_UpdatePoints(DefendingPlayerIndex,DefendingPlayerState->GetPoints());
+				MC_UpdatePoints(CurrentPlayerIndex,AttackingPlayerState->GetPoints());*/
+				PlayersToUpdatePoints.Add(DefendingPlayerIndex);
+				PlayersToUpdatePoints.Add(CurrentPlayerIndex);
 			}
 			break;
 		case 2:
@@ -1108,7 +1117,8 @@ void ABM_GameStateBase::HandleSiegedTile(uint8 AnsweredPlayer)
 			ConstructQuestionResult(AttackingPlayerState, UsedQuestions.Num(), LastQuestion, PlayersCurrentChoices, 0, false);
 			DefendingPlayerState->SC_ChangePoints(100);
 			//TileManager->SC_CancelAttackOnClickedTile(CurrentPlayerIndex);
-			MC_UpdatePoints(DefendingPlayerIndex,DefendingPlayerState->GetPoints());
+			//MC_UpdatePoints(DefendingPlayerIndex,DefendingPlayerState->GetPoints());
+			PlayersToUpdatePoints.Add(DefendingPlayerIndex);
 			break;
 		default:
 			break;
@@ -1142,6 +1152,14 @@ void ABM_GameStateBase::StartPostQuestionPhase(bool bSkipToPostQuestionComplete)
 		TMap<int32, ABM_TileBase*> LClickedTiles = TileManager->GetClickedTiles();
 		FPostQuestionPhaseInfo PostQuestionPhaseInfo = FPostQuestionPhaseInfo(QuestionResults, LPlayerColors, Round, LClickedTiles);
 		OnQuestionCompleted.Broadcast(PostQuestionPhaseInfo);
+		if (Round != EGameRound::FightForTheRestTiles)
+		{
+			for (const auto LPlayerIndex : PlayersToUpdatePoints)
+			{
+				ABM_PlayerState* LPlayerState = Cast<ABM_PlayerState>(PlayerArray[LPlayerIndex]);
+				MC_UpdatePoints(LPlayerIndex,LPlayerState->GetPoints());	
+			}
+		}
 		if (Round == EGameRound::FightForTheRestTiles)
 		{
 			CurrentPlayerIndex = FightForTheRestTileWinnerIndex; // Winner of the Shot question

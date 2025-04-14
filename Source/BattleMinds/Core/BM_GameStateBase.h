@@ -337,4 +337,7 @@ private:
 
 	UPROPERTY()
 	int32 FightForTheRestTileWinnerIndex = -1;
+
+	UPROPERTY()
+	TArray<int32> PlayersToUpdatePoints;
 };
