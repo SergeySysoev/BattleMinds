@@ -78,6 +78,9 @@ public:
 	
 	UFUNCTION(BlueprintPure)
 	ETileStatus GetStatus() { return Status; };
+
+	UFUNCTION(BlueprintPure)
+	ETileStatus GetCachedStatus() const  { return CachedStatus; };
 	
 	UFUNCTION(BlueprintPure)
 	int32 GetTileQuestionCount() const;

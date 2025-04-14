@@ -194,6 +194,15 @@ int32 ABM_TileManager::GetPointsOfCurrentClickedTile(int32 PlayerIndex)
 	return 200;
 }
 
+ETileStatus ABM_TileManager::GetStatusOfCurrentClickedTile(int32 PlayerIndex)
+{
+	if (ClickedTiles.Contains(PlayerIndex))
+	{
+		return Tiles.FindRef(ClickedTiles.FindRef(PlayerIndex))->GetCachedStatus();
+	}
+	return ETileStatus::NotOwned;
+}
+
 void ABM_TileManager::SwitchToNextRound(EGameRound NewRound)
 {
 	switch (NewRound)

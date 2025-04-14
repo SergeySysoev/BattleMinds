@@ -1086,6 +1086,10 @@ void ABM_GameStateBase::HandleSiegedTile(uint8 AnsweredPlayer)
 			break;
 		case 1:
 			LPoints = TileManager->GetPointsOfCurrentClickedTile(CurrentPlayerIndex);
+			if (CurrentSiegeTileQuestionCount > 0 && TileManager->GetStatusOfCurrentClickedTile(CurrentPlayerIndex) == ETileStatus::Castle)
+			{
+				LPoints = 0;	
+			}
 			ConstructQuestionResult(DefendingPlayerState, UsedQuestions.Num(), LastQuestion, PlayersCurrentChoices, -1 * LPoints, false);
 			ConstructQuestionResult(AttackingPlayerState, UsedQuestions.Num(), LastQuestion, PlayersCurrentChoices, LPoints, true);
 			// Apply 1 damage to CurrentClickedTile of AttackingPlayer

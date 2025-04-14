@@ -132,6 +132,9 @@ public:
 	UFUNCTION(BlueprintPure)
 	int32 GetPointsOfCurrentClickedTile(int32 PlayerIndex);
 
+	UFUNCTION(BlueprintPure)
+	ETileStatus GetStatusOfCurrentClickedTile(int32 PlayerIndex);
+
 	UFUNCTION(BlueprintCallable)
 	void SwitchToNextRound(EGameRound NewRound);
 	
