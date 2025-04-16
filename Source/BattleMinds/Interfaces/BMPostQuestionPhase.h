@@ -8,7 +8,7 @@
 #include "BMPostQuestionPhase.generated.h"
 
 // This class does not need to be modified.
-UINTERFACE(MinimalAPI)
+UINTERFACE(MinimalAPI, BlueprintType, NotBlueprintable)
 class UBMPostQuestionPhase : public UInterface
 {
 	GENERATED_BODY()
@@ -33,6 +33,6 @@ public:
 	UFUNCTION(Category = "BMPostQuestionPhase")
 	virtual void PostQuestionPhaseFightForTerritory(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo);
 
-	UFUNCTION(Category = "BMPostQuestionPhase")
+	UFUNCTION(BlueprintCallable, Category = "BMPostQuestionPhase")
 	virtual void CheckPostQuestionPhaseHandled();
 };

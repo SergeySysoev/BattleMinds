@@ -93,6 +93,18 @@ struct FPostQuestionPhaseInfo
 	bool ContainsResultType(EQuestionResult ResultTypeToCheck) const;
 };
 
+USTRUCT(BlueprintType)
+struct FPrePlayerTurnPhaseInfo
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly)
+	EGameRound GameRound = EGameRound::End;
+
+	FPrePlayerTurnPhaseInfo() {}
+	FPrePlayerTurnPhaseInfo(const EGameRound& InGameRound) : GameRound(InGameRound) {}
+};
+
 UENUM(BlueprintType)
 enum class EQuestionCategories : uint8
 {

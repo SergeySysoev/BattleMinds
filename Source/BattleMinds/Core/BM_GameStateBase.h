@@ -15,11 +15,12 @@ class ABM_TileBase;
 class ABM_GameModeBase;
 class ABM_PlayerStateBase;
 
-DECLARE_LOG_CATEGORY_EXTERN(BMLogGameStateBase, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogBM_GameStateBase, Log, All);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAnswerSentSignature, int32, PlayerID);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPlayerPointsChanged, int32, PlayerID, float, NewScore);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnQuestionCompleted, FPostQuestionPhaseInfo, PostQuestionPhaseInfo);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPrePlayerTurnPhaseStarted, FPrePlayerTurnPhaseInfo, PrePlayerTurnPhaseInfo);
 
 class ABM_PlayerState;
 
@@ -33,11 +34,14 @@ public:
 	UPROPERTY(BlueprintAssignable, BlueprintReadOnly, BlueprintCallable, Category = "Players info")
 	FAnswerSentSignature OnAnswerSent;
 	
-	UPROPERTY(BlueprintAssignable, BlueprintReadOnly, BlueprintCallable, Category = "Players info")
+	UPROPERTY(BlueprintAssignable, BlueprintReadOnly, BlueprintCallable, Category = "Game flow")
 	FOnQuestionCompleted OnQuestionCompleted;
 	
 	UPROPERTY(BlueprintAssignable, BlueprintReadOnly, BlueprintCallable, Category = "Players info")
 	FOnPlayerPointsChanged OnPlayerPointsChanged;
+
+	UPROPERTY(BlueprintAssignable, BlueprintReadOnly, BlueprintCallable, Category = "Game flow")
+	FOnPrePlayerTurnPhaseStarted OnPrePlayerTurnPhaseStarted;
 	
 	UFUNCTION(BlueprintPure)
 	FORCEINLINE int32 GetCurrentPlayerCounter() const { return CurrentPlayerCounter; }
@@ -104,6 +108,9 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void NotifyPostQuestionPhaseReady();
+
+	UFUNCTION(BlueprintCallable)
+	void NotifyPlayerTurnPhaseReady();
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_ChangePointsOfPlayer(int32 PlayerIndex, int32 PointsIncrement);
@@ -200,6 +207,9 @@ protected:
 
 	UFUNCTION()
 	void CheckPostQuestionPhaseComplete();
+
+	UFUNCTION()
+	void CheckPrePlayerTurnPhaseCompleted();
 
 	UFUNCTION()
 	void ConstructPlayerTurnsCycles();
@@ -331,6 +341,12 @@ private:
 
 	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess=true))
 	int32 ExpectedPostQuestionReadyActors;
+
+	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess=true))
+	int32 CurrentPrePlayerTurnReadyActors = 0;
+
+	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess=true))
+	int32 ExpectedPrePlayerTurnReadyActors = 0;
 
 	UPROPERTY(BlueprintReadOnly, meta=(AllowPrivateAccess=true))
 	TMap<int32, EQuestionResult> QuestionResults;

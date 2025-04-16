@@ -9,7 +9,7 @@
 #include "Player/BM_PlayerControllerBase.h"
 #include "Tiles/BM_TileManager.h"
 
-DEFINE_LOG_CATEGORY(BMLogGameStateBase);
+DEFINE_LOG_CATEGORY(LogBM_GameStateBase);
 
 //--------------------------------------Base methods---------------------------------------------//
 void ABM_GameStateBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -1176,8 +1176,7 @@ void ABM_GameStateBase::StartPostQuestionPhase(bool bSkipToPostQuestionComplete)
 void ABM_GameStateBase::NotifyPostQuestionPhaseReady()
 {
 	++CurrentPostQuestionReadyActors;
-
-	UE_LOG(LogTemp, Display, TEXT("PostQuestionListener confirmed (%d/%d)"),CurrentPostQuestionReadyActors, ExpectedPostQuestionReadyActors);
+	UE_LOG(LogBM_GameStateBase, Display, TEXT("PostQuestionListener confirmed (%d/%d)"),CurrentPostQuestionReadyActors, ExpectedPostQuestionReadyActors);
 	CheckPostQuestionPhaseComplete();
 }
 
@@ -1193,11 +1192,43 @@ void ABM_GameStateBase::CheckPostQuestionPhaseComplete()
 			ABM_PlayerControllerBase* LPlayerController = Cast<ABM_PlayerControllerBase>(LPlayerState->GetPlayerController());
 			if (IsValid(LPlayerController))
 			{
-				LPlayerController->CC_SetViewTargetWithBlend(LPlayerController->GetPawn(), 0.2f);
+				ABM_PlayerPawn* LPlayerPawn = Cast<ABM_PlayerPawn>(LPlayerController->GetPawn());
+				//LPlayerController->CC_SetViewTargetWithBlend(LPlayerController->GetPawn(), 0.2f);
+				if (IsValid(LPlayerPawn))
+				{
+					LPlayerPawn->CC_RestoreCameraPropertiesFromCache();
+				}
 			}
 		}
 		// Process to the next turn after 3 seconds
 		GetWorld()->GetTimerManager().SetTimer(PauseHandle,this, &ABM_GameStateBase::PrepareNextTurn, 3.0f, false);
+	}
+}
+
+void ABM_GameStateBase::NotifyPlayerTurnPhaseReady()
+{
+	++CurrentPrePlayerTurnReadyActors;
+	UE_LOG(LogBM_GameStateBase, Display, TEXT("PrePlayerTurnListener confirmed (%d/%d)"), CurrentPrePlayerTurnReadyActors, ExpectedPrePlayerTurnReadyActors);
+	CheckPrePlayerTurnPhaseCompleted();
+}
+
+void ABM_GameStateBase::CheckPrePlayerTurnPhaseCompleted()
+{
+	if (CurrentPrePlayerTurnReadyActors >= ExpectedPrePlayerTurnReadyActors)
+	{
+		UE_LOG(LogTemp, Log, TEXT("All listeners ready. Proceeding logic."));
+		CurrentPrePlayerTurnReadyActors = 0;
+		ExpectedPrePlayerTurnReadyActors = 0;
+		for (auto LPlayerState : PlayerArray)
+		{
+			ABM_PlayerControllerBase* LPlayerController = Cast<ABM_PlayerControllerBase>(LPlayerState->GetPlayerController());
+			if (IsValid(LPlayerController))
+			{
+				LPlayerController->CC_SetViewTargetWithBlend(LPlayerController->GetPawn(), 0.2f);
+			}
+		}
+		// Process to the next turn after 3 seconds
+		//GetWorld()->GetTimerManager().SetTimer(PauseHandle,this, &ABM_GameStateBase::PrepareNextTurn, 3.0f, false);
 	}
 }
 
@@ -1352,7 +1383,6 @@ void ABM_GameStateBase::PrepareNextTurn()
 				ConstructPlayerTurnsCycles();
 				UpdatePlayersTurnsWidget();
 				GetWorld()->GetTimerManager().SetTimer(PauseHandle, this, &ABM_GameStateBase::PassTurnToTheNextPlayer, 3.0f, false);
-				//PassTurnToTheNextPlayer();
 				UE_LOG(LogBM_GameMode, Display, TEXT("Switch to Fight for Territory round"));
 			}
 			break;

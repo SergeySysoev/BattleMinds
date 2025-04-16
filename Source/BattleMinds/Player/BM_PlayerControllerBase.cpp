@@ -306,7 +306,7 @@ bool ABM_PlayerControllerBase::SC_TryClickTheTile_Validate(FIntPoint TargetTile)
 
 void ABM_PlayerControllerBase::PostQuestionPhaseFightForTerritory(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo)
 {
-	if (PostQuestionPhaseInfo.ContainsResultType(EQuestionResult::TileDamaged)||
+	/*if (PostQuestionPhaseInfo.ContainsResultType(EQuestionResult::TileDamaged)||
 		PostQuestionPhaseInfo.ContainsResultType(EQuestionResult::TileCaptured))
 	{
 		TArray<ABM_TileBase*> LClickedTiles;
@@ -316,7 +316,7 @@ void ABM_PlayerControllerBase::PostQuestionPhaseFightForTerritory(const FPostQue
 		{
 			CC_SetViewTargetWithBlend(LClickedTile, 0.f);
 		}
-	}
+	}*/
 	CheckPostQuestionPhaseHandled();
 }
 

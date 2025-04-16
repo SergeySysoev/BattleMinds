@@ -150,6 +150,12 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void HidePreviewMeshOnClick(AActor* HoveredActor, FKey PressedButton);
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE FVector GetZoomCameraLocation() const { return TileCamera->GetComponentLocation();}
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE FRotator GetZoomCameraRotation() const { return TileCamera->GetComponentRotation();}
 	
 protected:
 
