@@ -6,13 +6,13 @@ void IBMPrePlayerTurnInterface::HandlePrePlayerTurn(FPrePlayerTurnPhaseInfo PreP
 {
 	switch (PrePlayerTurnPhaseInfo.GameRound)
 	{
-		case EGameRound::ChooseCastle:
+		case EGameRound::BuildCastle:
 			PrePlayerTurnChooseCastle(PrePlayerTurnPhaseInfo);
 		break;
 		case EGameRound::SetTerritory:
 			PrePlayerTurnSetTerritory(PrePlayerTurnPhaseInfo);
 		break;
-		case EGameRound::FightForTheRestTiles:
+		case EGameRound::FightForTheRemains:
 			PrePlayerTurnFightForTheRestTiles(PrePlayerTurnPhaseInfo);
 		break;
 		case EGameRound::FightForTerritory:

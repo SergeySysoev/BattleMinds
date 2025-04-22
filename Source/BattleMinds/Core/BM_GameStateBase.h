@@ -5,10 +5,10 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameStateBase.h"
 #include "BM_Types.h"
-#include "Camera/CameraActor.h"
-#include "Player/BM_PlayerControllerBase.h"
+#include "GameRounds/GameRound.h"
 #include "BM_GameStateBase.generated.h"
 
+class UGameRound;
 class ABM_TileManager;
 class ABM_PlayerControllerBase;
 class ABM_TileBase;
@@ -48,6 +48,24 @@ public:
 
 	UFUNCTION(BlueprintPure)
 	FORCEINLINE int32 GetCurrentPlayerIndex() const { return CurrentPlayerIndex; }
+
+	UFUNCTION()
+	void SetNextPlayerIndex();
+
+	UFUNCTION()
+	void SetCurrentPlayerCounter(int32 NewPlayerCounter);
+
+	UFUNCTION()
+	void SetCurrentPlayerCycles(TArray<FPlayersCycle>& PlayersCycles);
+
+	UFUNCTION()
+	void IncrementCurrentPlayerCycle();
+
+	UFUNCTION()
+	FORCEINLINE bool IsValidCurrentCycleCounter(int32 CounterToCheck) const { return PlayerTurnsCycles.IsValidIndex(CounterToCheck); }
+
+	UFUNCTION()
+	bool CheckCurrentCycleCounter() const;
 
 	UFUNCTION(BlueprintPure)
 	bool IsPlayerTurn(int32 PlayerIndex) const;
@@ -101,13 +119,16 @@ public:
 	void InitGameState();
 
 	UFUNCTION()
+	void PrepareNextRound(EGameRound NextRound);
+
+	UFUNCTION()
 	void StartPostCastleChosenPhase();
 	
 	UFUNCTION(BlueprintCallable)
 	void OpenQuestion(EQuestionType QuestionType);
 
-	UFUNCTION()
-	void TransferDefendingPlayerTerritoryToAttacker();
+	UFUNCTION(BlueprintCallable)
+	void ConstructQuestionResult(ABM_PlayerState* InPlayerState, int32 InQuestionNumber, FInstancedStruct InQuestion, TArray<FInstancedStruct> InPlayerChoices, int32 InReceivedPoints, bool InWasAnswered);
 
 	UFUNCTION(BlueprintPure)
 	FORCEINLINE TArray<FPlayersCycle> GetPlayerCycles() const { return PlayerTurnsCycles;}
@@ -120,6 +141,27 @@ public:
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_ChangePointsOfPlayer(int32 PlayerIndex, int32 PointsIncrement);
+
+	UFUNCTION()
+	void ChangePlayerPoints(TMap<int32, int32>& NewPlayersPoints);
+
+	UFUNCTION()
+	void UpdatePlayersCyclesWidget();
+
+	UFUNCTION()
+	void UpdatePlayerTurn();
+
+	UFUNCTION()
+	FORCEINLINE int32 GetMaxCyclesForRound(EGameRound InRound) const { return MaxCyclesPerRound.FindRef(InRound);};
+
+	UFUNCTION()
+	int32 GetNotOwnedTilesCount();
+
+	UFUNCTION()
+	FORCEINLINE int32 GetRemainingPlayersCount() const { return RemainingPlayers;}
+
+	UFUNCTION()
+	FORCEINLINE bool IsRemainingPlayer(const int32 IndexToCheck) const { return RemainingPlayerIndices.IsValidIndex(IndexToCheck); }
 	
 	FunctionVoidPtr OpenNextQuestionPtr;
 	FunctionVoidPtr StartSiegePtr;
@@ -208,6 +250,13 @@ protected:
 
 	virtual void BeginPlay() override;
 
+	template <typename T>
+	void SwitchGameRound()
+	{
+		CurrentGameRoundObject = NewObject<T>(this);
+		CurrentGameRoundObject->Enter(this, TileManager);
+	}
+
 	UFUNCTION(BlueprintCallable)
 	void StartPostQuestionPhase(bool bSkipToPostQuestionComplete = false);
 
@@ -256,9 +305,6 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void GatherPlayersAnswers();
-
-	UFUNCTION(BlueprintCallable)
-	void ConstructQuestionResult(ABM_PlayerState* InPlayerState, int32 InQuestionNumber, FInstancedStruct InQuestion, TArray<FInstancedStruct> InPlayerChoices, int32 InReceivedPoints, bool InWasAnswered);
 	
 	UFUNCTION(BlueprintCallable)
 	void ShowPlayerChoicesAndCorrectAnswer();
@@ -282,19 +328,10 @@ protected:
 	void SetNextGameRound(EGameRound NewRound);
 
 	UFUNCTION()
-	int32 CountNotOwnedTiles();
-
-	UFUNCTION()
-	void UpdatePlayersTurnsWidget();
-
-	UFUNCTION()
 	void ConvertPlayerCyclesToPlayerCyclesUI(TArray<FPlayersCycleUI>& OutPlayersCyclesUI);
 	
 	UFUNCTION()
 	void WrapUpCurrentPlayersCycle();
-
-	UFUNCTION()
-	void UpdatePlayerTurn();
 
 	UFUNCTION()
 	void StopHUDAnimations();
@@ -365,4 +402,7 @@ private:
 
 	UPROPERTY()
 	TArray<int32> PlayersToUpdatePoints;
+
+	UPROPERTY()
+	TObjectPtr<UGameRound> CurrentGameRoundObject;
 };

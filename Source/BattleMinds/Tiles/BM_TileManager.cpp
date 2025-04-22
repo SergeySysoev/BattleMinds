@@ -7,6 +7,7 @@
 #include "Core/BM_GameModeBase.h"
 #include "Core/BM_GameStateBase.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 
 ABM_TileManager::ABM_TileManager()
 {
@@ -86,7 +87,7 @@ void ABM_TileManager::SC_AddClickedTileToTheTerritory_Implementation(int32 Playe
 	FIntPoint LClickedTileAxials = ClickedTiles.FindRef(PlayerID);
 	TilesToSwitchMaterial.Add(LClickedTileAxials);
 	SC_SetTileOwner(LClickedTileAxials,NewStatus, PlayerID, NewColor, CurrentGameRound);
-	if (CurrentGameRound == EGameRound::FightForTheRestTiles)
+	if (CurrentGameRound == EGameRound::FightForTheRemains)
 	{
 		OnTileAddedNative.Execute();
 	}
@@ -414,7 +415,7 @@ TArray<FIntPoint> ABM_TileManager::GetCurrentPlayerAvailableTilesAxials(EGameRou
 	
 	switch (CurrentRound)
 	{
-		case EGameRound::ChooseCastle:
+		case EGameRound::BuildCastle:
 			/*
 			 * 1) взять границу текущей карты
 			 * 2) Найти занятые клетки в этой границе
@@ -431,7 +432,7 @@ TArray<FIntPoint> ABM_TileManager::GetCurrentPlayerAvailableTilesAxials(EGameRou
 			 */
 			CurrentPlayerAvailableTilesAxials = GetTilesAvailableForExpansion(PlayerIndex);
 		break;
-		case EGameRound::FightForTheRestTiles:
+		case EGameRound::FightForTheRemains:
 			CurrentPlayerAvailableTilesAxials = GetUncontrolledTiles();
 		break;
 		case EGameRound::FightForTerritory:
@@ -485,7 +486,7 @@ void ABM_TileManager::HandlePostQuestionPhase(FPostQuestionPhaseInfo PostQuestio
 			case EGameRound::SetTerritory:
 				PostQuestionPhaseSetTerritory(PostQuestionPhaseInfo);
 			break;
-			case EGameRound::FightForTheRestTiles:
+			case EGameRound::FightForTheRemains:
 				PostQuestionPhaseFightForTheRestTiles(PostQuestionPhaseInfo);
 			break;
 			case EGameRound::FightForTerritory:

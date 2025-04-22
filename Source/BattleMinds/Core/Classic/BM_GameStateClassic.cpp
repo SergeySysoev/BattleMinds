@@ -13,14 +13,15 @@ void ABM_GameStateClassic::ForceSetGameRound(EGameRound NewRound)
 	ConstructPlayerTurnsCycles();
 	switch (Round)
 	{
-		case EGameRound::ChooseCastle:
+		case EGameRound::BuildCastle:
 			StopAllTimers();
 			CurrentPlayerCounter = -1;
-			PassTurnToTheNextPlayer();
+			//PassTurnToTheNextPlayer();
+			PrepareNextRound(EGameRound::BuildCastle);
 			break;
 		case EGameRound::SetTerritory:
 			break;
-		case EGameRound::FightForTheRestTiles:
+		case EGameRound::FightForTheRemains:
 			StopAllTimers();
 			if (IsValid(TileManager))
 			{

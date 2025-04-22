@@ -1,9 +1,12 @@
 // Battle Minds, 2022. All rights reserved.
 
 #include "Core/BM_GameStateBase.h"
-
+#include "Camera/CameraActor.h"
 #include "BM_GameInstance.h"
 #include "BM_GameModeBase.h"
+#include "GameRounds/BuildCastleRound.h"
+#include "GameRounds/GameRound.h"
+#include "GameRounds/SetTerritoryRound.h"
 #include "Kismet/GameplayStatics.h"
 #include "Player/BM_PlayerState.h"
 #include "Player/BM_PlayerControllerBase.h"
@@ -26,7 +29,7 @@ void ABM_GameStateBase::CalculateAndSetMaxCyclesPerRound()
 	{
 		switch (static_cast<EGameRound>(i))
 		{
-			case EGameRound::ChooseCastle:
+			case EGameRound::BuildCastle:
 			{
 				MaxCyclesPerRound.Add(static_cast<EGameRound>(i), 1);
 			}
@@ -37,7 +40,7 @@ void ABM_GameStateBase::CalculateAndSetMaxCyclesPerRound()
 					(TileManager->GetTilesCount()-BMGameMode->GetNumberOfActivePlayers()*2)/BMGameMode->GetNumberOfActivePlayers() + 1);
 			}
 			break;
-			case EGameRound::FightForTheRestTiles:
+			case EGameRound::FightForTheRemains:
 			{
 				MaxCyclesPerRound.Add(static_cast<EGameRound>(i), 2);  // That's not cycles number but amount of turns
 			}
@@ -56,7 +59,7 @@ void ABM_GameStateBase::CalculateAndSetMaxCyclesPerRound()
 
 void ABM_GameStateBase::InitGameState()
 {
-	SetNextGameRound(EGameRound::ChooseCastle);
+	SetNextGameRound(EGameRound::BuildCastle);
 	RemainingPlayers = BMGameMode->GetNumberOfActivePlayers();
 	for (int i = 0; i < PlayerArray.Num(); i++)
 	{
@@ -94,7 +97,7 @@ void ABM_GameStateBase::ConstructPlayerTurnsCycles()
 	CurrentPlayerTurnsCycle = 0;
 	switch (Round)
 	{
-		case EGameRound::ChooseCastle:
+		case EGameRound::BuildCastle:
 		{
 			FPermutation LPermutation;
 			for (int32 i = 0; i < PlayerArray. Num(); i++)
@@ -104,11 +107,11 @@ void ABM_GameStateBase::ConstructPlayerTurnsCycles()
 			PlayerTurnsCycles.Add(FPlayersCycle(0, LPermutation, false));
 		}
 			break;
-		case EGameRound::FightForTheRestTiles:
+		case EGameRound::FightForTheRemains:
 		{
 			// Construct 1 cycle of N elements
 			FPermutation LPermutation;
-			for (int32 i = 0; i < MaxCyclesPerRound.FindRef(EGameRound::FightForTheRestTiles); i++)
+			for (int32 i = 0; i < MaxCyclesPerRound.FindRef(EGameRound::FightForTheRemains); i++)
 			{
 				LPermutation.Values.Add(-1); // All turns will be blacked out until the questions is answsered
 			}
@@ -131,7 +134,7 @@ void ABM_GameStateBase::ConstructPlayerTurnsCycles()
 		}
 			break;
 	}
-	UpdatePlayersTurnsWidget();
+	UpdatePlayersCyclesWidget();
 }
 
 void ABM_GameStateBase::DisableTileEdgesHighlight()
@@ -219,7 +222,7 @@ void ABM_GameStateBase::OpenNextQuestion()
 	}
 }
 
-int32 ABM_GameStateBase::CountNotOwnedTiles()
+int32 ABM_GameStateBase::GetNotOwnedTilesCount()
 {
 	return TileManager->GetUncontrolledTiles().Num();
 }
@@ -235,6 +238,36 @@ ABM_PlayerControllerBase* ABM_GameStateBase::GetPlayerController(int32 PlayerInd
 		return Cast<ABM_PlayerControllerBase>(PlayerArray[PlayerIndex]->GetPlayerController());
 	}
 	return nullptr;
+}
+
+void ABM_GameStateBase::SetNextPlayerIndex()
+{
+	check(HasAuthority());
+	CurrentPlayerIndex = GetNextPlayerArrayIndex();
+}
+
+void ABM_GameStateBase::SetCurrentPlayerCounter(int32 NewPlayerCounter)
+{
+	check(HasAuthority());
+	CurrentPlayerCounter = NewPlayerCounter;
+}
+
+void ABM_GameStateBase::SetCurrentPlayerCycles(TArray<FPlayersCycle>& PlayersCycles)
+{
+	CurrentPlayerTurnsCycle = 0;
+	PlayerTurnsCycles.Empty();
+	PlayerTurnsCycles = PlayersCycles;
+}
+
+void ABM_GameStateBase::IncrementCurrentPlayerCycle()
+{
+	PlayerTurnsCycles[CurrentPlayerTurnsCycle].bIsCompleted = true;
+	++CurrentPlayerTurnsCycle;
+}
+
+bool ABM_GameStateBase::CheckCurrentCycleCounter() const
+{
+	return IsValidCurrentCycleCounter(CurrentPlayerTurnsCycle);
 }
 
 bool ABM_GameStateBase::IsPlayerTurn(int32 PlayerIndex) const
@@ -350,7 +383,7 @@ void ABM_GameStateBase::ConstructQuestionResult(ABM_PlayerState* InPlayerState, 
 //--------------------------------------Game flow methods----------------------------------------//
 EGameRound ABM_GameStateBase::GetNextGameRound() const
 {
-	if(Round == EGameRound::ChooseCastle)
+	if(Round == EGameRound::BuildCastle)
 		return EGameRound::SetTerritory;
 	if(Round == EGameRound::SetTerritory)
 		return EGameRound::FightForTerritory;
@@ -364,7 +397,7 @@ void ABM_GameStateBase::SetNextGameRound(EGameRound NewRound)
 	Round = NewRound;
 	switch (Round)
 	{
-		case EGameRound::ChooseCastle:
+		case EGameRound::BuildCastle:
 			break;
 		case EGameRound::SetTerritory:
 			break;
@@ -459,43 +492,33 @@ void ABM_GameStateBase::HandleClickedTile(FIntPoint InClickedTile)
 	check(HasAuthority());
 	ABM_PlayerControllerBase* LCurrentPlayerController = GetPlayerController(CurrentPlayerIndex);
 	ABM_PlayerState* LCurrentPlayerState = LCurrentPlayerController->GetPlayerState<ABM_PlayerState>();
-	ABM_PlayerPawn* LPlayerPawn = Cast<ABM_PlayerPawn>(LCurrentPlayerState->GetPawn());
 	LCurrentPlayerController->CC_SetInputEnabled(false);
+	LCurrentPlayerState->SetPlayerTurn(false);
 	TileManager->HandleClickedTile(CurrentPlayerIndex, InClickedTile);
-	FUniversalCameraPositionSaveFormat LCastleCameraProperties;
+	DisableTileEdgesHighlight();
+	StopPlayerTurnTimer();
 	switch (Round)
 	{
-		case EGameRound::ChooseCastle:
+		case EGameRound::BuildCastle:
 			/* Player chose their Castle tile
 			 * so add it to their territory
 			 and pass the turn to the nex Player when Castle mesh is spawned*/
-			TileManager->SC_AddClickedTileToTheTerritory(CurrentPlayerIndex, ETileStatus::Castle, LCurrentPlayerState->GetPlayerColor(), Round);
-			TileManager->SC_ResetFirstAvailableTile();
-			LCurrentPlayerState->SC_ChangePoints(TileManager->GetPointsOfTile(InClickedTile));
-			MC_UpdatePoints(LCurrentPlayerState->GetPlayerIndex(),LCurrentPlayerState->GetPoints());
-			//CurrentPlayerCounter++;
-			//LCurrentPlayerState->SetPlayerTurn(false);
-			DisableTileEdgesHighlight();
-			StopPlayerTurnTimer();
-			TileManager->BindPassTurnToTileCastleMeshSpawned(InClickedTile);
+			if (CurrentGameRoundObject)
+			{
+				CurrentGameRoundObject->HandleClickedTile(InClickedTile, LCurrentPlayerState);
+			}
 			break;
 		case EGameRound::SetTerritory:
 			/* Spawn Attacking Banner Mesh on Clicked Tile, pass Turn to the next player, after all players choose their tile
 			 the GameState will open the question */
+			if (CurrentGameRoundObject)
 			{
-				LCurrentPlayerState->SetPlayerTurn(false);
-				DisableTileEdgesHighlight();
-				StopPlayerTurnTimer();
-				TileManager->SC_AttackTile(InClickedTile, LCurrentPlayerState->GetPlayerColor());
-				TileManager->BindGameStateToTileBannerMeshSpawned(InClickedTile, PassTurnToNextPlayerPtr);
-				//CurrentPlayerCounter++;
+				CurrentGameRoundObject->HandleClickedTile(InClickedTile, LCurrentPlayerState);
 			}
 			break;
-		case EGameRound::FightForTheRestTiles:
+		case EGameRound::FightForTheRemains:
 			{
-				DisableTileEdgesHighlight();
-				StopPlayerTurnTimer();
-				LCurrentPlayerState->SC_ChangePoints(BMGameMode->GetPointsOfTile(EGameRound::FightForTheRestTiles));
+				LCurrentPlayerState->SC_ChangePoints(BMGameMode->GetPointsOfTile(EGameRound::FightForTheRemains));
 				TileManager->SC_AddClickedTileToTheTerritory(CurrentPlayerIndex, ETileStatus::Controlled, LCurrentPlayerState->GetPlayerColor(), Round);
 				MC_UpdatePoints(CurrentPlayerIndex, LCurrentPlayerState->GetPoints());
 				LCurrentPlayerState->SetPlayerTurn(false);
@@ -509,8 +532,6 @@ void ABM_GameStateBase::HandleClickedTile(FIntPoint InClickedTile)
 				TileManager->SC_AttackTile(InClickedTile, LCurrentPlayerState->GetPlayerColor());
 				CurrentSiegeTileQuestionCount = TileManager->GetTileQuestionsCount(InClickedTile);
 				SetDefendingPlayer(InClickedTile);
-				DisableTileEdgesHighlight();
-				StopPlayerTurnTimer();
 				TileManager->BindGameStateToTileBannerMeshSpawned(InClickedTile, OpenNextQuestionPtr);
 			}
 			break;
@@ -661,18 +682,6 @@ void ABM_GameStateBase::OpenQuestion(EQuestionType QuestionType)
 	StartQuestionTimer();
 }
 
-void ABM_GameStateBase::TransferDefendingPlayerTerritoryToAttacker()
-{
-	StopAllTimers();
-	if (HasAuthority())
-	{
-		ABM_PlayerControllerBase* AttackingPlayer = Cast<ABM_PlayerControllerBase>(PlayerArray[CurrentPlayerIndex]->GetPlayerController());
-		ABM_PlayerState* AttackingPlayerState = Cast<ABM_PlayerState>(AttackingPlayer->PlayerState);
-		ABM_PlayerControllerBase* DefendingPlayer = Cast<ABM_PlayerControllerBase>(PlayerArray[DefendingPlayerIndex]->GetPlayerController());
-		ABM_PlayerState* DefendingPlayerState = Cast<ABM_PlayerState>(DefendingPlayer->PlayerState);
-	}
-}
-
 int32 ABM_GameStateBase::FindNextQuestion(EQuestionType Question, TArray<FName> Array, FString& ContextString)
 {
 	if (!IsValid(BMGameMode))
@@ -758,7 +767,7 @@ void ABM_GameStateBase::OnPlayerAnswerSent(int32 LastSentPlayer)
 			}
 			break;
 		}
-		case EGameRound::FightForTheRestTiles:
+		case EGameRound::FightForTheRemains:
 		{
 			if(NumberOfSentAnswers == BMGameMode->GetNumberOfActivePlayers())
 			{
@@ -903,7 +912,7 @@ void ABM_GameStateBase::VerifyAnswers()
 
 TMap<int32, EQuestionResult> ABM_GameStateBase::VerifyChooseAnswers()
 {
-	const auto LRightAnswer = LastQuestion.GetPtr<FQuestionChooseText>()->RightAnswer;
+	/*const auto LRightAnswer = LastQuestion.GetPtr<FQuestionChooseText>()->RightAnswer;
 	TMap<int32, EQuestionResult> LQuestionResults;
 	switch (Round)
 	{
@@ -993,6 +1002,10 @@ TMap<int32, EQuestionResult> ABM_GameStateBase::VerifyChooseAnswers()
 		default:
 			break;
 	}
+	return LQuestionResults;*/
+	const auto LRightAnswer = LastQuestion.GetPtr<FQuestionChooseText>()->RightAnswer;
+	TMap<int32, EQuestionResult> LQuestionResults = CurrentGameRoundObject->VerifyChooseAnswers(
+		LastQuestion, PlayersCurrentChoices, UsedQuestions.Num());
 	return LQuestionResults;
 }
 
@@ -1015,7 +1028,7 @@ TMap<int32, EQuestionResult> ABM_GameStateBase::VerifyShotAnswers()
 	CurrentSiegeTileQuestionCount--;
 	if (ShotChoices[0].Answer == MAX_int32)   // No players have sent their answers
 	{
-		if (Round == EGameRound::FightForTheRestTiles)
+		if (Round == EGameRound::FightForTheRemains)
 		{
 			for (const auto LShotChoice: ShotChoices)
 			{
@@ -1039,7 +1052,7 @@ TMap<int32, EQuestionResult> ABM_GameStateBase::VerifyShotAnswers()
 	}
 	FightForTheRestTileWinnerIndex = ShotChoices[0].PlayerID;
 	ABM_PlayerState* WinnerPlayerState = Cast<ABM_PlayerState>(PlayerArray[ShotChoices[0].PlayerID]);
-	if (Round == EGameRound::FightForTheRestTiles)
+	if (Round == EGameRound::FightForTheRemains)
 	{
 		for (int i = 1; i < ShotChoices.Num(); i++)
 		{
@@ -1058,7 +1071,7 @@ TMap<int32, EQuestionResult> ABM_GameStateBase::VerifyShotAnswers()
 			//TileManager->SC_AddClickedTileToTheTerritory(ShotChoices[0].PlayerID, ETileStatus::Controlled, WinnerPlayerState->GetPlayerColor(), Round);
 			//MC_UpdatePoints(WinnerPlayerState->GetPlayerIndex(),WinnerPlayerState->GetPoints());
 			PlayersToUpdatePoints.Add(WinnerPlayerState->GetPlayerIndex());
-			ConstructQuestionResult(WinnerPlayerState, UsedQuestions.Num(), LastQuestion, PlayersCurrentChoices, BMGameMode->GetPointsOfTile(EGameRound::FightForTheRestTiles), true);
+			ConstructQuestionResult(WinnerPlayerState, UsedQuestions.Num(), LastQuestion, PlayersCurrentChoices, BMGameMode->GetPointsOfTile(EGameRound::FightForTheRemains), true);
 		}
 	}
 	if (Round == EGameRound::FightForTerritory)
@@ -1097,6 +1110,33 @@ TMap<int32, EQuestionResult> ABM_GameStateBase::VerifyShotAnswers()
 	}
 	return LQuestionResults;
 }
+
+void ABM_GameStateBase::PrepareNextRound(EGameRound NextRound)
+{
+	StopAllTimers();
+	SetNextGameRound(NextRound);
+	FTimerDelegate LNextRoundDelegate;
+	LNextRoundDelegate.BindLambda([this, NextRound]() {
+		switch (NextRound)
+		{
+			case EGameRound::BuildCastle:
+			{
+				SwitchGameRound<UBuildCastleRound>();
+			}
+			break;
+			case EGameRound::SetTerritory:
+			{
+				SwitchGameRound<USetTerritoryRound>();
+			}
+			break;
+			default:
+				break;
+		}
+	});
+	GetWorld()->GetTimerManager().SetTimer(PauseHandle, LNextRoundDelegate, 3.0f, false);
+	
+}
+
 UE_ENABLE_OPTIMIZATION
 
 void ABM_GameStateBase::ShowPlayerChoicesAndCorrectAnswer()
@@ -1174,7 +1214,7 @@ void ABM_GameStateBase::StartPostQuestionPhase(bool bSkipToPostQuestionComplete)
 		}
 	}
 	if (bSkipToPostQuestionComplete ||
-		(Round == EGameRound::FightForTheRestTiles && FightForTheRestTileWinnerIndex < 0))
+		(Round == EGameRound::FightForTheRemains && FightForTheRestTileWinnerIndex < 0))
 	{
 		PrepareNextTurn();
 	}
@@ -1191,15 +1231,25 @@ void ABM_GameStateBase::StartPostQuestionPhase(bool bSkipToPostQuestionComplete)
 		TMap<int32, ABM_TileBase*> LClickedTiles = TileManager->GetClickedTiles();
 		FPostQuestionPhaseInfo PostQuestionPhaseInfo = FPostQuestionPhaseInfo(QuestionResults, LPlayerColors, Round, LClickedTiles);
 		OnQuestionCompleted.Broadcast(PostQuestionPhaseInfo);
-		if (Round != EGameRound::FightForTheRestTiles)
+		if (Round != EGameRound::FightForTheRemains)
 		{
-			for (const auto LPlayerIndex : PlayersToUpdatePoints)
+			TMap<int32, int32> LPlayerPointsUpdate;
+			for (const auto LQuestionResult : QuestionResults)
 			{
-				ABM_PlayerState* LPlayerState = Cast<ABM_PlayerState>(PlayerArray[LPlayerIndex]);
-				MC_UpdatePoints(LPlayerIndex,LPlayerState->GetPoints());	
+				if (LQuestionResult.Value == EQuestionResult::TileCaptured)
+				{
+					int32 LPoints = TileManager->GetPointsOfCurrentClickedTile(CurrentPlayerIndex);
+					LPlayerPointsUpdate.Add(LQuestionResult.Key, LPoints);	
+				}
+				else if (LQuestionResult.Value == EQuestionResult::TileDefended)
+				{
+					int32 LPoints = 100;
+					LPlayerPointsUpdate.Add(LQuestionResult.Key, LPoints);
+				}
 			}
+			ChangePlayerPoints(LPlayerPointsUpdate);
 		}
-		if (Round == EGameRound::FightForTheRestTiles)
+		if (Round == EGameRound::FightForTheRemains)
 		{
 			CurrentPlayerIndex = FightForTheRestTileWinnerIndex; // Winner of the Shot question
 			FightForTheRestTileWinnerIndex = -1;
@@ -1251,6 +1301,22 @@ void ABM_GameStateBase::NotifyPrePlayerTurnPhaseReady()
 	CheckPrePlayerTurnPhaseCompleted();
 }
 
+void ABM_GameStateBase::ChangePlayerPoints(TMap<int32, int32>& NewPlayersPoints)
+{
+	for (const auto LPlayerIndex : NewPlayersPoints)
+	{
+		if (PlayerArray.IsValidIndex(LPlayerIndex.Key))
+		{
+			ABM_PlayerState* LPlayerState = Cast<ABM_PlayerState>(PlayerArray[LPlayerIndex.Key]);
+			if (IsValid(LPlayerState))
+			{
+				LPlayerState->SC_ChangePoints(LPlayerIndex.Value);
+				MC_UpdatePoints(LPlayerIndex.Key,LPlayerState->GetPoints());
+			}
+		}
+	}
+}
+
 void ABM_GameStateBase::CheckPrePlayerTurnPhaseCompleted()
 {
 	if (CurrentPrePlayerTurnReadyActors >= ExpectedPrePlayerTurnReadyActors)
@@ -1259,7 +1325,7 @@ void ABM_GameStateBase::CheckPrePlayerTurnPhaseCompleted()
 		CurrentPrePlayerTurnReadyActors = 0;
 		ExpectedPrePlayerTurnReadyActors = 0;
 		// PassTurnToTheNextPlayer after 1 second
-		if (Round != EGameRound::FightForTheRestTiles)
+		if (Round != EGameRound::FightForTheRemains)
 		{
 			GetWorld()->GetTimerManager().SetTimer(PauseHandle,this, &ABM_GameStateBase::StartPlayerTurnTimer, 1.0f, false);
 		}
@@ -1271,7 +1337,7 @@ void ABM_GameStateBase::MC_UpdatePoints_Implementation(int32 PlayerID, float New
 	OnPlayerPointsChanged.Broadcast(PlayerID, NewScore);
 }
 
-void ABM_GameStateBase::UpdatePlayersTurnsWidget()
+void ABM_GameStateBase::UpdatePlayersCyclesWidget()
 {
 	TArray<FPlayersCycleUI> LPlayerCyclesUI;
 	ConvertPlayerCyclesToPlayerCyclesUI(LPlayerCyclesUI);
@@ -1320,13 +1386,13 @@ void ABM_GameStateBase::WrapUpCurrentPlayersCycle()
 	FTimerDelegate LNextRoundDelegate;
 	switch (Round)
 	{
-		case EGameRound::ChooseCastle:
+		case EGameRound::BuildCastle:
 			//All players set their castles, continue to SetTerritory round with 2 sec delay
 			{
 				SetNextGameRound(EGameRound::SetTerritory);
 				ConstructPlayerTurnsCycles();
 				LNextRoundDelegate.BindUObject(this, &ThisClass::PassTurnToTheNextPlayer);
-				UpdatePlayersTurnsWidget();
+				UpdatePlayersCyclesWidget();
 				GetWorld()->GetTimerManager().SetTimer(PauseHandle, LNextRoundDelegate, 2.0, false);
 			}
 			break;
@@ -1341,7 +1407,7 @@ void ABM_GameStateBase::WrapUpCurrentPlayersCycle()
 			GetWorld()->GetTimerManager().SetTimer(PauseHandle, QuestionDelegate, 2.0, false);	
 		}
 			break;
-		case EGameRound::FightForTheRestTiles:
+		case EGameRound::FightForTheRemains:
 		{
 			//Start Shot question for the rest tiles
 			//Find first not owned tile
@@ -1371,9 +1437,9 @@ void ABM_GameStateBase::WrapUpCurrentPlayersCycle()
 
 void ABM_GameStateBase::PrepareNextTurn()
 {
-	switch (Round)
+	/*switch (Round)
 	{
-		case EGameRound::ChooseCastle:
+		case EGameRound::BuildCastle:
 		{
 			PassTurnToTheNextPlayer();
 		}
@@ -1386,18 +1452,18 @@ void ABM_GameStateBase::PrepareNextTurn()
 			 *		If there are more than Players, continue SetTerritoryRound
 			 *		Else start FightForTheRestTiles special round
 			 * Else start FightForTerritory round
-			 */
-			int32 NotOwnedTiles = CountNotOwnedTiles();	
+			 #1#
+			int32 NotOwnedTiles = GetNotOwnedTilesCount();	
 			if (NotOwnedTiles > 0)
 			{
 				if(NotOwnedTiles >= BMGameMode->GetNumberOfActivePlayers())
 				{
 					if (!PlayerTurnsCycles.IsValidIndex(CurrentPlayerTurnsCycle))
 					{
-						SetNextGameRound(EGameRound::FightForTheRestTiles);
+						SetNextGameRound(EGameRound::FightForTheRemains);
 						CurrentPlayerCounter = -1;
 						ConstructPlayerTurnsCycles();
-						UpdatePlayersTurnsWidget();
+						UpdatePlayersCyclesWidget();
 						UE_LOG(LogBM_GameMode, Display, TEXT("Switch to Fight for the Rest Tiles round due to Max SetTerritory turns reached"));
 						WrapUpCurrentPlayersCycle();
 						break;
@@ -1406,10 +1472,10 @@ void ABM_GameStateBase::PrepareNextTurn()
 				}
 				else
 				{
-					SetNextGameRound(EGameRound::FightForTheRestTiles);
+					SetNextGameRound(EGameRound::FightForTheRemains);
 					CurrentPlayerCounter = -1;
 					ConstructPlayerTurnsCycles();
-					UpdatePlayersTurnsWidget();
+					UpdatePlayersCyclesWidget();
 					// instantly Wrap Up Player Cycle as there choosing of tiles is done after the question
 					WrapUpCurrentPlayersCycle();
 					UE_LOG(LogBM_GameMode, Display, TEXT("Switch to Fight for the Rest Tiles round as the number of not owned Tiles < Remaining Players"));
@@ -1420,15 +1486,15 @@ void ABM_GameStateBase::PrepareNextTurn()
 				SetNextGameRound(EGameRound::FightForTerritory);
 				CurrentPlayerCounter = -1;
 				ConstructPlayerTurnsCycles();
-				UpdatePlayersTurnsWidget();
+				UpdatePlayersCyclesWidget();
 				GetWorld()->GetTimerManager().SetTimer(PauseHandle, this, &ABM_GameStateBase::PassTurnToTheNextPlayer, 3.0f, false);
 				UE_LOG(LogBM_GameMode, Display, TEXT("Switch to Fight for Territory round"));
 			}
 			break;
 		}
-		case EGameRound::FightForTheRestTiles:
+		case EGameRound::FightForTheRemains:
 		{
-			int32 NotOwnedTiles = CountNotOwnedTiles();
+			int32 NotOwnedTiles = GetNotOwnedTilesCount();
 			if (NotOwnedTiles > 0 && PlayerTurnsCycles.IsValidIndex(CurrentPlayerTurnsCycle) && PlayerTurnsCycles[CurrentPlayerTurnsCycle].PlayersPermutation.Values.IsValidIndex(CurrentPlayerCounter+1))
 			{
 				// instantly Wrap Up Player Cycle as there is no choice in FightForTheRestTiles round
@@ -1440,7 +1506,7 @@ void ABM_GameStateBase::PrepareNextTurn()
 				SetNextGameRound(EGameRound::FightForTerritory);
 				CurrentPlayerCounter = -1;
 				ConstructPlayerTurnsCycles();
-				UpdatePlayersTurnsWidget();
+				UpdatePlayersCyclesWidget();
 				GetWorld()->GetTimerManager().SetTimer(PauseHandle, this, &ABM_GameStateBase::PassTurnToTheNextPlayer, 3.0f, false);
 				UE_LOG(LogBM_GameMode, Display, TEXT("Switch to Fight For Territory round"));
 			}
@@ -1457,7 +1523,7 @@ void ABM_GameStateBase::PrepareNextTurn()
 			 *		else
 			 *		switch to the CountResults round
 			 *	else Continue the siege
-			 */
+			 #1#
 			if (bShotQuestionIsNeeded)
 			{
 				OpenQuestion(EQuestionType::Shot);
@@ -1484,6 +1550,10 @@ void ABM_GameStateBase::PrepareNextTurn()
 		}
 		default:
 			break;
+	}*/
+	if (CurrentGameRoundObject)
+	{
+		CurrentGameRoundObject->PrepareNextTurn();
 	}
 }
 

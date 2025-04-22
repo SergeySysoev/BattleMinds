@@ -6,13 +6,13 @@ void IBMPostQuestionPhase::HandlePostQuestionPhase(FPostQuestionPhaseInfo PostQu
 {
 	switch (PostQuestionPhaseInfo.GameRound)
 	{
-		case EGameRound::ChooseCastle:
+		case EGameRound::BuildCastle:
 			PostQuestionPhaseChooseCastle(PostQuestionPhaseInfo);
 		break;
 		case EGameRound::SetTerritory:
 			PostQuestionPhaseSetTerritory(PostQuestionPhaseInfo);
 		break;
-		case EGameRound::FightForTheRestTiles:
+		case EGameRound::FightForTheRemains:
 			PostQuestionPhaseFightForTheRestTiles(PostQuestionPhaseInfo);
 		break;
 		case EGameRound::FightForTerritory:

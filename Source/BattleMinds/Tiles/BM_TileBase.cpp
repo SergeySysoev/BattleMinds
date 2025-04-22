@@ -8,6 +8,7 @@
 #include "GameFramework/Actor.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Player/BM_PlayerControllerBase.h"
 
 DEFINE_LOG_CATEGORY(LogBM_Tile);
 
@@ -315,7 +316,7 @@ void ABM_TileBase::ShowPreviewMesh_Implementation(AActor* HoveredActor)
 		UMaterialInterface* LBannerPreviewMaterial = nullptr;
 		switch (LGameState->GetCurrentRound())
 		{
-			case EGameRound::ChooseCastle:
+			case EGameRound::BuildCastle:
 				LCastlePreviewMaterial = LGameInstance->CastleMaterials.FindRef(LPlayerState->GetPlayerColor());
 				CastlePreviewMesh->SetMaterial(0, LCastlePreviewMaterial);
 				CastlePreviewMesh->SetVisibility(true);
@@ -393,7 +394,7 @@ void ABM_TileBase::ForceShowPreviewMesh_Implementation(AActor* HoveredActor)
 		UMaterialInterface* LBannerPreviewMaterial = nullptr;
 		switch (LGameState->GetCurrentRound())
 		{
-			case EGameRound::ChooseCastle:
+			case EGameRound::BuildCastle:
 				LCastlePreviewMaterial = LGameInstance->CastleMaterials.FindRef(LPlayerState->GetPlayerColor());
 			CastlePreviewMesh->SetMaterial(0, LCastlePreviewMaterial);
 			CastlePreviewMesh->SetVisibility(true);

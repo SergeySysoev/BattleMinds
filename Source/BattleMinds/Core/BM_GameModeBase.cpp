@@ -61,8 +61,8 @@ ABM_GameModeBase::ABM_GameModeBase()
 {
 	TilePoints.Add(EGameRound::SetTerritory, 200);
 	TilePoints.Add(EGameRound::FightForTerritory, 400);
-	TilePoints.Add(EGameRound::FightForTheRestTiles, 300);
-	TilePoints.Add(EGameRound::ChooseCastle, 1000);
+	TilePoints.Add(EGameRound::FightForTheRemains, 300);
+	TilePoints.Add(EGameRound::BuildCastle, 1000);
 	TilePoints.Add(EGameRound::End, 200);
 	
 }

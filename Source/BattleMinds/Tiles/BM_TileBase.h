@@ -268,7 +268,7 @@ protected:
 	 * Depending on this value different amount of points will be incremented to Player's Score
 	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Territory")
-	EGameRound AnnexedRound = EGameRound::ChooseCastle;
+	EGameRound AnnexedRound = EGameRound::BuildCastle;
 	 /*
 	  * XY coordinate of the Hex tile for any Hex related functions
 	  */

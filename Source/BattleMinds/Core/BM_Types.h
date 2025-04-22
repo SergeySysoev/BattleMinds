@@ -48,9 +48,9 @@ enum class EQuestionResult : uint8
 UENUM(BlueprintType)
 enum class EGameRound : uint8
 {
-	ChooseCastle,
+	BuildCastle,
 	SetTerritory,
-	FightForTheRestTiles,
+	FightForTheRemains,
 	FightForTerritory,
 	End
 };
