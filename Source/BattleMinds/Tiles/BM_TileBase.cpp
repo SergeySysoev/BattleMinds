@@ -42,6 +42,14 @@ ABM_TileBase::ABM_TileBase()
 	CastleMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Castle Mesh"));
 	CastleMesh->SetupAttachment(RootComponent);
 	CastleMesh->SetIsReplicated(true);
+	
+	CastleCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("CastleCamera"));
+	CastleCamera->SetupAttachment(CastleMesh);
+	CastleCamera->SetIsReplicated(true);
+
+	PlayerTurnCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("PlayerTurnCamera"));
+	PlayerTurnCamera->SetupAttachment(CastleMesh);
+	PlayerTurnCamera->SetIsReplicated(true);
 
 	CastlePreviewMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Castle Preview Mesh"));
 	CastlePreviewMesh->SetupAttachment(RootComponent);
@@ -198,16 +206,11 @@ void ABM_TileBase::SC_AddTileToPlayerTerritory_Implementation(ETileStatus InStat
 		OwnerPlayerIndex = InPlayerID;
 		SC_ChangeStatus(InStatus);
 		TileColor = InPlayerColor;
-		OnRep_TileColor();
 		MC_SetBannerVisibility(false);
+		OnRep_TileColor();
 		AnnexedRound = CurrentGameRound;	
 	}
 	OnBannerMeshSpawned.Clear();
-}
-
-void ABM_TileBase::MC_RemoveSelection_Implementation()
-{
-	BannerMesh->SetVisibility(false);
 }
 
 void ABM_TileBase::SC_CancelAttack_Implementation()
@@ -339,6 +342,11 @@ void ABM_TileBase::HidePreviewMeshOnClick_Implementation(AActor* HoveredActor, F
 	BannerPreviewMesh->SetVisibility(false);
 }
 
+void ABM_TileBase::MC_ResetBorderMaterial_Implementation()
+{
+	BorderStaticMesh->SetMaterial(0, BorderMeshDefaultMaterial);
+}
+
 void ABM_TileBase::SC_ApplyDamage(int32 InDamageAmount)
 {
 	TileHP -= InDamageAmount;
@@ -346,6 +354,12 @@ void ABM_TileBase::SC_ApplyDamage(int32 InDamageAmount)
 	{
 		OnCastleDestroyed.Broadcast(OwnerPlayerIndex);
 	}
+}
+
+void ABM_TileBase::MC_SetCastleRotation_Implementation(FRotator InRotator)
+{
+	CastleMesh->SetWorldRotation(InRotator);
+	CastlePreviewMesh->SetWorldRotation(InRotator);
 }
 
 void ABM_TileBase::ForceShowPreviewMesh_Implementation(AActor* HoveredActor)

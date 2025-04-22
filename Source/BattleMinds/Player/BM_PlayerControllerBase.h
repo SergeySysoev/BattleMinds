@@ -8,7 +8,9 @@
 #include "UI/BM_UWPlayerHUD.h"
 #include "UI/BM_UWResults.h"
 #include "InputMappingContext.h"
+#include "SharedStructs.h"
 #include "Interfaces/BMPostQuestionPhase.h"
+#include "Interfaces/BMPrePlayerTurnInterface.h"
 #include "BM_PlayerControllerBase.generated.h"
 
 class UBM_GameInstance;
@@ -22,7 +24,9 @@ DECLARE_LOG_CATEGORY_EXTERN(LogBM_PlayerController, Display, All);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSetTimerDelegate);
 
 UCLASS()
-class BATTLEMINDS_API ABM_PlayerControllerBase : public APlayerController, public IBMPostQuestionPhase
+class BATTLEMINDS_API ABM_PlayerControllerBase
+	: public APlayerController, public IBMPostQuestionPhase,
+	  public IBMPrePlayerTurnInterface
 {
 	GENERATED_BODY()
 
@@ -128,6 +132,20 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Tiles")
 	FORCEINLINE ABM_TileBase* GetCachedTileWithPreview() {return CachedTileWithPreview;}
 
+	// IBMPrePlayerTurn Interface
+	virtual void CheckPrePlayerTurnPhaseHandled() override;
+	//~IBMPrePlayerTurn Interface
+
+	// IBMPostQuestionPhase interface
+	virtual void CheckPostQuestionPhaseHandled() override;
+	//~IBMPostQuestionPhase interface
+
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "General Camera")
+	void SC_SetCameraDefaultProperties(const FUniversalCameraPositionSaveFormat& InDefaultProperties);
+
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "General Camera")
+	void SC_SetCameraPlayerTurnProperties(const FUniversalCameraPositionSaveFormat& InDefaultProperties);
+	
 protected:
 	virtual void BeginPlay() override;
 
@@ -142,11 +160,24 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category="Inputs")
 	TSoftObjectPtr<UInputMappingContext> ClassicIMC = nullptr;
-	
-	virtual void PostQuestionPhaseFightForTerritory(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo) override;
-	
-	virtual void CheckPostQuestionPhaseHandled() override;
 
+	// IBMPostQuestionPhase interface
+	virtual void PostQuestionPhaseChooseCastle(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo) override;
+	virtual void PostQuestionPhaseFightForTerritory(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo) override;
+	//~ IBMPostQuestionPhase interface
+
+	// IBMPrePlayerTurn Interface
+	virtual void PrePlayerTurnChooseCastle(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo) override;
+	virtual void PrePlayerTurnSetTerritory(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo) override;
+	virtual void PrePlayerTurnFightForTerritory(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo) override;
+
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "PrePlayerTurnPhase")
+	void SC_CheckPrePlayerTurnPhaseHandled();
+
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "PostQuestionPhase")
+	void SC_CheckPostQuestionPhaseHandled();
+	//~IBMPrePlayerTurn interface
+	
 	UPROPERTY(BlueprintReadOnly, Category="Tiles")
 	TObjectPtr<ABM_TileBase> CachedTileWithPreview;
 };

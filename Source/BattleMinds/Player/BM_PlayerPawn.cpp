@@ -2,8 +2,9 @@
 
 
 #include "Player/BM_PlayerPawn.h"
+
+#include "EnhancedInputSubsystems.h"
 #include "Core/BM_GameStateBase.h"
-#include "Tiles/BM_TileBase.h"
 
 DEFINE_LOG_CATEGORY(LogBM_PlayerPawn);
 
@@ -15,11 +16,25 @@ ABM_PlayerPawn::ABM_PlayerPawn()
 void ABM_PlayerPawn::BeginPlay()
 {
 	Super::BeginPlay();
-	ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState());
-	if (IsValid(LGameState))
+	if (IsLocallyControlled())
 	{
-		LGameState->OnQuestionCompleted.AddUniqueDynamic(this, &ThisClass::HandlePostQuestionPhase);
-		LGameState->OnPrePlayerTurnPhaseStarted.AddUniqueDynamic(this, &ThisClass::HandlePrePlayerTurn);
+		DefaultCameraProperties = StaticCameraProperties;
+		PlayerTurnCameraProperties = StaticCameraProperties;
+		APlayerController* LPlayerController = Cast<APlayerController>(GetController());
+		if (LPlayerController && LPlayerController->IsLocalController())
+		{
+			ULocalPlayer* LLocalPlayer = LPlayerController->GetLocalPlayer();
+			if (IsValid(LLocalPlayer))
+			{
+				if (UEnhancedInputLocalPlayerSubsystem* LInputSystem = LLocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
+				{
+					if (!DynamicCameraIMC.IsNull())
+					{
+						LInputSystem->AddMappingContext(DynamicCameraIMC.LoadSynchronous(), 0);
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -33,79 +48,133 @@ void ABM_PlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
-
-void ABM_PlayerPawn::PostQuestionPhaseFightForTheRestTiles(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo)
+void ABM_PlayerPawn::CC_SetInputEnabled_Implementation(bool IsEnabled)
 {
-	/*TArray<ABM_TileBase*> LClickedTiles;
-	PostQuestionPhaseInfo.PlayerClickedTiles.GenerateValueArray(LClickedTiles);
-	ABM_TileBase* LClickedTile = LClickedTiles[0];
-	if (IsValid(LClickedTile))
+	APlayerController* LPlayerController = Cast<APlayerController>(GetController());
+	if (LPlayerController && LPlayerController->IsLocalController())
 	{
-		CC_ZoomIntoClickedTile(LClickedTile->GetZoomCameraLocation(), LClickedTile->GetZoomCameraRotation(),0.f);
-	}*/
-	CheckPostQuestionPhaseHandled();
-}
-
-void ABM_PlayerPawn::PostQuestionPhaseFightForTerritory(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo)
-{
-	TArray<ABM_TileBase*> LClickedTiles;
-	PostQuestionPhaseInfo.PlayerClickedTiles.GenerateValueArray(LClickedTiles);
-	ABM_TileBase* LClickedTile = LClickedTiles[0];
-	if (IsValid(LClickedTile))
-	{
-		CC_ZoomIntoClickedTile(LClickedTile->GetZoomCameraLocation(), LClickedTile->GetZoomCameraRotation(),0.f, true, false);
-	}
-	CheckPostQuestionPhaseHandled();
-}
-
-void ABM_PlayerPawn::CheckPostQuestionPhaseHandled()
-{
-	ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState());
-	if (IsValid(LGameState))
-	{
-		LGameState->NotifyPostQuestionPhaseReady();
+		ULocalPlayer* LLocalPlayer = LPlayerController->GetLocalPlayer();
+		if (IsValid(LLocalPlayer))
+		{
+			UEnhancedInputLocalPlayerSubsystem* LInputSystem = LLocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+			if (IsValid(LInputSystem))
+			{
+				if (IsEnabled)
+				{
+					UInputMappingContext* LLoadedIMC = DynamicCameraIMC.LoadSynchronous();
+					if (IsValid(LLoadedIMC) && !LInputSystem->HasMappingContext(LLoadedIMC))
+					{
+						LInputSystem->AddMappingContext(LLoadedIMC, 1);
+					}
+				}
+				else
+				{
+					UInputMappingContext* LLoadedIMC = DynamicCameraIMC.LoadSynchronous();
+					if (IsValid(LLoadedIMC) && LInputSystem->HasMappingContext(LLoadedIMC))
+					{
+						LInputSystem->RemoveMappingContext(DynamicCameraIMC.LoadSynchronous());
+					}
+				}
+			}
+		}
 	}
 }
 
-void ABM_PlayerPawn::PrePlayerTurnFightForTerritory_Implementation(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo)
+void ABM_PlayerPawn::CC_SetDefaultCameraProperties_Implementation(const FUniversalCameraPositionSaveFormat& InDefaultProperties)
 {
-	CC_RestoreCameraPropertiesFromCache();
-	CheckPrePlayerTurnPhaseHandled();
-}
-
-void ABM_PlayerPawn::CheckPrePlayerTurnPhase_Implementation()
-{
-	ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState());
-	if (IsValid(LGameState))
+	if (bEnableDynamicCamera)
 	{
-		LGameState->NotifyPlayerTurnPhaseReady();
+		DefaultCameraProperties = InDefaultProperties;
 	}
 }
 
-
-void ABM_PlayerPawn::CachedCameraProperties()
+void ABM_PlayerPawn::CC_SetPlayerTurnCameraProperties_Implementation(const FUniversalCameraPositionSaveFormat& InDefaultProperties)
 {
-	CachedLocation = DesiredLocation;
-	CachedRotation = DesiredRotation;
-	CachedZoom = DesiredZoom;
+	if (bEnableDynamicCamera)
+	{
+		PlayerTurnCameraProperties = InDefaultProperties;
+	}
+}
+
+void ABM_PlayerPawn::CallCheckPrePlayerTurnPhaseHandled()
+{
+	ABM_PlayerControllerBase* LOwningController = Cast<ABM_PlayerControllerBase>(GetOwner());
+	if (IsValid(LOwningController))
+	{
+		LOwningController->CheckPrePlayerTurnPhaseHandled();	
+	}
+	else
+	{
+		UE_LOG(LogBM_PlayerPawn, Error, TEXT("Can't get PlayerController on CallCheckPrePlayerTurnPhaseHandled"));
+	}
+}
+
+void ABM_PlayerPawn::CallCheckPostQuestionPhaseHandled()
+{
+	ABM_PlayerControllerBase* LOwningController = Cast<ABM_PlayerControllerBase>(GetOwner());
+	if (IsValid(LOwningController))
+	{
+		LOwningController->CheckPostQuestionPhaseHandled();	
+	}
+	else
+	{
+		UE_LOG(LogBM_PlayerPawn, Error, TEXT("Can't get PlayerController on CallCheckPostQuestionPhaseHandled"));
+	}
+}
+
+void ABM_PlayerPawn::CacheCameraProperties()
+{
+	CachedCameraProperties.DesiredLocation = DesiredLocation;
+	CachedCameraProperties.DesiredRotation = DesiredRotation;
+	CachedCameraProperties.DesiredZoom = DesiredZoom;
+	CachedCameraProperties.DesiredRotationOffset = DesiredRotationOffset;
+	CachedCameraProperties.DesiredSocketOffset = DesiredSocketOffset;
+	CachedCameraProperties.DesiredTargetOffset = DesiredTargetOffset;
 	UE_LOG(LogBM_PlayerPawn, Display, TEXT("Cached properties: Location: %s, Rotation: %s, Zoom: %f"),
-		*CachedLocation.ToString(), *CachedRotation.ToString(), CachedZoom);
+		*CachedCameraProperties.DesiredLocation.ToString(), *CachedCameraProperties.DesiredRotation.ToString(), CachedCameraProperties.DesiredZoom);
+}
+
+void ABM_PlayerPawn::CC_TravelCameraToPlayerTurn_Implementation()
+{
+	if (bEnableDynamicCamera)
+	{
+		TravelCamera(true);
+	}
+	else
+	{
+		CallCheckPrePlayerTurnPhaseHandled();
+	}
+}
+
+void ABM_PlayerPawn::CC_TravelCameraToDefault_Implementation()
+{
+	if (bEnableDynamicCamera)
+	{
+		TravelCamera(false);
+	}
+	else
+	{
+		CallCheckPostQuestionPhaseHandled();
+	}
 }
 
 void ABM_PlayerPawn::CC_RestoreCameraPropertiesFromCache_Implementation()
 {
-	SetDesiredLocation(CachedLocation, false, true);
-	SetDesiredRotation(CachedRotation, false, true);
-	SetDesiredZoom(CachedZoom, false, true);
+	SetDesiredLocation(CachedCameraProperties.DesiredLocation, false, true);
+	SetDesiredRotation(CachedCameraProperties.DesiredRotation, false, true);
+	SetDesiredZoom(CachedCameraProperties.DesiredZoom, false, true);
 }
 
 void ABM_PlayerPawn::CC_ZoomIntoClickedTile_Implementation(FVector ZoomLocation, FRotator ZoomRotation, float Zoom, bool IgnoreLag, bool IgnoreRestrictions)
 {
-	CachedCameraProperties();
-	UE_LOG(LogBM_PlayerPawn, Display, TEXT("New camera pos: Location: %s, Rotation: %s, Zoom: %f"),
-	*ZoomLocation.ToString(), *ZoomRotation.ToString(), Zoom);
-	SetDesiredLocation(ZoomLocation, IgnoreLag, IgnoreRestrictions);
-	SetDesiredRotation(ZoomRotation, IgnoreLag, IgnoreRestrictions);
-	SetDesiredZoom(Zoom, IgnoreLag, IgnoreRestrictions);
+	if (bEnableDynamicCamera)
+	{
+		CacheCameraProperties();
+		UE_LOG(LogBM_PlayerPawn, Display, TEXT("New camera pos: Location: %s, Rotation: %s, Zoom: %f"),
+		*ZoomLocation.ToString(), *ZoomRotation.ToString(), Zoom);
+		SetDesiredLocation(ZoomLocation, IgnoreLag, IgnoreRestrictions);
+		SetDesiredRotation(ZoomRotation, IgnoreLag, IgnoreRestrictions);
+		SetDesiredZoom(Zoom, IgnoreLag, IgnoreRestrictions);
+	}
 }
 

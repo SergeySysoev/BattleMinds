@@ -8,6 +8,7 @@
 #include "Components/BoxComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Core/BM_Types.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "BM_TileBase.generated.h"
 
 class USpringArmComponent;
@@ -17,6 +18,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCastleMeshSpawned);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnBannerMeshSpawned);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCastleDestroyed, int32, OwnerPlayerIndex);
 DECLARE_MULTICAST_DELEGATE(FOnBannerMeshSpawnedNative);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnBannerMeshDissolved);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTileMaterialSwitched);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCastleTowerDamaged);
 
@@ -40,6 +42,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnBannerMeshSpawned OnBannerMeshSpawned;
+
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
+	FOnBannerMeshDissolved OnBannerMeshDissolved;
 
 	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnCastleDestroyed OnCastleDestroyed;
@@ -88,9 +93,6 @@ public:
 	UFUNCTION(BlueprintPure)
 	EQuestionType GetTileNextQuestionType() const;
 
-	UFUNCTION(NetMulticast, Reliable, BlueprintCallable, Category="Visuals")
-	void MC_RemoveSelection();
-
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_CancelAttack();
 
@@ -100,7 +102,7 @@ public:
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_RemoveTileFromPlayerTerritory();
 	
-	UFUNCTION(BlueprintNativeEvent)
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void SpawnCastleMesh();
 
 	UFUNCTION(BlueprintNativeEvent)
@@ -108,6 +110,9 @@ public:
 
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
 	void MC_SetBorderVisibility(bool bIsVisible);
+
+	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
+	void MC_ResetBorderMaterial();
 
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
 	void MC_SetBannerVisibility(bool bIsVisible);
@@ -136,6 +141,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void SwitchTileMeshMaterialColor();
 
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	void ChangeTileVisualsPostQuestion(ETilePostQuestionOperation PostQuestionEvent, EGameRound CurrentGameRound);
+
 	UFUNCTION(Server, Unreliable, BlueprintCallable)
 	void SC_ToggleShowPreviewMesh(bool bShow);
 
@@ -156,6 +164,27 @@ public:
 
 	UFUNCTION(BlueprintPure)
 	FORCEINLINE FRotator GetZoomCameraRotation() const { return TileCamera->GetComponentRotation();}
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE FVector GetCastleCameraLocation() const { return CastleCamera->GetComponentLocation();}
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE FRotator GetCastleCameraRotation() const { return CastleCamera->GetComponentRotation();}
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE FVector GetPlayerTurnCameraLocation() const { return PlayerTurnCamera->GetComponentLocation();}
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE FRotator GetPlayerTurnCameraRotation() const { return PlayerTurnCamera->GetComponentRotation();}
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE float GetCastleCameraZoom() const { return 500.f;}
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE float GetPlayerTurnCameraZoom() const { return 880.f;}
+
+	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
+	void MC_SetCastleRotation(FRotator InRotator);
 	
 protected:
 
@@ -164,6 +193,12 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	UCameraComponent* TileCamera = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	UCameraComponent* CastleCamera = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	UCameraComponent* PlayerTurnCamera = nullptr;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	UStaticMeshComponent* StaticMesh = nullptr;
@@ -200,6 +235,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Visuals")
 	TObjectPtr<UMaterialInterface> TileMeshDefaultMaterial;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Visuals")
+	TObjectPtr<UMaterialInterface> BorderMeshDefaultMaterial;
 	
 	UPROPERTY(BlueprintReadWrite, Category = "Visuals")
 	TObjectPtr<UMaterialInterface> EdgesMaterial;

@@ -22,6 +22,7 @@ void ABM_TileManager::GenerateMap_Implementation(int32 NumberOfPlayers)
 		{
 			LTile.Value->SetOwner(this);
 			LTile.Value->OnCastleDestroyed.AddDynamic(this, &ABM_TileManager::OnCastleDestroyed);
+			SC_SetCastleRotationToCenter_Implementation(LTile.Value);
 		}
 		OnMapGeneratedNative.Broadcast();
 	}
@@ -82,8 +83,9 @@ int32 ABM_TileManager::GetTileOwnerID(FIntPoint TileAxials) const
 
 void ABM_TileManager::SC_AddClickedTileToTheTerritory_Implementation(int32 PlayerID, ETileStatus NewStatus, EColor NewColor, EGameRound CurrentGameRound)
 {
-	TilesToSwitchMaterial.Add(ClickedTiles.FindRef(PlayerID));
-	SC_SetTileOwner(ClickedTiles.FindRef(PlayerID),NewStatus, PlayerID, NewColor, CurrentGameRound);
+	FIntPoint LClickedTileAxials = ClickedTiles.FindRef(PlayerID);
+	TilesToSwitchMaterial.Add(LClickedTileAxials);
+	SC_SetTileOwner(LClickedTileAxials,NewStatus, PlayerID, NewColor, CurrentGameRound);
 	if (CurrentGameRound == EGameRound::FightForTheRestTiles)
 	{
 		OnTileAddedNative.Execute();
@@ -109,13 +111,47 @@ void ABM_TileManager::SC_ApplyDamageToTile_Implementation(int32 PlayerIndex, int
 	}
 }
 
+void ABM_TileManager::GetClickedTileCastleCameraProperties(const FIntPoint& TileAxials, FUniversalCameraPositionSaveFormat& CameraProperties)
+{
+	ABM_TileBase* LTile = Tiles.FindRef(TileAxials);
+	if (IsValid(LTile))
+	{
+		CameraProperties.DesiredLocation = LTile->GetCastleCameraLocation();
+		CameraProperties.DesiredRotation = LTile->GetCastleCameraRotation();
+		CameraProperties.DesiredZoom = LTile->GetCastleCameraZoom();
+	}
+}
+
+void ABM_TileManager::GetClickedTilePlayerTurnCameraProperties(const FIntPoint& TileAxials, FUniversalCameraPositionSaveFormat& CameraProperties)
+{
+	ABM_TileBase* LTile = Tiles.FindRef(TileAxials);
+	if (IsValid(LTile))
+	{
+		CameraProperties.DesiredLocation = LTile->GetPlayerTurnCameraLocation();
+		CameraProperties.DesiredRotation = LTile->GetPlayerTurnCameraRotation();
+		CameraProperties.DesiredZoom = LTile->GetPlayerTurnCameraZoom();
+	}
+}
+
+void ABM_TileManager::GetClickedTileCastleCameraPropertiesByPlayerId(const int PlayerId, FUniversalCameraPositionSaveFormat& CameraProperties)
+{
+	FIntPoint PlayerTileAxials = ClickedTiles.FindRef(PlayerId);
+	GetClickedTileCastleCameraProperties(PlayerTileAxials, CameraProperties);
+}
+
+void ABM_TileManager::GetClickedTilePlayerTurnCameraPropertiesByPlayerId(const int PlayerId, FUniversalCameraPositionSaveFormat& CameraProperties)
+{
+	FIntPoint PlayerTileAxials = ClickedTiles.FindRef(PlayerId);
+	GetClickedTilePlayerTurnCameraProperties(PlayerTileAxials, CameraProperties);
+}
+
 void ABM_TileManager::BindPassTurnToTileCastleMeshSpawned(FIntPoint TileAxials)
 {
 	ABM_TileBase* LTile = Tiles.FindRef(TileAxials);
 	if (IsValid(LTile))
 	{
 		ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState());
-		LTile->OnCastleMeshSpawned.AddUniqueDynamic(LGameState, &ABM_GameStateBase::PassTurnToTheNextPlayer);
+		LTile->OnCastleMeshSpawned.AddUniqueDynamic(LGameState, &ABM_GameStateBase::StartPostCastleChosenPhase);
 	}
 }
 
@@ -134,6 +170,10 @@ void ABM_TileManager::UnbindAllOnBannerSpawnedDelegates()
 		LTile.Value->OnBannerMeshSpawned.RemoveAll(LGameState);
 		LTile.Value->OnBannerMeshSpawnedNative.RemoveAll(LGameState);
 	}
+}
+
+void ABM_TileManager::AutoAssignCastles_Implementation(const TMap<int32, EColor>& PlayerColors)
+{
 }
 
 void ABM_TileManager::AutoAssignTerritory_Implementation(const bool bAssignCastles, const TMap<int32, EColor>& PlayerColors)
@@ -310,6 +350,19 @@ TMap<int32, ABM_TileBase*> ABM_TileManager::GetClickedTiles()
 	return LClickedTiles;
 }
 
+void ABM_TileManager::SC_SetCastleRotationToCenter_Implementation(ABM_TileBase* TileToRotate)
+{
+	if (IsValid(TileToRotate))
+	{
+		ABM_TileBase* LCenterTile = Tiles.FindRef(FIntPoint(0,0));
+		if (IsValid(LCenterTile))
+		{
+			FRotator LRotator = UKismetMathLibrary::FindLookAtRotation(LCenterTile->GetActorLocation(), TileToRotate->GetActorLocation());
+			TileToRotate->MC_SetCastleRotation(LRotator);
+		}
+	}
+}
+
 ABM_TileBase* ABM_TileManager::GetFirstAvailableForPlayerTile()
 {
 	return GetTileByAxials(GetFirstAvailableTileAxials());
@@ -330,7 +383,8 @@ void ABM_TileManager::UnhighlightTiles()
 	{
 		if (IsValid(LTile.Value))
 		{
-			LTile.Value->MC_SetBorderVisibility(false);
+			//LTile.Value->MC_SetBorderVisibility(false);
+			LTile.Value->MC_ResetBorderMaterial();
 			LTile.Value->MC_SetPointsWidgetVisibility(false);
 		}
 	}
@@ -436,7 +490,9 @@ void ABM_TileManager::HandlePostQuestionPhase(FPostQuestionPhaseInfo PostQuestio
 			break;
 			case EGameRound::FightForTerritory:
 				PostQuestionPhaseFightForTerritory(PostQuestionPhaseInfo);
-			default:break;
+			default:
+				CheckForTilePostQuestionHandled();
+				break;
 		}
 	}
 }

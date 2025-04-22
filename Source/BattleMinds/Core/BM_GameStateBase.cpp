@@ -70,6 +70,18 @@ void ABM_GameStateBase::InitGameState()
 	PassTurnToNextPlayerPtr = &ABM_GameStateBase::PassTurnToTheNextPlayer;
 }
 
+void ABM_GameStateBase::StartPostCastleChosenPhase()
+{
+	ABM_PlayerControllerBase* LCurrentPlayerController = GetPlayerController(CurrentPlayerIndex);
+	FUniversalCameraPositionSaveFormat LCastleCameraProperties;
+	FUniversalCameraPositionSaveFormat LPlayerTurnCameraProperties;
+	TileManager->GetClickedTileCastleCameraPropertiesByPlayerId(CurrentPlayerIndex, LCastleCameraProperties);
+	TileManager->GetClickedTilePlayerTurnCameraPropertiesByPlayerId(CurrentPlayerIndex, LPlayerTurnCameraProperties);
+	LCurrentPlayerController->SC_SetCameraDefaultProperties(LCastleCameraProperties);
+	LCurrentPlayerController->SC_SetCameraPlayerTurnProperties(LPlayerTurnCameraProperties);
+	StartPostQuestionPhase(false);
+}
+
 void ABM_GameStateBase::BeginPlay()
 {
 	Super::BeginPlay();
@@ -163,6 +175,18 @@ int32 ABM_GameStateBase::GetPreviousPlayerArrayIndex()
 		}
 	}
 	return -1;
+}
+
+void ABM_GameStateBase::TogglePlayerTurnTimer(bool ShouldPause)
+{
+	if (ShouldPause)
+	{
+		GetWorld()->GetTimerManager().PauseTimer(PlayerTurnHandle);
+	}
+	else
+	{
+		GetWorld()->GetTimerManager().UnPauseTimer(PlayerTurnHandle);
+	}
 }
 
 void ABM_GameStateBase::StopPlayerTurnTimer()
@@ -390,11 +414,8 @@ void ABM_GameStateBase::PassTurnToTheNextPlayer()
 			LCurrentPlayerState->SetPlayerTurn(true);
 			UpdatePlayerTurn();
 		}
-		/*GetWorld()->GetTimerManager().ClearTimer(PauseHandle);
-		FTimerDelegate LStartPlayerTurnDelegate;
-		LStartPlayerTurnDelegate.BindUObject(this, &ThisClass::StartPlayerTurnTimer, CurrentPlayerIndex);
-		GetWorld()->GetTimerManager().SetTimer(PauseHandle, LStartPlayerTurnDelegate, 1.0f, false);*/
-		StartPlayerTurnTimer(CurrentPlayerIndex);
+		//StartPlayerTurnTimer(CurrentPlayerIndex);
+		StartPrePlayerTurnPhase();
 	}
 	else
 	{
@@ -429,7 +450,7 @@ void ABM_GameStateBase::PassTurnToTheShotQuestionWinner()
 			LCurrentPlayerController->CC_SetInputEnabled(true);
 			UpdatePlayerTurn();
 		}
-		StartPlayerTurnTimer(CurrentPlayerIndex);
+		StartPlayerTurnTimer();
 	}
 }
 
@@ -438,7 +459,10 @@ void ABM_GameStateBase::HandleClickedTile(FIntPoint InClickedTile)
 	check(HasAuthority());
 	ABM_PlayerControllerBase* LCurrentPlayerController = GetPlayerController(CurrentPlayerIndex);
 	ABM_PlayerState* LCurrentPlayerState = LCurrentPlayerController->GetPlayerState<ABM_PlayerState>();
+	ABM_PlayerPawn* LPlayerPawn = Cast<ABM_PlayerPawn>(LCurrentPlayerState->GetPawn());
+	LCurrentPlayerController->CC_SetInputEnabled(false);
 	TileManager->HandleClickedTile(CurrentPlayerIndex, InClickedTile);
+	FUniversalCameraPositionSaveFormat LCastleCameraProperties;
 	switch (Round)
 	{
 		case EGameRound::ChooseCastle:
@@ -450,7 +474,7 @@ void ABM_GameStateBase::HandleClickedTile(FIntPoint InClickedTile)
 			LCurrentPlayerState->SC_ChangePoints(TileManager->GetPointsOfTile(InClickedTile));
 			MC_UpdatePoints(LCurrentPlayerState->GetPlayerIndex(),LCurrentPlayerState->GetPoints());
 			//CurrentPlayerCounter++;
-			LCurrentPlayerState->SetPlayerTurn(false);
+			//LCurrentPlayerState->SetPlayerTurn(false);
 			DisableTileEdgesHighlight();
 			StopPlayerTurnTimer();
 			TileManager->BindPassTurnToTileCastleMeshSpawned(InClickedTile);
@@ -514,11 +538,12 @@ void ABM_GameStateBase::SetViewTargetForQuestion(EQuestionType QuestionType, TAr
 	}
 }
 
-void ABM_GameStateBase::StartPlayerTurnTimer(int32 PlayerArrayIndex)
+void ABM_GameStateBase::StartPlayerTurnTimer()
 {
+	check(HasAuthority());
 	GetWorld()->GetTimerManager().ClearTimer(PlayerTurnHandle);
 	CurrentTurnTimer = BMGameMode->GetTurnTimer()+1; // to be able to see timer widget fades away
-	HighlightAvailableTiles(PlayerArrayIndex);
+	HighlightAvailableTiles(CurrentPlayerIndex);
 	for (const auto PlayerState : PlayerArray)
 	{
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
@@ -526,7 +551,7 @@ void ABM_GameStateBase::StartPlayerTurnTimer(int32 PlayerArrayIndex)
 			PlayerController->ResetTurnTimer(Round);
 		}
 	}
-	ABM_PlayerState* LCurrentPlayerState = Cast<ABM_PlayerState>(PlayerArray[PlayerArrayIndex]);
+	ABM_PlayerState* LCurrentPlayerState = Cast<ABM_PlayerState>(PlayerArray[CurrentPlayerIndex]);
 	ABM_PlayerControllerBase* LCurrentPlayerController = Cast<ABM_PlayerControllerBase>(LCurrentPlayerState->GetPlayerController());
 	if (IsValid(LCurrentPlayerController))
 	{
@@ -600,6 +625,20 @@ void ABM_GameStateBase::RequestToOpenQuestion(EQuestionType QuestionType)
 void ABM_GameStateBase::OpenChooseQuestion()
 {
 	RequestToOpenQuestion(EQuestionType::Choose);
+}
+
+void ABM_GameStateBase::StartPrePlayerTurnPhase()
+{
+	CurrentPrePlayerTurnReadyActors = 0;
+	ExpectedPrePlayerTurnReadyActors = OnPrePlayerTurnPhaseStarted.GetAllObjects().Num();
+	UE_LOG(LogTemp, Log, TEXT("PrePlayerTurn Phase started. Expecting %d listeners."), ExpectedPrePlayerTurnReadyActors);
+	
+	FPrePlayerTurnPhaseInfo LPlayerTurnPhaseInfo = FPrePlayerTurnPhaseInfo(Round);
+	OnPrePlayerTurnPhaseStarted.Broadcast(LPlayerTurnPhaseInfo);
+	if (ExpectedPrePlayerTurnReadyActors == 0)
+	{
+		CheckPrePlayerTurnPhaseCompleted();
+	}
 }
 
 void ABM_GameStateBase::OpenQuestion(EQuestionType QuestionType)
@@ -1193,10 +1232,10 @@ void ABM_GameStateBase::CheckPostQuestionPhaseComplete()
 			if (IsValid(LPlayerController))
 			{
 				ABM_PlayerPawn* LPlayerPawn = Cast<ABM_PlayerPawn>(LPlayerController->GetPawn());
-				//LPlayerController->CC_SetViewTargetWithBlend(LPlayerController->GetPawn(), 0.2f);
 				if (IsValid(LPlayerPawn))
 				{
-					LPlayerPawn->CC_RestoreCameraPropertiesFromCache();
+					//LPlayerPawn->CC_RestoreCameraPropertiesFromCache();
+					LPlayerPawn->CC_TravelCameraToDefault();
 				}
 			}
 		}
@@ -1205,7 +1244,7 @@ void ABM_GameStateBase::CheckPostQuestionPhaseComplete()
 	}
 }
 
-void ABM_GameStateBase::NotifyPlayerTurnPhaseReady()
+void ABM_GameStateBase::NotifyPrePlayerTurnPhaseReady()
 {
 	++CurrentPrePlayerTurnReadyActors;
 	UE_LOG(LogBM_GameStateBase, Display, TEXT("PrePlayerTurnListener confirmed (%d/%d)"), CurrentPrePlayerTurnReadyActors, ExpectedPrePlayerTurnReadyActors);
@@ -1216,19 +1255,14 @@ void ABM_GameStateBase::CheckPrePlayerTurnPhaseCompleted()
 {
 	if (CurrentPrePlayerTurnReadyActors >= ExpectedPrePlayerTurnReadyActors)
 	{
-		UE_LOG(LogTemp, Log, TEXT("All listeners ready. Proceeding logic."));
+		UE_LOG(LogTemp, Log, TEXT("All listeners of PrePlayerTurn Phase ready. Proceeding logic to PassTurnToTheNextPlayer."));
 		CurrentPrePlayerTurnReadyActors = 0;
 		ExpectedPrePlayerTurnReadyActors = 0;
-		for (auto LPlayerState : PlayerArray)
+		// PassTurnToTheNextPlayer after 1 second
+		if (Round != EGameRound::FightForTheRestTiles)
 		{
-			ABM_PlayerControllerBase* LPlayerController = Cast<ABM_PlayerControllerBase>(LPlayerState->GetPlayerController());
-			if (IsValid(LPlayerController))
-			{
-				LPlayerController->CC_SetViewTargetWithBlend(LPlayerController->GetPawn(), 0.2f);
-			}
+			GetWorld()->GetTimerManager().SetTimer(PauseHandle,this, &ABM_GameStateBase::StartPlayerTurnTimer, 1.0f, false);
 		}
-		// Process to the next turn after 3 seconds
-		//GetWorld()->GetTimerManager().SetTimer(PauseHandle,this, &ABM_GameStateBase::PrepareNextTurn, 3.0f, false);
 	}
 }
 
@@ -1283,7 +1317,7 @@ void ABM_GameStateBase::ConvertPlayerCyclesToPlayerCyclesUI(TArray<FPlayersCycle
 void ABM_GameStateBase::WrapUpCurrentPlayersCycle()
 {
 	ClearPlayerTurnTimer();
-	FTimerDelegate LNextRound;
+	FTimerDelegate LNextRoundDelegate;
 	switch (Round)
 	{
 		case EGameRound::ChooseCastle:
@@ -1291,9 +1325,9 @@ void ABM_GameStateBase::WrapUpCurrentPlayersCycle()
 			{
 				SetNextGameRound(EGameRound::SetTerritory);
 				ConstructPlayerTurnsCycles();
-				LNextRound.BindUObject(this, &ThisClass::PassTurnToTheNextPlayer);
+				LNextRoundDelegate.BindUObject(this, &ThisClass::PassTurnToTheNextPlayer);
 				UpdatePlayersTurnsWidget();
-				GetWorld()->GetTimerManager().SetTimer(PauseHandle, LNextRound, 2.0, false);
+				GetWorld()->GetTimerManager().SetTimer(PauseHandle, LNextRoundDelegate, 2.0, false);
 			}
 			break;
 		case EGameRound::SetTerritory:
@@ -1339,6 +1373,11 @@ void ABM_GameStateBase::PrepareNextTurn()
 {
 	switch (Round)
 	{
+		case EGameRound::ChooseCastle:
+		{
+			PassTurnToTheNextPlayer();
+		}
+		break;
 		case EGameRound::SetTerritory:
 		{
 			/*

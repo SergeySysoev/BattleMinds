@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SharedStructs.h"
 #include "Core/BM_Types.h"
 #include "GameFramework/Actor.h"
 #include "Core/BM_Types.h"
@@ -94,6 +95,18 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category = "Tile operations")
 	void SC_ApplyDamageToTile(int32 PlayerIndex, int32 InDamage);
+
+	UFUNCTION(BlueprintCallable)
+	void GetClickedTileCastleCameraProperties(const FIntPoint& TileAxials, FUniversalCameraPositionSaveFormat& CameraProperties);
+
+	UFUNCTION(BlueprintCallable)
+	void GetClickedTilePlayerTurnCameraProperties(const FIntPoint& TileAxials, FUniversalCameraPositionSaveFormat& CameraProperties);
+
+	UFUNCTION(BlueprintCallable)
+	void GetClickedTileCastleCameraPropertiesByPlayerId(const int PlayerId, FUniversalCameraPositionSaveFormat& CameraProperties);
+
+	UFUNCTION(BlueprintCallable)
+	void GetClickedTilePlayerTurnCameraPropertiesByPlayerId(const int PlayerId, FUniversalCameraPositionSaveFormat& CameraProperties);
 	
 	UFUNCTION()
 	void BindPassTurnToTileCastleMeshSpawned(FIntPoint TileAxials);
@@ -103,6 +116,8 @@ public:
 	UFUNCTION()
 	void UnbindAllOnBannerSpawnedDelegates();
 
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category="Tile operations")
+	void AutoAssignCastles(const TMap<int32, EColor>& PlayerColors);
 	/*
 	 * Randomly assign Tiles to Number of players
 	 * bool bAssignCastles : true - Manager will assign castles randomly,
@@ -145,7 +160,10 @@ public:
 	TMap<int32, ABM_TileBase*> GetClickedTiles();
 
 	UFUNCTION(BlueprintPure)
-	FORCEINLINE ABM_TileBase* GetFirstAvailableTile() { return FirstAvailableTile; };
+	FORCEINLINE ABM_TileBase* GetFirstAvailableTile() { return FirstAvailableTile; }
+
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "Tile operations")
+	void SC_SetCastleRotationToCenter(ABM_TileBase* TileToRotate);
 
 	UFUNCTION(BlueprintPure)
 	ABM_TileBase* GetFirstAvailableForPlayerTile();

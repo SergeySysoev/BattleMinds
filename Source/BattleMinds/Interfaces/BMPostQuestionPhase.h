@@ -25,6 +25,9 @@ public:
 	virtual void HandlePostQuestionPhase(FPostQuestionPhaseInfo PostQuestionPhaseInfo);
 
 	UFUNCTION(Category = "BMPostQuestionPhase")
+	virtual void PostQuestionPhaseChooseCastle(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo);
+	
+	UFUNCTION(Category = "BMPostQuestionPhase")
 	virtual void PostQuestionPhaseSetTerritory(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo);
 
 	UFUNCTION(Category = "BMPostQuestionPhase")

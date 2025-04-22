@@ -26,6 +26,7 @@ void UBM_UWTurnTimer::ResetTimer()
 	}
 	StartTimer();
 }
+
 void UBM_UWTurnTimer::UpdateTimer()
 {
 	TimerCurrent += 1/TimerTotal;
@@ -43,4 +44,18 @@ void UBM_UWTurnTimer::StopTimer()
 	}
 	TimerCurrent = 0.0;
 	GetOwningPlayer()->GetWorldTimerManager().ClearTimer(TimerHandle);
+}
+
+void UBM_UWTurnTimer::ToggleTimer(bool ShouldPause)
+{
+	if (ShouldPause)
+	{
+		GetOwningPlayer()->GetWorldTimerManager().PauseTimer(TimerHandle);
+		SpawnedTimerSound->SetPaused(true);
+	}
+	else
+	{
+		SpawnedTimerSound->SetPaused(false);
+		GetOwningPlayer()->GetWorldTimerManager().UnPauseTimer(TimerHandle);
+	}
 }

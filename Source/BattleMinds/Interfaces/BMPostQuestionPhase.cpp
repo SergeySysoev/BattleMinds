@@ -6,6 +6,9 @@ void IBMPostQuestionPhase::HandlePostQuestionPhase(FPostQuestionPhaseInfo PostQu
 {
 	switch (PostQuestionPhaseInfo.GameRound)
 	{
+		case EGameRound::ChooseCastle:
+			PostQuestionPhaseChooseCastle(PostQuestionPhaseInfo);
+		break;
 		case EGameRound::SetTerritory:
 			PostQuestionPhaseSetTerritory(PostQuestionPhaseInfo);
 		break;
@@ -16,6 +19,11 @@ void IBMPostQuestionPhase::HandlePostQuestionPhase(FPostQuestionPhaseInfo PostQu
 			PostQuestionPhaseFightForTerritory(PostQuestionPhaseInfo);
 		default:break;
 	}
+}
+
+void IBMPostQuestionPhase::PostQuestionPhaseChooseCastle(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo)
+{
+	CheckPostQuestionPhaseHandled();
 }
 
 void IBMPostQuestionPhase::PostQuestionPhaseSetTerritory(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo)

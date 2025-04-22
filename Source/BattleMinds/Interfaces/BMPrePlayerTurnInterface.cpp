@@ -1,12 +1,14 @@
 ﻿// Battle Minds, 2022. All rights reserved.
 
-
 #include "BMPrePlayerTurnInterface.h"
 
-void IBMPrePlayerTurnInterface::HandlePrePlayerTurn_Implementation(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo)
+void IBMPrePlayerTurnInterface::HandlePrePlayerTurn(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo)
 {
 	switch (PrePlayerTurnPhaseInfo.GameRound)
 	{
+		case EGameRound::ChooseCastle:
+			PrePlayerTurnChooseCastle(PrePlayerTurnPhaseInfo);
+		break;
 		case EGameRound::SetTerritory:
 			PrePlayerTurnSetTerritory(PrePlayerTurnPhaseInfo);
 		break;
@@ -19,19 +21,24 @@ void IBMPrePlayerTurnInterface::HandlePrePlayerTurn_Implementation(FPrePlayerTur
 	}
 }
 
-void IBMPrePlayerTurnInterface::PrePlayerTurnSetTerritory_Implementation(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo)
+void IBMPrePlayerTurnInterface::PrePlayerTurnChooseCastle(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo)
 {
 	CheckPrePlayerTurnPhaseHandled();
 }
 
-void IBMPrePlayerTurnInterface::PrePlayerTurnFightForTheRestTiles_Implementation(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo)
+void IBMPrePlayerTurnInterface::PrePlayerTurnSetTerritory(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo)
 {
 	CheckPrePlayerTurnPhaseHandled();
 }
 
-void IBMPrePlayerTurnInterface::PrePlayerTurnFightForTerritory_Implementation(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo)
+void IBMPrePlayerTurnInterface::PrePlayerTurnFightForTheRestTiles(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo)
 {
 	CheckPrePlayerTurnPhaseHandled();
 }
 
-void IBMPrePlayerTurnInterface::CheckPrePlayerTurnPhase_Implementation() {}
+void IBMPrePlayerTurnInterface::PrePlayerTurnFightForTerritory(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo)
+{
+	CheckPrePlayerTurnPhaseHandled();
+}
+
+void IBMPrePlayerTurnInterface::CheckPrePlayerTurnPhaseHandled() {}

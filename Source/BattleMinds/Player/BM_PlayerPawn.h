@@ -3,56 +3,88 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "InputMappingContext.h"
 #include "UniversalCamera.h"
-#include "Interfaces/BMPostQuestionPhase.h"
-#include "Interfaces/BMPrePlayerTurnInterface.h"
 #include "BM_PlayerPawn.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogBM_PlayerPawn, Display, All);
 
 class ABM_GameStateBase;
 class ABM_TileBase;
+class UEnhancedInputLocalPlayerSubsystem;
 
 UCLASS()
-class BATTLEMINDS_API ABM_PlayerPawn : public AUniversalCamera, public IBMPostQuestionPhase, public IBMPrePlayerTurnInterface
+class BATTLEMINDS_API ABM_PlayerPawn : public AUniversalCamera
 {
 	GENERATED_BODY()
 
 protected:
 	virtual void BeginPlay() override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Camera)
-	FVector CachedLocation = FVector::ZeroVector;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Camera)
+	FUniversalCameraPositionSaveFormat CachedCameraProperties;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Camera)
-	FRotator CachedRotation = FRotator::ZeroRotator;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Camera)
-	float CachedZoom = 1.0f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Camera)
+	FUniversalCameraPositionSaveFormat StaticCameraProperties;
 	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Camera)
+	FUniversalCameraPositionSaveFormat DefaultCameraProperties;
+
+	/* Calculated based on the Default Castle Camera properties*/
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Camera)
+	FUniversalCameraPositionSaveFormat PlayerTurnCameraProperties;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Camera)
+	float PlayerTurnCameraZoom = 2500.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Camera)
+	float PlayerTurnCameraPitch = -72.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Camera)
+	FUniversalCameraPositionSaveFormat ZoomTileCameraProperties;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Inputs")
+	TSoftObjectPtr<UInputMappingContext> DynamicCameraIMC = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Camera)
+	bool bEnableDynamicCamera = true;
 
 public:
 	ABM_PlayerPawn();
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	// IBMPostQuestionPhase interface
-	virtual void PostQuestionPhaseFightForTheRestTiles(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo) override;
-	virtual void PostQuestionPhaseFightForTerritory(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo) override;
-	virtual void CheckPostQuestionPhaseHandled() override;
-	//~ IBMPostQuestionPhase interface
+	UFUNCTION(Client, Reliable, Category="Inputs")
+	void CC_SetInputEnabled(bool IsEnabled);
 
-	// IBMPrePlayerTurn Interface
-	virtual void PrePlayerTurnFightForTerritory_Implementation(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo) override;
-	virtual void CheckPrePlayerTurnPhase_Implementation() override;
+	UFUNCTION(Client, Reliable, BlueprintCallable)
+	void CC_SetDefaultCameraProperties(const FUniversalCameraPositionSaveFormat& InDefaultProperties);
+
+	UFUNCTION(Client, Reliable, BlueprintCallable)
+	void CC_SetPlayerTurnCameraProperties(const FUniversalCameraPositionSaveFormat& InDefaultProperties);
 	
-	//~IBMPrePlayerTurn interface
+	UFUNCTION(BlueprintCallable)
+	void CallCheckPrePlayerTurnPhaseHandled();
+
+	UFUNCTION(BlueprintCallable)
+	void CallCheckPostQuestionPhaseHandled();
+	
 	UFUNCTION(Client, Reliable, BlueprintCallable, Category= "Camera")
 	void CC_ZoomIntoClickedTile(FVector ZoomLocation, FRotator ZoomRotation, float Zoom = 0.f, bool IgnoreLag = true, bool IgnoreRestrictions = true);
 
 	UFUNCTION()
-	void CachedCameraProperties();
+	void CacheCameraProperties();
 
 	UFUNCTION(Client, Reliable, BlueprintCallable, Category="Camera")
 	void CC_RestoreCameraPropertiesFromCache();
+
+	UFUNCTION(Client, Reliable, BlueprintCallable, Category="Camera")
+	void CC_TravelCameraToDefault();
+
+	UFUNCTION(Client, Reliable, BlueprintCallable, Category="Camera")
+	void CC_TravelCameraToPlayerTurn();
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category="Camera")
+	void TravelCamera(bool IsPlayerTurn);
+	
 };

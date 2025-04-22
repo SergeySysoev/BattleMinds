@@ -87,6 +87,7 @@ void ABM_PlayerControllerBase::SetPlayerInfoFromGI()
 
 void ABM_PlayerControllerBase::SetInputEnabled_Implementation(bool bIsEnabled)
 {
+	ABM_PlayerPawn* LPlayerPawn = Cast<ABM_PlayerPawn>(GetPawn());
 	if (ULocalPlayer* LocalPlayer = Cast<ULocalPlayer>(Player))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* InputSystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
@@ -94,6 +95,10 @@ void ABM_PlayerControllerBase::SetInputEnabled_Implementation(bool bIsEnabled)
 			if (bIsEnabled)
 			{
 				InputSystem->AddMappingContext(ClassicIMC.LoadSynchronous(), 1);
+				if (IsValid(LPlayerPawn))
+				{
+				//	LPlayerPawn->CC_SetInputEnabled(bIsEnabled);
+				}
 			}
 			else
 			{
@@ -101,6 +106,10 @@ void ABM_PlayerControllerBase::SetInputEnabled_Implementation(bool bIsEnabled)
 				if (InputSystem->HasMappingContext(LLoadedClassicIMC))
 				{
 					InputSystem->RemoveMappingContext(LLoadedClassicIMC);
+				}
+				if (IsValid(LPlayerPawn))
+				{
+				//	LPlayerPawn->CC_SetInputEnabled(bIsEnabled);
 				}
 			}
 		}
@@ -129,6 +138,7 @@ void ABM_PlayerControllerBase::BeginPlay()
 	if (IsValid(LGameState))
 	{
 		LGameState->OnQuestionCompleted.AddUniqueDynamic(this, &ThisClass::HandlePostQuestionPhase);
+		LGameState->OnPrePlayerTurnPhaseStarted.AddUniqueDynamic(this, &ThisClass::HandlePrePlayerTurn);
 	}
 }
 
@@ -172,7 +182,6 @@ void ABM_PlayerControllerBase::CC_ShowWarningPopup_Implementation(const FText& I
 		PlayerHUD->ShowWarningPopup(InText);
 	}
 }
-
 
 void ABM_PlayerControllerBase::CC_InitPlayerHUD_Implementation(const TArray<FPlayerInfo>& PlayersHUDInfo)
 {
@@ -304,27 +313,122 @@ bool ABM_PlayerControllerBase::SC_TryClickTheTile_Validate(FIntPoint TargetTile)
 	return true;
 }
 
-void ABM_PlayerControllerBase::PostQuestionPhaseFightForTerritory(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo)
+void ABM_PlayerControllerBase::PostQuestionPhaseChooseCastle(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo)
 {
-	/*if (PostQuestionPhaseInfo.ContainsResultType(EQuestionResult::TileDamaged)||
-		PostQuestionPhaseInfo.ContainsResultType(EQuestionResult::TileCaptured))
+	/*ABM_PlayerPawn* LPlayerPawn = Cast<ABM_PlayerPawn>(GetPawn());
+	ABM_PlayerState* LPlayerState = Cast<ABM_PlayerState>(PlayerState);
+	if (IsValid(LPlayerPawn) && IsValid(LPlayerState))
 	{
-		TArray<ABM_TileBase*> LClickedTiles;
-		PostQuestionPhaseInfo.PlayerClickedTiles.GenerateValueArray(LClickedTiles);
-		ABM_TileBase* LClickedTile = LClickedTiles[0];
-		if (IsValid(LClickedTile))
+		if (LPlayerState->IsPlayerTurn())
 		{
-			CC_SetViewTargetWithBlend(LClickedTile, 0.f);
+			LPlayerPawn->CC_TravelCameraToDefault();
+		}
+		else
+		{
+			
 		}
 	}*/
 	CheckPostQuestionPhaseHandled();
 }
 
+void ABM_PlayerControllerBase::PostQuestionPhaseFightForTerritory(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo)
+{
+	TArray<ABM_TileBase*> LClickedTiles;
+	PostQuestionPhaseInfo.PlayerClickedTiles.GenerateValueArray(LClickedTiles);
+	ABM_TileBase* LClickedTile = LClickedTiles[0];
+	ABM_PlayerPawn* LPlayerPawn = Cast<ABM_PlayerPawn>(GetPawn());
+	if (IsValid(LClickedTile) && IsValid(LPlayerPawn))
+	{
+		LPlayerPawn->CC_ZoomIntoClickedTile(LClickedTile->GetZoomCameraLocation(), LClickedTile->GetZoomCameraRotation(),0.f, true, false);
+	}
+	// Immediately call check because zooming is instant
+	CheckPostQuestionPhaseHandled();
+}
+
 void ABM_PlayerControllerBase::CheckPostQuestionPhaseHandled()
+{
+	SC_CheckPostQuestionPhaseHandled();
+}
+
+void ABM_PlayerControllerBase::SC_CheckPostQuestionPhaseHandled_Implementation()
 {
 	ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState());
 	if (IsValid(LGameState))
 	{
 		LGameState->NotifyPostQuestionPhaseReady();
+	}
+}
+
+void ABM_PlayerControllerBase::PrePlayerTurnChooseCastle(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo)
+{
+	ABM_PlayerPawn* LPlayerPawn = Cast<ABM_PlayerPawn>(GetPawn());
+	ABM_PlayerState* LPlayerState = Cast<ABM_PlayerState>(PlayerState);
+	if (IsValid(LPlayerPawn) && IsValid(LPlayerState) && LPlayerState->IsPlayerTurn())
+	{
+		LPlayerPawn->CC_TravelCameraToPlayerTurn();
+	}
+	else
+	{
+		CheckPrePlayerTurnPhaseHandled();
+	}
+}
+
+void ABM_PlayerControllerBase::PrePlayerTurnSetTerritory(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo)
+{
+	ABM_PlayerPawn* LPlayerPawn = Cast<ABM_PlayerPawn>(GetPawn());
+	ABM_PlayerState* LPlayerState = Cast<ABM_PlayerState>(PlayerState);
+	if (IsValid(LPlayerPawn) && IsValid(LPlayerState) && LPlayerState->IsPlayerTurn())
+	{
+		LPlayerPawn->CC_TravelCameraToPlayerTurn();
+	}
+	else
+	{
+		CheckPrePlayerTurnPhaseHandled();
+	}
+}
+
+void ABM_PlayerControllerBase::PrePlayerTurnFightForTerritory(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo)
+{
+	ABM_PlayerPawn* LPlayerPawn = Cast<ABM_PlayerPawn>(GetPawn());
+	ABM_PlayerState* LPlayerState = Cast<ABM_PlayerState>(PlayerState);
+	if (IsValid(LPlayerPawn) && IsValid(LPlayerState) && LPlayerState->IsPlayerTurn())
+	{
+		LPlayerPawn->CC_TravelCameraToPlayerTurn();
+	}
+	else
+	{
+		CheckPrePlayerTurnPhaseHandled();
+	}
+}
+
+void ABM_PlayerControllerBase::SC_SetCameraDefaultProperties_Implementation(const FUniversalCameraPositionSaveFormat& InDefaultProperties)
+{
+	ABM_PlayerPawn* LPlayerPawn = Cast<ABM_PlayerPawn>(GetPawn());
+	if (IsValid(LPlayerPawn))
+	{
+		LPlayerPawn->CC_SetDefaultCameraProperties(InDefaultProperties);
+	}
+}
+
+void ABM_PlayerControllerBase::SC_SetCameraPlayerTurnProperties_Implementation(const FUniversalCameraPositionSaveFormat& InDefaultProperties)
+{
+	ABM_PlayerPawn* LPlayerPawn = Cast<ABM_PlayerPawn>(GetPawn());
+	if (IsValid(LPlayerPawn))
+	{
+		LPlayerPawn->CC_SetPlayerTurnCameraProperties(InDefaultProperties);
+	}
+}
+
+void ABM_PlayerControllerBase::CheckPrePlayerTurnPhaseHandled()
+{
+	SC_CheckPrePlayerTurnPhaseHandled();
+}
+
+void ABM_PlayerControllerBase::SC_CheckPrePlayerTurnPhaseHandled_Implementation()
+{
+	ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState());
+	if (IsValid(LGameState))
+	{
+		LGameState->NotifyPrePlayerTurnPhaseReady();
 	}
 }

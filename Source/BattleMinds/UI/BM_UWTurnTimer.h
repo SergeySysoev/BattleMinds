@@ -46,6 +46,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void StopTimer();
 
+	UFUNCTION(BlueprintCallable)
+	void ToggleTimer(bool ShouldPause);
+
 private:
 	UPROPERTY(BlueprintReadWrite, Category="Timer settings", meta=(AllowPrivateAccess=true))
 	TObjectPtr<UAudioComponent> SpawnedTimerSound;

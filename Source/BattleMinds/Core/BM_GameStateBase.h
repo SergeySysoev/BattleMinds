@@ -84,6 +84,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void OpenChooseQuestion();
+
+	UFUNCTION(BlueprintCallable)
+	void StartPrePlayerTurnPhase();
 	
 	UFUNCTION(BlueprintCallable)
 	void PassTurnToTheNextPlayer();
@@ -96,6 +99,9 @@ public:
 
 	UFUNCTION()
 	void InitGameState();
+
+	UFUNCTION()
+	void StartPostCastleChosenPhase();
 	
 	UFUNCTION(BlueprintCallable)
 	void OpenQuestion(EQuestionType QuestionType);
@@ -110,7 +116,7 @@ public:
 	void NotifyPostQuestionPhaseReady();
 
 	UFUNCTION(BlueprintCallable)
-	void NotifyPlayerTurnPhaseReady();
+	void NotifyPrePlayerTurnPhaseReady();
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_ChangePointsOfPlayer(int32 PlayerIndex, int32 PointsIncrement);
@@ -226,6 +232,9 @@ protected:
 	UFUNCTION(BlueprintPure)
 	int32 GetPreviousPlayerArrayIndex();
 
+	UFUNCTION(BlueprintCallable)
+	void TogglePlayerTurnTimer(bool ShouldPause);
+	
 	UFUNCTION()
 	void StopPlayerTurnTimer();
 
@@ -297,7 +306,7 @@ protected:
 	void HighlightAvailableTiles(int32 PlayerArrayIndex);
 
 	UFUNCTION(BlueprintCallable)
-	void StartPlayerTurnTimer(int32 PlayerArrayIndex);
+	void StartPlayerTurnTimer();
 	
 	UFUNCTION(BlueprintCallable)
 	void ChooseFirstAvailableTileForPlayer(int32 PlayerIndex);

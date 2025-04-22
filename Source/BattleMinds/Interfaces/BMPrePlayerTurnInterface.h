@@ -7,7 +7,7 @@
 #include "Core/BM_Types.h"
 #include "BMPrePlayerTurnInterface.generated.h"
 
-UINTERFACE(MinimalAPI, BlueprintType)
+UINTERFACE(MinimalAPI)
 class UBMPrePlayerTurnInterface : public UInterface
 {
 	GENERATED_BODY()
@@ -19,24 +19,17 @@ class BATTLEMINDS_API IBMPrePlayerTurnInterface
 
 public:
 
-	UFUNCTION(BlueprintNativeEvent)
-	void HandlePrePlayerTurn(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo);
-	virtual void HandlePrePlayerTurn_Implementation(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo);
+	UFUNCTION()
+	virtual void HandlePrePlayerTurn(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo);
+	UFUNCTION()
+	virtual void PrePlayerTurnChooseCastle(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo);
+	UFUNCTION()
+	virtual void PrePlayerTurnSetTerritory(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo);
+	UFUNCTION()
+	virtual void PrePlayerTurnFightForTheRestTiles(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo);
+	UFUNCTION()
+	virtual void PrePlayerTurnFightForTerritory(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo);
 	
-	UFUNCTION(BlueprintNativeEvent)
-	void PrePlayerTurnSetTerritory(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo);
-	virtual void PrePlayerTurnSetTerritory_Implementation(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo);
-	
-	UFUNCTION(BlueprintNativeEvent)
-	void PrePlayerTurnFightForTheRestTiles(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo);
-	virtual void PrePlayerTurnFightForTheRestTiles_Implementation(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo);
-	
-	UFUNCTION(BlueprintNativeEvent)
-	void PrePlayerTurnFightForTerritory(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo);
-	virtual void PrePlayerTurnFightForTerritory_Implementation(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo);
-	
-	UFUNCTION(BlueprintNativeEvent)
-	void CheckPrePlayerTurnPhaseHandled();
-	virtual void CheckPrePlayerTurnPhase_Implementation();
+	virtual void CheckPrePlayerTurnPhaseHandled();
 
 };

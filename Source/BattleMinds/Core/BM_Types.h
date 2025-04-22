@@ -19,6 +19,23 @@ enum class EGameLength : uint8
 	Long,
 };
 
+UENUM(BlueprintType, meta = (Bitflags, UseEnumValuesAsMaskValuesInEditor = "true"))
+enum class ETilePostQuestionOperation : uint8
+{
+	None = 0, 
+	TileMesh = 1 << 0,
+	BannerMesh = 1 << 1,
+	CastleMesh = 1 << 2
+};
+
+UENUM(BlueprintType, meta = (Bitflags, UseEnumValuesAsMaskValuesInEditor = "true"))
+enum class EAnsweredPlayer : uint8
+{
+	NoCorrectAnswer = 0, 
+	AttackingPlayer = 1 << 0,
+	DefendingPlayer = 1 << 1
+};
+
 UENUM(BlueprintType)
 enum class EQuestionResult : uint8
 {
@@ -571,7 +588,7 @@ struct FPlayerCastle
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Castle Info")
 	TObjectPtr<UTexture2D> Icon;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Castle Info")
-	int32 CastleID;
+	int32 CastleID = 0;
 };
 
 USTRUCT(BlueprintType)
@@ -585,7 +602,7 @@ struct FPlayerKnight
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Knight Info")
 	TObjectPtr<UTexture2D> Icon;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Player Knight Info")
-	int32 KnightID;
+	int32 KnightID = 0;
 };
 
 USTRUCT(BlueprintType)
@@ -619,11 +636,11 @@ struct FPlayerInfo
 	FString Nickname;
 
 	UPROPERTY(BlueprintReadOnly)
-	EColor Color;
+	EColor Color = EColor::Undefined;
 
 	/* Index in PlayerArray of GameState*/
 	UPROPERTY(BlueprintReadOnly)
-	int32 PlayerID;
+	int32 PlayerID = -1;
 	
 	UPROPERTY(BlueprintReadOnly)
 	FUniqueNetIdRepl UniqueNetIdRepl;
@@ -725,7 +742,7 @@ struct FPlayersCycleUI
 	FPermutationUI PlayersPermutation;
 
 	UPROPERTY(BlueprintReadWrite, Category="Player Cycle Info")
-	FLinearColor BorderColor;
+	FLinearColor BorderColor = FLinearColor::Black;
 
 	FPlayersCycleUI() {};
 	FPlayersCycleUI(const int32 InCycleNumber, const FPermutationUI& InPermutation)
