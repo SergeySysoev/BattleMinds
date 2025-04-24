@@ -40,6 +40,7 @@ UENUM(BlueprintType)
 enum class EQuestionResult : uint8
 {
 	ShotQuestionNeeded,
+	WrongAnswer,
 	TileDefended,
 	TileDamaged,
 	TileCaptured
@@ -807,8 +808,9 @@ struct TStructOpsTypeTraits<FTileBaseArray> : public TStructOpsTypeTraitsBase2<F
 };
 
 class ABM_GameStateBase;
-
+class UGameRound;
 typedef void (ABM_GameStateBase::*FunctionVoidPtr)(void);
+typedef void (UGameRound::*RoundFunctionVoidPtr)(void);
 
 UCLASS()
 class BATTLEMINDS_API UBM_Types : public UBlueprintFunctionLibrary

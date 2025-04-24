@@ -8,15 +8,16 @@ void IBMPrePlayerTurnInterface::HandlePrePlayerTurn(FPrePlayerTurnPhaseInfo PreP
 	{
 		case EGameRound::BuildCastle:
 			PrePlayerTurnChooseCastle(PrePlayerTurnPhaseInfo);
-		break;
+			break;
 		case EGameRound::SetTerritory:
 			PrePlayerTurnSetTerritory(PrePlayerTurnPhaseInfo);
-		break;
+			break;
 		case EGameRound::FightForTheRemains:
 			PrePlayerTurnFightForTheRestTiles(PrePlayerTurnPhaseInfo);
-		break;
+			break;
 		case EGameRound::FightForTerritory:
 			PrePlayerTurnFightForTerritory(PrePlayerTurnPhaseInfo);
+			break;
 		default:break;
 	}
 }

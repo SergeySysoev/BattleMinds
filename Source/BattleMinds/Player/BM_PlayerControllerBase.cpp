@@ -315,19 +315,6 @@ bool ABM_PlayerControllerBase::SC_TryClickTheTile_Validate(FIntPoint TargetTile)
 
 void ABM_PlayerControllerBase::PostQuestionPhaseChooseCastle(const FPostQuestionPhaseInfo& PostQuestionPhaseInfo)
 {
-	/*ABM_PlayerPawn* LPlayerPawn = Cast<ABM_PlayerPawn>(GetPawn());
-	ABM_PlayerState* LPlayerState = Cast<ABM_PlayerState>(PlayerState);
-	if (IsValid(LPlayerPawn) && IsValid(LPlayerState))
-	{
-		if (LPlayerState->IsPlayerTurn())
-		{
-			LPlayerPawn->CC_TravelCameraToDefault();
-		}
-		else
-		{
-			
-		}
-	}*/
 	CheckPostQuestionPhaseHandled();
 }
 
@@ -339,7 +326,7 @@ void ABM_PlayerControllerBase::PostQuestionPhaseFightForTerritory(const FPostQue
 	ABM_PlayerPawn* LPlayerPawn = Cast<ABM_PlayerPawn>(GetPawn());
 	if (IsValid(LClickedTile) && IsValid(LPlayerPawn))
 	{
-		LPlayerPawn->CC_ZoomIntoClickedTile(LClickedTile->GetZoomCameraLocation(), LClickedTile->GetZoomCameraRotation(),0.f, true, false);
+		LPlayerPawn->CC_ZoomIntoClickedTile(LClickedTile->GetZoomCameraLocation(), LClickedTile->GetZoomCameraRotation(),500.f, true, false);
 	}
 	// Immediately call check because zooming is instant
 	CheckPostQuestionPhaseHandled();
@@ -355,7 +342,7 @@ void ABM_PlayerControllerBase::SC_CheckPostQuestionPhaseHandled_Implementation()
 	ABM_GameStateBase* LGameState = Cast<ABM_GameStateBase>(GetWorld()->GetGameState());
 	if (IsValid(LGameState))
 	{
-		LGameState->NotifyPostQuestionPhaseReady();
+		LGameState->NotifyPostQuestionPhaseReady(this);
 	}
 }
 
@@ -374,6 +361,20 @@ void ABM_PlayerControllerBase::PrePlayerTurnChooseCastle(FPrePlayerTurnPhaseInfo
 }
 
 void ABM_PlayerControllerBase::PrePlayerTurnSetTerritory(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo)
+{
+	ABM_PlayerPawn* LPlayerPawn = Cast<ABM_PlayerPawn>(GetPawn());
+	ABM_PlayerState* LPlayerState = Cast<ABM_PlayerState>(PlayerState);
+	if (IsValid(LPlayerPawn) && IsValid(LPlayerState) && LPlayerState->IsPlayerTurn())
+	{
+		LPlayerPawn->CC_TravelCameraToPlayerTurn();
+	}
+	else
+	{
+		CheckPrePlayerTurnPhaseHandled();
+	}
+}
+
+void ABM_PlayerControllerBase::PrePlayerTurnFightForTheRestTiles(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo)
 {
 	ABM_PlayerPawn* LPlayerPawn = Cast<ABM_PlayerPawn>(GetPawn());
 	ABM_PlayerState* LPlayerState = Cast<ABM_PlayerState>(PlayerState);

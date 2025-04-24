@@ -14,44 +14,85 @@ void USetTerritoryRound::Enter(ABM_GameStateBase* InGameState, ABM_TileManager* 
 void USetTerritoryRound::HandleClickedTile(const FIntPoint& InClickedTile, ABM_PlayerState* CurrentPlayerState)
 {
 	TileManager->SC_AttackTile(InClickedTile, CurrentPlayerState->GetPlayerColor());
-	TileManager->BindGameStateToTileBannerMeshSpawned(InClickedTile, OwnerGameState->PassTurnToNextPlayerPtr);
+	TileManager->BindRoundToTileBannerMeshSpawned(InClickedTile, PassTurnToNextPlayerPtr);
 }
 
-TMap<int32, EQuestionResult> USetTerritoryRound::VerifyChooseAnswers(FInstancedStruct& LastQuestion, TArray<FInstancedStruct>& PlayerCurrentChoices, int32 QuestionNumber)
+void USetTerritoryRound::GatherPlayerAnswers()
+{
+	Super::GatherPlayerAnswers();
+	
+	for (const auto PlayerState : OwnerGameState->PlayerArray)
+	{
+		const auto LPlayerState = Cast<ABM_PlayerState>(PlayerState);
+		// Answers may not be pushed by the Player manually
+		if (!IsValid(LPlayerState))
+		{
+			continue;
+		}
+		if(LPlayerState->CurrentQuestionAnswerSent == false)	// TODO: not set properly : Testcase - FightForTheRestTiles round with Shot question
+		{
+			OwnerGameState->GenerateAutoPlayerChoice(LPlayerState);
+		}
+		PlayersCurrentChoices.Add(LPlayerState->QuestionChoices.Last());
+	}
+}
+
+TMap<int32, EQuestionResult> USetTerritoryRound::VerifyChooseAnswers(FInstancedStruct& LastQuestion, int32 QuestionNumber)
 {
 	const auto LRightAnswer = LastQuestion.GetPtr<FQuestionChooseText>()->RightAnswer;
 	TMap<int32, EQuestionResult> LQuestionResults;
-	for (const auto LPlayerChoice : PlayerCurrentChoices)
+	for (const auto LPlayerChoice : PlayersCurrentChoices)
 	{
 		const auto LPlayerID =  LPlayerChoice.GetPtr<FPlayerChoice>()->PlayerID;
 		ABM_PlayerState* LCurrentPlayerState = Cast<ABM_PlayerState>(OwnerGameState->PlayerArray[LPlayerID]);
 		if (LPlayerChoice.GetPtr<FPlayerChoiceChoose>()->AnswerID != LRightAnswer)
 		{
 			// Wrong answer was given
-			OwnerGameState->ConstructQuestionResult(LCurrentPlayerState, QuestionNumber, LastQuestion, PlayerCurrentChoices, 0, false);
-			LQuestionResults.Add(LPlayerID, EQuestionResult::TileDefended);
+			OwnerGameState->ConstructQuestionResult(LCurrentPlayerState, QuestionNumber, LastQuestion, PlayersCurrentChoices, 0, false);
+			LQuestionResults.Add(LPlayerID, EQuestionResult::WrongAnswer);
 		}
 		else
 		{
 			// Correct answer was given
-			int32 LPoints = TileManager->GetPointsOfCurrentClickedTile(OwnerGameState->GetCurrentPlayerIndex());
-			OwnerGameState->ConstructQuestionResult(LCurrentPlayerState, QuestionNumber, LastQuestion, PlayerCurrentChoices, LPoints, true);
-			LCurrentPlayerState->SC_ChangePoints(LPoints);
+			int32 LPoints = TileManager->GetPointsOfCurrentClickedTile(CurrentPlayerIndex);
+			OwnerGameState->ConstructQuestionResult(LCurrentPlayerState, QuestionNumber, LastQuestion, PlayersCurrentChoices, LPoints, true);
 			LQuestionResults.Add(LPlayerID, EQuestionResult::TileCaptured);
+			PlayerQuestionPoints.Add(LPlayerID, LPoints);
 		}
 	}
 	return LQuestionResults;
 }
 
-void USetTerritoryRound::HandleQuestionResults(EAnsweredPlayer AnsweredPlayer)
+void USetTerritoryRound::ChangePlayersPoints(TMap<int32, EQuestionResult>& QuestionResults)
 {
+	/*TMap<int32, int32> LPlayerPointsUpdate;
+	for (const auto LQuestionResult : QuestionResults)
+	{
+		switch (LQuestionResult.Value)
+		{
+			case EQuestionResult::TileCaptured:
+			{
+				int32 LPoints = TileManager->GetPointsOfCurrentClickedTile(CurrentPlayerIndex);
+				LPlayerPointsUpdate.Add(LQuestionResult.Key, LPoints);	
+			}
+			break;
+			default: break;
+		}
+	}*/
+	//OwnerGameState->ChangePlayerPoints(PlayerQuestionPoints);
 }
 
 void USetTerritoryRound::WrapUpCurrentPlayersCycle()
 {
 	Super::WrapUpCurrentPlayersCycle();
-	OwnerGameState->IncrementCurrentPlayerCycle();
-	OwnerGameState->RequestToOpenQuestion(EQuestionType::Choose);
+	CurrentPlayerCounter = -1;
+	CurrentPlayerTurnsCycle++;
+	OwnerGameState->RequestToOpenQuestion(EQuestionType::Choose, 2.0f);
+}
+
+bool USetTerritoryRound::HasMoreTurns() const
+{
+	return PlayerTurnsCycles.IsValidIndex(CurrentPlayerTurnsCycle);
 }
 
 void USetTerritoryRound::PrepareNextTurn()
@@ -69,7 +110,7 @@ void USetTerritoryRound::PrepareNextTurn()
 	{
 		if(NotOwnedTiles >= OwnerGameState->GetRemainingPlayersCount())
 		{
-			if (!OwnerGameState->CheckCurrentCycleCounter())
+			if (!HasMoreTurns())
 			{
 				Exit(EGameRound::FightForTheRemains);
 			}
@@ -97,7 +138,7 @@ void USetTerritoryRound::Exit(EGameRound NextRound)
 void USetTerritoryRound::ConstructPlayerTurnsCycles()
 {
 	TArray<int32> LElements;
-	TArray<FPlayersCycle> LPlayersCycles;
+	PlayerTurnsCycles.Empty();
 	for (int32 i = 0; i < OwnerGameState->PlayerArray. Num(); i++)
 	{
 		LElements.Add(i);
@@ -106,8 +147,9 @@ void USetTerritoryRound::ConstructPlayerTurnsCycles()
 		UBM_Types::GenerateNumberOfPermutations(LElements, OwnerGameState->GetMaxCyclesForRound(EGameRound::SetTerritory));
 	for (int32 i = 0; i < LPermutations.Num(); i++)
 	{
-		LPlayersCycles.Add(FPlayersCycle(i, LPermutations[i], false));
+		PlayerTurnsCycles.Add(FPlayersCycle(i, LPermutations[i], false));
 	}
-	OwnerGameState->SetCurrentPlayerCycles(LPlayersCycles);
+	CurrentPlayerTurnsCycle = 0;
+	CurrentPlayerCounter = -1;
 	Super::ConstructPlayerTurnsCycles();
 }

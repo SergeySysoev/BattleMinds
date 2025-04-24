@@ -4,19 +4,14 @@
 
 #include "Core/BM_GameModeBase.h"
 #include "Player/BM_PlayerState.h"
-#include "Tiles/BM_TileBase.h"
 #include "Tiles/BM_TileManager.h"
 
 void ABM_GameStateClassic::ForceSetGameRound(EGameRound NewRound)
 {
-	SetNextGameRound(NewRound);
-	ConstructPlayerTurnsCycles();
-	switch (Round)
+	switch (NewRound)
 	{
 		case EGameRound::BuildCastle:
 			StopAllTimers();
-			CurrentPlayerCounter = -1;
-			//PassTurnToTheNextPlayer();
 			PrepareNextRound(EGameRound::BuildCastle);
 			break;
 		case EGameRound::SetTerritory:
@@ -33,9 +28,8 @@ void ABM_GameStateClassic::ForceSetGameRound(EGameRound NewRound)
 				}
 				TileManager->AutoAssignTerritoryWithEmptyTiles(true, PlayerColors, 4);
 			}
-			CurrentPlayerCounter = -1;
-			CurrentPlayerIndex = 0;
-			WrapUpCurrentPlayersCycle();
+			SetPlayersCamerasToDefault();
+			PrepareNextRound(EGameRound::FightForTheRemains);
 			break;
 		case EGameRound::FightForTerritory:
 			StopAllTimers();
@@ -48,10 +42,9 @@ void ABM_GameStateClassic::ForceSetGameRound(EGameRound NewRound)
 					PlayerColors.Add(LBMPlayerState->GetPlayerIndex(), LBMPlayerState->GetPlayerColor());
 				}
 				TileManager->AutoAssignTerritory(true, PlayerColors);
-				
 			}
-			CurrentPlayerCounter = -1;
-			PassTurnToTheNextPlayer();
+			SetPlayersCamerasToDefault();
+			PrepareNextRound(EGameRound::FightForTerritory);
 			break;
 		default: break;
 	}

@@ -3,6 +3,7 @@
 
 #include "Player/BM_PlayerPawn.h"
 
+#include "BM_PlayerControllerBase.h"
 #include "EnhancedInputSubsystems.h"
 #include "Core/BM_GameStateBase.h"
 

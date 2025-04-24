@@ -14,9 +14,11 @@ class BATTLEMINDS_API USetTerritoryRound : public UGameRound
 	/* Base Game flow methods */
 	virtual void Enter(ABM_GameStateBase* InGameState, ABM_TileManager* InTileManager) override;
 	virtual void HandleClickedTile(const FIntPoint& InClickedTile, ABM_PlayerState* CurrentPlayerState) override;
-	virtual TMap<int32, EQuestionResult> VerifyChooseAnswers(FInstancedStruct& LastQuestion, TArray<FInstancedStruct>& PlayerCurrentChoices, int32 QuestionNumber) override;
-	virtual void HandleQuestionResults(EAnsweredPlayer AnsweredPlayer) override;
+	virtual void GatherPlayerAnswers() override;
+	virtual TMap<int32, EQuestionResult> VerifyChooseAnswers(FInstancedStruct& LastQuestion, int32 QuestionNumber) override;
+	virtual void ChangePlayersPoints(TMap<int32, EQuestionResult>& QuestionResults) override;
 	virtual void WrapUpCurrentPlayersCycle() override;
+	virtual bool HasMoreTurns() const override;
 	virtual void PrepareNextTurn() override;
 	virtual void Exit(EGameRound NextRound) override;
 	/*~Base Game flow methods */

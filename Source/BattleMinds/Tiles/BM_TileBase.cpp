@@ -170,6 +170,7 @@ EQuestionType ABM_TileBase::GetTileNextQuestionType() const
 
 void ABM_TileBase::SpawnBannerMesh_Implementation()
 {
+	MC_SetBannerVisibility(false);
 	OnBannerMeshSpawnedNative.Broadcast();
 }
 
@@ -212,6 +213,7 @@ void ABM_TileBase::SC_AddTileToPlayerTerritory_Implementation(ETileStatus InStat
 		AnnexedRound = CurrentGameRound;	
 	}
 	OnBannerMeshSpawned.Clear();
+	OnBannerMeshSpawnedNative.Clear();
 }
 
 void ABM_TileBase::SC_CancelAttack_Implementation()
@@ -219,6 +221,7 @@ void ABM_TileBase::SC_CancelAttack_Implementation()
 	bIsAttacked = false;
 	MC_SetBannerVisibility(false);
 	OnBannerMeshSpawned.Clear();
+	OnBannerMeshSpawnedNative.Clear();
 	SC_RevertStatus();
 }
 

@@ -169,6 +169,7 @@ protected:
 	// IBMPrePlayerTurn Interface
 	virtual void PrePlayerTurnChooseCastle(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo) override;
 	virtual void PrePlayerTurnSetTerritory(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo) override;
+	virtual void PrePlayerTurnFightForTheRestTiles(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo) override;
 	virtual void PrePlayerTurnFightForTerritory(FPrePlayerTurnPhaseInfo PrePlayerTurnPhaseInfo) override;
 
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "PrePlayerTurnPhase")

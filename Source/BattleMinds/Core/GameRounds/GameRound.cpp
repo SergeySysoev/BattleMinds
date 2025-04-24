@@ -10,11 +10,52 @@ void UGameRound::Enter(ABM_GameStateBase* InGameState, ABM_TileManager* InTileMa
 	OwnerGameState = InGameState;
 	TileManager = InTileManager;
 	ConstructPlayerTurnsCycles();
+	PassTurnToNextPlayerPtr = &ThisClass::PassTurnToTheNextPlayer;
 }
 
 void UGameRound::ConstructPlayerTurnsCycles()
 {
 	OwnerGameState->UpdatePlayersCyclesWidget();
+}
+
+bool UGameRound::HasMoreTurns() const
+{
+	return true;
+}
+
+bool UGameRound::IsShotQuestionNeeded() const
+{
+	return false;
+}
+
+int32 UGameRound::GetCurrentPlayerIndex() const
+{
+	return CurrentPlayerIndex;
+}
+
+int32 UGameRound::GetCurrentCycle() const
+{
+	return CurrentPlayerTurnsCycle;
+}
+
+int32 UGameRound::GetCurrentPlayerCounter() const
+{
+	return CurrentPlayerCounter;
+}
+
+TArray<FPlayersCycle> UGameRound::GetPlayersCycles() const
+{
+	return PlayerTurnsCycles;
+}
+
+void UGameRound::OnStartPostQuestion(TMap<int32, EQuestionResult> QuestionResults)
+{
+	ChangePlayersPoints(QuestionResults);
+}
+
+bool UGameRound::ShouldSkipToPostQuestionComplete() const
+{
+	return false;
 }
 
 bool UGameRound::IsValidPlayerIndex(int32 IndexToCheck) const
@@ -38,10 +79,10 @@ void UGameRound::PassTurnToTheNextPlayer()
 			LBMPlayerState->SetPlayerTurn(false);
 		}
 	}
-	OwnerGameState->SetNextPlayerIndex();
-	if (IsValidPlayerIndex(OwnerGameState->GetCurrentPlayerIndex()))
+	CurrentPlayerIndex = GetNextPlayerIndex();
+	if (IsValidPlayerIndex(CurrentPlayerIndex))
 	{
-		ABM_PlayerState* LCurrentPlayerState = Cast<ABM_PlayerState>(OwnerGameState->PlayerArray[OwnerGameState->GetCurrentPlayerIndex()]);
+		ABM_PlayerState* LCurrentPlayerState = Cast<ABM_PlayerState>(OwnerGameState->PlayerArray[CurrentPlayerIndex]);
 		if (IsValid(LCurrentPlayerState))
 		{
 			TileManager->SC_ResetFirstAvailableTile();
@@ -52,28 +93,45 @@ void UGameRound::PassTurnToTheNextPlayer()
 	}
 	else
 	{
-		OwnerGameState->SetCurrentPlayerCounter(-1);
+		CurrentPlayerIndex = -1;
 		WrapUpCurrentPlayersCycle();
 	}
 }
 
-TMap<int32, EQuestionResult> UGameRound::VerifyChooseAnswers(FInstancedStruct& LastQuestion, TArray<FInstancedStruct>& PlayerCurrentChoices, int32 QuestionNumber)
+void UGameRound::AssignAnsweringPlayers(TArray<int32>& AnsweringPlayers)
+{
+	for (const auto PlayerState : OwnerGameState->PlayerArray)
+	{
+		AnsweringPlayers.Add(Cast<ABM_PlayerState>(PlayerState)->GetPlayerIndex());
+	}
+}
+
+void UGameRound::GatherPlayerAnswers()
+{
+	PlayersCurrentChoices.Empty();
+	PlayerQuestionPoints.Empty();
+}
+
+TMap<int32, EQuestionResult> UGameRound::VerifyChooseAnswers(FInstancedStruct& LastQuestion, int32 QuestionNumber)
 {
 	TMap<int32, EQuestionResult> LQuestionResults;
 	return LQuestionResults;
 }
 
-TMap<int32, EQuestionResult> UGameRound::VerifyShotAnswers()
+TMap<int32, EQuestionResult> UGameRound::VerifyShotAnswers(FInstancedStruct& LastQuestion, int32 QuestionNumber)
 {
 	TMap<int32, EQuestionResult> LQuestionResults;
 	return LQuestionResults;
 }
 
-void UGameRound::HandleQuestionResults(EAnsweredPlayer AnsweredPlayer) {}
+void UGameRound::ChangePlayersPoints(TMap<int32, EQuestionResult>& QuestionResults)
+{
+	OwnerGameState->ChangePlayerPoints(PlayerQuestionPoints);
+}
 
 void UGameRound::WrapUpCurrentPlayersCycle()
 {
-	OwnerGameState->ClearPlayerTurnTimer();
+	OwnerGameState->StopPlayerTurnTimer();
 }
 
 void UGameRound::PrepareNextTurn() {}
@@ -81,4 +139,22 @@ void UGameRound::PrepareNextTurn() {}
 void UGameRound::Exit(EGameRound NextRound)
 {
 	OwnerGameState->PrepareNextRound(NextRound);
+}
+
+int32 UGameRound::GetNextPlayerIndex()
+{
+	++CurrentPlayerCounter;
+	if (!PlayerTurnsCycles.IsEmpty())
+	{
+		if (PlayerTurnsCycles.IsValidIndex(CurrentPlayerTurnsCycle))
+		{
+			if (PlayerTurnsCycles[CurrentPlayerTurnsCycle].PlayersPermutation.Values.IsValidIndex(CurrentPlayerCounter))
+			{
+				return PlayerTurnsCycles[CurrentPlayerTurnsCycle].PlayersPermutation.Values[CurrentPlayerCounter];
+			}
+			return -1;
+		}
+		return -1;
+	}
+	return -1;
 }

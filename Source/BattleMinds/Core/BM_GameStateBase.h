@@ -44,34 +44,13 @@ public:
 	FOnPrePlayerTurnPhaseStarted OnPrePlayerTurnPhaseStarted;
 	
 	UFUNCTION(BlueprintPure)
-	FORCEINLINE int32 GetCurrentPlayerCounter() const { return CurrentPlayerCounter; }
-
-	UFUNCTION(BlueprintPure)
-	FORCEINLINE int32 GetCurrentPlayerIndex() const { return CurrentPlayerIndex; }
-
-	UFUNCTION()
-	void SetNextPlayerIndex();
-
-	UFUNCTION()
-	void SetCurrentPlayerCounter(int32 NewPlayerCounter);
-
-	UFUNCTION()
-	void SetCurrentPlayerCycles(TArray<FPlayersCycle>& PlayersCycles);
-
-	UFUNCTION()
-	void IncrementCurrentPlayerCycle();
-
-	UFUNCTION()
-	FORCEINLINE bool IsValidCurrentCycleCounter(int32 CounterToCheck) const { return PlayerTurnsCycles.IsValidIndex(CounterToCheck); }
-
-	UFUNCTION()
-	bool CheckCurrentCycleCounter() const;
-
-	UFUNCTION(BlueprintPure)
 	bool IsPlayerTurn(int32 PlayerIndex) const;
 	
 	UFUNCTION(BlueprintPure)
 	FORCEINLINE EGameRound GetCurrentRound() const { return Round; }
+
+	UFUNCTION()
+	FORCEINLINE UGameRound* GetCurrentRoundObject() {return CurrentGameRoundObject;}
 
 	UFUNCTION(BlueprintPure)
 	TArray<FIntPoint> GetPlayerAvailableTiles(EGameRound CurrentRound, int32 PlayerIndex) const;
@@ -82,35 +61,23 @@ public:
 	UFUNCTION(BlueprintPure)
 	EColor GetPlayerColorByIndex(int32 PlayerIndex) const;
 
+	UFUNCTION(BlueprintPure)
+	int32 GetCurrentPlayerIndex();
+
 	UFUNCTION()
 	void HandleClickedTile(FIntPoint InClickedTile);
-
-	UFUNCTION(BlueprintCallable)
-	void SetDefendingPlayer(FIntPoint InClickedTile);
-
-	UFUNCTION(BlueprintCallable)
-	void ClearPlayerTurnTimer();
 
 	UFUNCTION()
 	void EliminatePlayer(int32 PlayerIndex);
 
 	UFUNCTION(BlueprintCallable)
-	void RequestToOpenQuestion(EQuestionType QuestionType);
-
-	UFUNCTION(BlueprintCallable)
-	void StartSiege();
-
-	UFUNCTION(BlueprintCallable)
-	void OpenChooseQuestion();
+	void RequestToOpenQuestion(EQuestionType QuestionType, float PauseBeforeOpeningQuestion);
 
 	UFUNCTION(BlueprintCallable)
 	void StartPrePlayerTurnPhase();
-	
-	UFUNCTION(BlueprintCallable)
-	void PassTurnToTheNextPlayer();
 
 	UFUNCTION(BlueprintCallable)
-	void PassTurnToTheShotQuestionWinner();
+	void StartPlayerTurnTimer();
 
 	UFUNCTION(BlueprintCallable)
 	ABM_PlayerControllerBase* GetPlayerController(int32 PlayerIndex);
@@ -119,22 +86,30 @@ public:
 	void InitGameState();
 
 	UFUNCTION()
+	int32 GetPointsOfTile(EGameRound GameRound) const;
+
+	UFUNCTION()
 	void PrepareNextRound(EGameRound NextRound);
 
 	UFUNCTION()
 	void StartPostCastleChosenPhase();
+
+	UFUNCTION(BlueprintCallable)
+	void OpenNextQuestion();
 	
 	UFUNCTION(BlueprintCallable)
 	void OpenQuestion(EQuestionType QuestionType);
 
-	UFUNCTION(BlueprintCallable)
-	void ConstructQuestionResult(ABM_PlayerState* InPlayerState, int32 InQuestionNumber, FInstancedStruct InQuestion, TArray<FInstancedStruct> InPlayerChoices, int32 InReceivedPoints, bool InWasAnswered);
-
-	UFUNCTION(BlueprintPure)
-	FORCEINLINE TArray<FPlayersCycle> GetPlayerCycles() const { return PlayerTurnsCycles;}
+	UFUNCTION()
+	void GenerateAutoPlayerChoice(ABM_PlayerState* PlayerState) const;
 	
 	UFUNCTION(BlueprintCallable)
-	void NotifyPostQuestionPhaseReady();
+	void ConstructQuestionResult(ABM_PlayerState* InPlayerState, int32 InQuestionNumber, FInstancedStruct InQuestion, TArray<FInstancedStruct> InPlayerChoices, int32 InReceivedPoints, bool InWasAnswered);
+	
+	UFUNCTION(BlueprintCallable)
+	void NotifyPostQuestionPhaseReady(UObject* PostQuestionListener);
+
+	void SetPlayersCamerasToDefault();
 
 	UFUNCTION(BlueprintCallable)
 	void NotifyPrePlayerTurnPhaseReady();
@@ -147,6 +122,9 @@ public:
 
 	UFUNCTION()
 	void UpdatePlayersCyclesWidget();
+
+	UFUNCTION()
+	void StopPlayerTurnTimer();
 
 	UFUNCTION()
 	void UpdatePlayerTurn();
@@ -165,7 +143,6 @@ public:
 	
 	FunctionVoidPtr OpenNextQuestionPtr;
 	FunctionVoidPtr StartSiegePtr;
-	FunctionVoidPtr PassTurnToNextPlayerPtr;
 
 protected:
 	
@@ -180,32 +157,9 @@ protected:
 	
 	UPROPERTY(Replicated, EditDefaultsOnly, BlueprintReadWrite, Category="Game flow", meta=(BaseStruct = "Question"))
 	FInstancedStruct LastQuestion;
-
-	/*
-	 * integer to iterate through PlayerCycles[i].Permutations array, always go from 0 to Number of players
-	 */
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Players info")
-	int32 CurrentPlayerCounter = -1;
-
-	/*
-	 * index of player in PlayerArray, is set from PlayerCycles[i].Permutations array using CurrentPlayerCounter
-	 */
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Players info")
-	int32 CurrentPlayerIndex = 0;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Game flow")
 	FTimerHandle PlayerTurnHandle;
-
-	/* Player choices sent (or auto generated) to the LastQuestion */
-	UPROPERTY(BlueprintReadWrite, Category="Players info", meta=(BaseStruct="PlayerChoice"))
-	TArray<FInstancedStruct> PlayersCurrentChoices;
-
-	/*
-	 * index of player in PlayerArray used when one player attacks another player tile
-	 * is set from Tile->OwningPlayerIndex property, equivalent of CurrentPlayerIndex
-	 */
-	UPROPERTY(BlueprintReadWrite, Category = "Players info")
-	int32 DefendingPlayerIndex;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Game flow", meta=(BaseStruct = "Question"))
 	TArray<FInstancedStruct> UsedQuestions;
@@ -220,8 +174,6 @@ protected:
 	UPROPERTY()
 	float CurrentTurnTimer;
 	
-	bool bShotQuestionIsNeeded = false;
-	
 	int32 NumberOfSentAnswers = 0;
 
 	UPROPERTY(BlueprintReadOnly, Category="Game flow")
@@ -232,18 +184,9 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite)
 	const ABM_GameModeBase* BMGameMode = nullptr;
-	
-	UPROPERTY(BlueprintReadOnly)
-	int32 CurrentSiegeTileQuestionCount = 0;
 
 	UPROPERTY(BlueprintReadWrite)
 	ABM_TileManager* TileManager = nullptr;
-
-	UPROPERTY(BlueprintReadWrite)
-	TArray<FPlayersCycle> PlayerTurnsCycles;
-
-	UPROPERTY(BlueprintReadWrite)
-	int32 CurrentPlayerTurnsCycle = 0;
 
 	UPROPERTY(BlueprintReadOnly)
 	TMap<EGameRound, int32> MaxCyclesPerRound;
@@ -267,28 +210,13 @@ protected:
 	void CheckPrePlayerTurnPhaseCompleted();
 
 	UFUNCTION()
-	void ConstructPlayerTurnsCycles();
-
-	UFUNCTION()
 	void DisableTileEdgesHighlight();
 
 	UFUNCTION()
 	void UnbindAllOnBannerSpawnedTiles();
-
-	UFUNCTION(BlueprintPure)
-	int32 GetNextPlayerArrayIndex();
 	
-	UFUNCTION(BlueprintPure)
-	int32 GetPreviousPlayerArrayIndex();
-
 	UFUNCTION(BlueprintCallable)
 	void TogglePlayerTurnTimer(bool ShouldPause);
-	
-	UFUNCTION()
-	void StopPlayerTurnTimer();
-
-	UFUNCTION(BlueprintCallable)
-	void OpenNextQuestion();
 	
 	// Move Players Cameras to Question Location
 	UFUNCTION()
@@ -300,14 +228,11 @@ protected:
 	UFUNCTION()
 	void OnPlayerAnswerSent(int32 LastSentPlayer);
 
-	UFUNCTION()
-	void GenerateAutoPlayerChoice(ABM_PlayerState* PlayerState) const;
-
 	UFUNCTION(BlueprintCallable)
 	void GatherPlayersAnswers();
 	
 	UFUNCTION(BlueprintCallable)
-	void ShowPlayerChoicesAndCorrectAnswer();
+	void ShowPlayerChoicesAndCorrectAnswer(TArray<FInstancedStruct>& CurrentPlayersChoices);
 
 	UFUNCTION()
 	void PrepareNextTurn();
@@ -316,34 +241,19 @@ protected:
 	void VerifyAnswers();
 	
 	UFUNCTION()
-	TMap<int32, EQuestionResult> VerifyChooseAnswers();
-	
-	UFUNCTION()
-	TMap<int32, EQuestionResult> VerifyShotAnswers();
-	
-	UFUNCTION()
 	EGameRound GetNextGameRound() const;
 
 	UFUNCTION()
 	void SetNextGameRound(EGameRound NewRound);
 
 	UFUNCTION()
-	void ConvertPlayerCyclesToPlayerCyclesUI(TArray<FPlayersCycleUI>& OutPlayersCyclesUI);
-	
-	UFUNCTION()
-	void WrapUpCurrentPlayersCycle();
+	void ConvertPlayerCyclesToPlayerCyclesUI(TArray<FPlayersCycleUI>& OutPlayersCyclesUI, TArray<FPlayersCycle> InPlayersCycles);
 
 	UFUNCTION()
 	void StopHUDAnimations();
 
 	UFUNCTION()
-	void UpdateGameMap();
-
-	UFUNCTION()
 	void HighlightAvailableTiles(int32 PlayerArrayIndex);
-
-	UFUNCTION(BlueprintCallable)
-	void StartPlayerTurnTimer();
 	
 	UFUNCTION(BlueprintCallable)
 	void ChooseFirstAvailableTileForPlayer(int32 PlayerIndex);
@@ -363,20 +273,11 @@ protected:
 
 	UFUNCTION()
 	void StopAllTimers();
-
-	/*
-	 * AnsweredPlayer = 0 - no one gave the right answer
-	 * AnsweredPlayer = 1 - Attacker was right
-	 * AnsweredPlayer = 2 - Defender was right
-	 */
-	UFUNCTION()
-	void HandleSiegedTile(
-		uint8 AnsweredPlayer);
-
+	
 	UFUNCTION(BlueprintCallable, NetMulticast, Unreliable)
 	void MC_UpdatePoints(int32 PlayerID, float NewScore);
 
-	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	virtual void CalculateAndSetMaxCyclesPerRound();
 

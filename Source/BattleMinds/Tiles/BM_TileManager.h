@@ -113,6 +113,8 @@ public:
 	
 	void BindGameStateToTileBannerMeshSpawned(FIntPoint TileAxials, FunctionVoidPtr FunctionPointer);
 
+	void BindRoundToTileBannerMeshSpawned(FIntPoint TileAxials, RoundFunctionVoidPtr FunctionPointer);
+
 	UFUNCTION()
 	void UnbindAllOnBannerSpawnedDelegates();
 

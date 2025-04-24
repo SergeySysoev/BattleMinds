@@ -163,6 +163,18 @@ void ABM_TileManager::BindGameStateToTileBannerMeshSpawned(FIntPoint TileAxials,
 	LTile->OnBannerMeshSpawnedNative.AddUObject(LGameState, FunctionPointer);
 }
 
+void ABM_TileManager::BindRoundToTileBannerMeshSpawned(FIntPoint TileAxials, RoundFunctionVoidPtr FunctionPointer)
+{
+	ABM_TileBase* LTile = Tiles.FindRef(TileAxials);
+	ABM_GameStateBase* LGameState = GetWorld()->GetGameState<ABM_GameStateBase>();
+	if (IsValid(LGameState))
+	{
+		UGameRound* LCurrentRound = LGameState->GetCurrentRoundObject();
+		LTile->OnBannerMeshSpawnedNative.AddUObject(LCurrentRound, FunctionPointer);
+	}
+	
+}
+
 void ABM_TileManager::UnbindAllOnBannerSpawnedDelegates()
 {
 	ABM_GameStateBase* LGameState = GetWorld()->GetGameState<ABM_GameStateBase>();
@@ -491,6 +503,7 @@ void ABM_TileManager::HandlePostQuestionPhase(FPostQuestionPhaseInfo PostQuestio
 			break;
 			case EGameRound::FightForTerritory:
 				PostQuestionPhaseFightForTerritory(PostQuestionPhaseInfo);
+			break;
 			default:
 				CheckForTilePostQuestionHandled();
 				break;
@@ -504,7 +517,7 @@ void ABM_TileManager::PostQuestionPhaseSetTerritory(const FPostQuestionPhaseInfo
 	{
 		switch (LQuestionResult.Value)
 		{
-			case EQuestionResult::TileDefended:
+			case EQuestionResult::WrongAnswer:
 			{
 				if (ClickedTiles.Contains(LQuestionResult.Key))
 				{
@@ -527,7 +540,16 @@ void ABM_TileManager::PostQuestionPhaseSetTerritory(const FPostQuestionPhaseInfo
 				}
 			}
 			break;
-			default:break;
+			default:
+				if (ClickedTiles.Contains(LQuestionResult.Key))
+				{
+					/* Attacking Player wasn't able to capture the Tile
+					 * Call SC_CancelAttack for this Player
+					 * and don't include it for ExpectedTilesToHandlePostQuestion
+					 */
+					SC_CancelAttackOnClickedTile(LQuestionResult.Key);
+				}
+			break;
 		}
 	}
 	SwitchTilesMaterial();
@@ -660,7 +682,7 @@ void ABM_TileManager::CheckForTilePostQuestionHandled()
 			FirstAvailableTile = nullptr;
 			FirstAvailableTileAxials.X = 0;
 			FirstAvailableTileAxials.Y = 0;
-			LGameState->NotifyPostQuestionPhaseReady();
+			LGameState->NotifyPostQuestionPhaseReady(this);
 		}
 	}
 }
