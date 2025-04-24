@@ -465,6 +465,7 @@ void ABM_GameStateBase::StartPlayerTurnTimer()
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 		{
 			PlayerController->ResetTurnTimer(Round);
+			PlayerController->UpdateCurrentPlayerNickname(LCurrentPlayerIndex);
 		}
 	}
 	ABM_PlayerState* LCurrentPlayerState = Cast<ABM_PlayerState>(PlayerArray[LCurrentPlayerIndex]);
@@ -880,7 +881,7 @@ void ABM_GameStateBase::UpdatePlayerTurn()
 		if (ABM_PlayerControllerBase* PlayerController = Cast<ABM_PlayerControllerBase>(PlayerState->GetPlayerController()))
 		{
 			PlayerController->UpdatePlayerTurnWidget(CurrentGameRoundObject->GetCurrentCycle(), CurrentGameRoundObject->GetCurrentPlayerCounter());
-			PlayerController->UpdateCurrentPlayerNickname(CurrentGameRoundObject->GetCurrentPlayerIndex());
+			//PlayerController->UpdateCurrentPlayerNickname(CurrentGameRoundObject->GetCurrentPlayerIndex());
 			Cast<ABM_PlayerState>(PlayerState)->CurrentQuestionAnswerSent = false;
 			PlayerController->ResetTurnTimer(Round);
 		}
