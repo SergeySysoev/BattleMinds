@@ -1,7 +1,11 @@
 ﻿// Battle Minds, 2022. All rights reserved.
 
 #include "GameRound.h"
+
+#include "Characters/BMCharacterSpawnSlot.h"
+#include "Characters/BM_CharacterBase.h"
 #include "Core/BM_GameStateBase.h"
+#include "Kismet/GameplayStatics.h"
 #include "Player/BM_PlayerControllerBase.h"
 #include "Player/BM_PlayerState.h"
 
@@ -10,12 +14,32 @@ void UGameRound::Enter(ABM_GameStateBase* InGameState, ABM_TileManager* InTileMa
 	OwnerGameState = InGameState;
 	TileManager = InTileManager;
 	ConstructPlayerTurnsCycles();
+	SetCharacterSpawnSlots();
 	PassTurnToNextPlayerPtr = &ThisClass::PassTurnToTheNextPlayer;
 }
 
 void UGameRound::ConstructPlayerTurnsCycles()
 {
 	OwnerGameState->UpdatePlayersCyclesWidget();
+}
+
+void UGameRound::SetCharacterSpawnSlots()
+{
+	TArray<AActor*> LSpawnSlots;
+	UGameplayStatics::GetAllActorsOfClass(this, ABMCharacterSpawnSlot::StaticClass(), LSpawnSlots);
+	int32 LSlotIndex = 0;
+	for (const auto LSpawnSlot : LSpawnSlots)
+	{
+		if (IsValid(LSpawnSlot))
+		{
+			ABMCharacterSpawnSlot* LCastedSpawnSlot = Cast<ABMCharacterSpawnSlot>(LSpawnSlot);
+			if (OwnerGameState->GetCurrentRound() == LCastedSpawnSlot->GetGameRound())
+			{
+				CurrentRoundSpawnSlots.Add(LSlotIndex, LCastedSpawnSlot);
+				LSlotIndex++;
+			}
+		}
+	}
 }
 
 bool UGameRound::HasMoreTurns() const
@@ -51,6 +75,7 @@ TArray<FPlayersCycle> UGameRound::GetPlayersCycles() const
 void UGameRound::OnStartPostQuestion(TMap<int32, EQuestionResult> QuestionResults)
 {
 	ChangePlayersPoints(QuestionResults);
+	DestroySpawnedCharacters();
 }
 
 bool UGameRound::ShouldSkipToPostQuestionComplete() const
@@ -100,6 +125,7 @@ void UGameRound::PassTurnToTheNextPlayer()
 
 void UGameRound::AssignAnsweringPlayers(TArray<int32>& AnsweringPlayers)
 {
+	CurrentSpawnedCharacters.Empty();
 	for (const auto PlayerState : OwnerGameState->PlayerArray)
 	{
 		AnsweringPlayers.Add(Cast<ABM_PlayerState>(PlayerState)->GetPlayerIndex());
@@ -157,4 +183,24 @@ int32 UGameRound::GetNextPlayerIndex()
 		return -1;
 	}
 	return -1;
+}
+
+void UGameRound::DestroySpawnedCharacters()
+{
+	for (auto LCharacter : CurrentSpawnedCharacters)
+	{
+		LCharacter.Value->Destroy();
+	}
+}
+
+void UGameRound::PlayAnimationOnSpawnedCharacters(TMap<int32, EQuestionResult> QuestionResults)
+{
+	for (const auto LQuestionResult : QuestionResults)
+	{
+		ABM_CharacterBase* LCharacter = CurrentSpawnedCharacters.FindRef(LQuestionResult.Key);
+		if (IsValid(LCharacter))
+		{
+			LCharacter->MC_PlayAnimation(LQuestionResult.Value);
+		}
+	}
 }

@@ -2,6 +2,8 @@
 
 #include "SetTerritoryRound.h"
 
+#include "Characters/BMCharacterSpawnSlot.h"
+#include "Characters/BM_CharacterBase.h"
 #include "Core/BM_GameStateBase.h"
 #include "Player/BM_PlayerState.h"
 
@@ -15,6 +17,25 @@ void USetTerritoryRound::HandleClickedTile(const FIntPoint& InClickedTile, ABM_P
 {
 	TileManager->SC_AttackTile(InClickedTile, CurrentPlayerState->GetPlayerColor());
 	TileManager->BindRoundToTileBannerMeshSpawned(InClickedTile, PassTurnToNextPlayerPtr);
+}
+
+void USetTerritoryRound::AssignAnsweringPlayers(TArray<int32>& AnsweringPlayers)
+{
+	Super::AssignAnsweringPlayers(AnsweringPlayers);
+	for (int i = 0; i < AnsweringPlayers.Num(); i++)
+	{
+		ABMCharacterSpawnSlot* LSpawnSlot = CurrentRoundSpawnSlots.FindRef(i);
+		if (IsValid(LSpawnSlot))
+		{
+			ABM_CharacterBase* LSpawnedCharacter = LSpawnSlot->SpawnCharacter();
+			if (IsValid(LSpawnedCharacter))
+			{
+				LSpawnedCharacter->SC_SetColor(OwnerGameState->GetPlayerColorByIndex(AnsweringPlayers[i]));
+				LSpawnedCharacter->SC_SetAttacker(true);
+				CurrentSpawnedCharacters.Add(AnsweringPlayers[i], LSpawnedCharacter);
+			}
+		}
+	}
 }
 
 void USetTerritoryRound::GatherPlayerAnswers()
@@ -61,25 +82,6 @@ TMap<int32, EQuestionResult> USetTerritoryRound::VerifyChooseAnswers(FInstancedS
 		}
 	}
 	return LQuestionResults;
-}
-
-void USetTerritoryRound::ChangePlayersPoints(TMap<int32, EQuestionResult>& QuestionResults)
-{
-	/*TMap<int32, int32> LPlayerPointsUpdate;
-	for (const auto LQuestionResult : QuestionResults)
-	{
-		switch (LQuestionResult.Value)
-		{
-			case EQuestionResult::TileCaptured:
-			{
-				int32 LPoints = TileManager->GetPointsOfCurrentClickedTile(CurrentPlayerIndex);
-				LPlayerPointsUpdate.Add(LQuestionResult.Key, LPoints);	
-			}
-			break;
-			default: break;
-		}
-	}*/
-	//OwnerGameState->ChangePlayerPoints(PlayerQuestionPoints);
 }
 
 void USetTerritoryRound::WrapUpCurrentPlayersCycle()

@@ -12,6 +12,8 @@
 
 class ABM_PlayerState;
 class ABM_GameStateBase;
+class ABM_CharacterBase;
+class ABMCharacterSpawnSlot;
 class ABM_PlayerControllerBase;
 
 UCLASS(Abstract, Blueprintable)
@@ -40,13 +42,18 @@ public:
 
 	/* Base auxiliary methods for variables initialization or verification*/
 	virtual void ConstructPlayerTurnsCycles();
+	UFUNCTION()
+	void SetCharacterSpawnSlots();
 	virtual bool HasMoreTurns() const;
 	virtual bool IsShotQuestionNeeded() const;
 	int32 GetCurrentPlayerIndex() const; 
 	int32 GetCurrentCycle() const; 
 	int32 GetCurrentPlayerCounter() const;
 	TArray<FPlayersCycle> GetPlayersCycles() const;
-
+	
+	UFUNCTION()
+	void PlayAnimationOnSpawnedCharacters(TMap<int32, EQuestionResult> QuestionResults);
+	
 	/* Post Question Phase interface */
 	virtual void OnStartPostQuestion(TMap<int32, EQuestionResult> QuestionResults);
 	virtual bool ShouldSkipToPostQuestionComplete() const;
@@ -91,8 +98,17 @@ protected:
 	UPROPERTY(BlueprintReadWrite)
 	int32 CurrentPlayerTurnsCycle = 0;
 
+	UPROPERTY()
+	TMap<int32, ABMCharacterSpawnSlot*> CurrentRoundSpawnSlots;
+
+	UPROPERTY()
+	TMap<int32, ABM_CharacterBase*> CurrentSpawnedCharacters;
+
 	/*~ Player turns order related variables */
 
 	UFUNCTION()
 	int32 GetNextPlayerIndex();
+
+	UFUNCTION()
+	void DestroySpawnedCharacters();
 };

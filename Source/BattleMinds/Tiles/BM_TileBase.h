@@ -62,10 +62,7 @@ public:
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void SC_RevertStatus();
-
-	UFUNCTION(BlueprintCallable)
-	void SetTileEdgesColor(EColor NewColor);
-
+	
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void SetPointsWidgetValue(int32 Points);
 
@@ -109,8 +106,8 @@ public:
 	void SpawnBannerMesh();
 
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
-	void MC_SetBorderVisibility(bool bIsVisible);
-
+	void MC_SetBorderMaterial(EColor PlayerColor);
+	
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
 	void MC_ResetBorderMaterial();
 
@@ -240,7 +237,7 @@ protected:
 	TObjectPtr<UMaterialInterface> BorderMeshDefaultMaterial;
 	
 	UPROPERTY(BlueprintReadWrite, Category = "Visuals")
-	TObjectPtr<UMaterialInterface> EdgesMaterial;
+	TObjectPtr<UMaterialInterface> BorderMaterial;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Visuals")
 	TObjectPtr<UMaterialInterface> MaterialOwned;
@@ -260,8 +257,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_TileColor, BlueprintReadWrite, Category="Territory")
 	EColor TileColor = EColor::Undefined;
 
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_BorderColor, BlueprintReadWrite, Category="Territory")
-	EColor BorderColor = EColor::Undefined;
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_BannerColor, BlueprintReadWrite, Category="Territory")
+	EColor BannerColor = EColor::Undefined;
 
 	/*
 	 * Game round in which this tile was annexed to a Player's territory
@@ -297,7 +294,7 @@ protected:
 	void OnRep_TileColorMeshChangeOR();
 
 	UFUNCTION()
-	void OnRep_BorderColor();
+	void OnRep_BannerColor();
 	
 	virtual void BeginPlay() override;
 

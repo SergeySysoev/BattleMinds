@@ -6,6 +6,8 @@
 #include "GameRound.h"
 #include "FightForTerritoryRound.generated.h"
 
+class ABM_CharacterBase;
+class ABMCharacterSpawnSlot;
 UCLASS()
 class BATTLEMINDS_API UFightForTerritoryRound : public UGameRound
 {

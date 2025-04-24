@@ -325,8 +325,7 @@ void ABM_TileManager::HighlightTilesForPlayer(TArray<FIntPoint> TilesToHighlight
 		}
 		if (IsValid(LTileToHighlight))
 		{
-			LTileToHighlight->SetTileEdgesColor(InPlayerColor);
-			LTileToHighlight->MC_SetBorderVisibility(true);
+			LTileToHighlight->MC_SetBorderMaterial(InPlayerColor);
 			if (LTileToHighlight->GetStatus() == ETileStatus::NotOwned)
 			{
 				ABM_GameModeBase* LGameMode = Cast<ABM_GameModeBase>(GetWorld()->GetAuthGameMode());

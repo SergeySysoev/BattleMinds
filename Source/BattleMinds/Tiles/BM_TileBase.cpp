@@ -102,23 +102,6 @@ void ABM_TileBase::SC_RevertStatus_Implementation()
 	Status = CachedStatus;
 }
 
-void ABM_TileBase::SetTileEdgesColor(EColor NewColor)
-{
-	if (HasAuthority())
-	{
-		BorderColor = NewColor;
-		OnRep_BorderColor();
-	}
-}
-
-void ABM_TileBase::MC_SetBorderVisibility_Implementation(bool bIsVisible)
-{
-	if (IsValid(BorderStaticMesh))
-	{
-		BorderStaticMesh->SetVisibility(bIsVisible);
-	}
-}
-
 void ABM_TileBase::SetPointsWidgetVisibility(bool bIsVisible)
 {
 	if (IsValid(PointsWidget))
@@ -170,7 +153,6 @@ EQuestionType ABM_TileBase::GetTileNextQuestionType() const
 
 void ABM_TileBase::SpawnBannerMesh_Implementation()
 {
-	MC_SetBannerVisibility(false);
 	OnBannerMeshSpawnedNative.Broadcast();
 }
 
@@ -185,8 +167,8 @@ void ABM_TileBase::SC_AttackTile_Implementation(EColor InPlayerColor)
 		CachedStatus = Status;
 		bIsAttacked = true;
 		SC_ChangeStatus(ETileStatus::Attacked);
-		BorderColor = InPlayerColor;
-		OnRep_BorderColor();
+		BannerColor = InPlayerColor;
+		OnRep_BannerColor();
 		MC_SetBannerVisibility(true);
 		SpawnBannerMesh();
 	}
@@ -255,29 +237,21 @@ void ABM_TileBase::OnRep_TileColorMeshChangeOR_Implementation()
 	StaticMesh->SetMaterial(0, TileMeshMaterial);
 }
 
-void ABM_TileBase::OnRep_BorderColor()
+void ABM_TileBase::OnRep_BannerColor()
 {
 	UBM_GameInstance* LGameInstance = Cast<UBM_GameInstance>(GetWorld()->GetGameInstance());
-	if (IsValid(LGameInstance))
+	if (!IsValid(LGameInstance))
 	{
-		EdgesMaterial = LGameInstance->BorderMeshMaterials.FindRef(BorderColor);
-		if (IsValid(EdgesMaterial))
-		{
-			BorderStaticMesh->SetMaterial(0, EdgesMaterial);
-		}
-		else
-		{
-			UE_LOG(LogBM_Tile, Error, TEXT("ABM_TileBase::OnRep_BorderColor: Not Valid Material!"));
-		}
-		BannerMaterial = LGameInstance->BannerMaterials.FindRef(BorderColor);
-		if (IsValid(BannerMaterial))
-		{
-			BannerMesh->SetMaterial(0, BannerMaterial);
-		}
-		else
-		{
-			UE_LOG(LogBM_Tile, Warning, TEXT("ABM_TileBase::OnRep_BorderColor, Banner Material is not valid!"));
-		}
+		return;
+	}
+	BannerMaterial = LGameInstance->BannerMaterials.FindRef(BannerColor);
+	if (IsValid(BannerMaterial))
+	{
+		BannerMesh->SetMaterial(0, BannerMaterial);
+	}
+	else
+	{
+		UE_LOG(LogBM_Tile, Warning, TEXT("ABM_TileBase::OnRep_BannerColor, Banner Material is not valid!"));
 	}
 }
 
@@ -349,6 +323,23 @@ void ABM_TileBase::HidePreviewMeshOnClick_Implementation(AActor* HoveredActor, F
 void ABM_TileBase::MC_ResetBorderMaterial_Implementation()
 {
 	BorderStaticMesh->SetMaterial(0, BorderMeshDefaultMaterial);
+}
+
+void ABM_TileBase::MC_SetBorderMaterial_Implementation(EColor PlayerColor)
+{
+	UBM_GameInstance* LGameInstance = Cast<UBM_GameInstance>(GetWorld()->GetGameInstance());
+	if (IsValid(LGameInstance))
+	{
+		BorderMaterial = LGameInstance->BorderMeshMaterials.FindRef(PlayerColor);
+		if (IsValid(BorderMaterial))
+		{
+			BorderStaticMesh->SetMaterial(0, BorderMaterial);
+		}
+		else
+		{
+			UE_LOG(LogBM_Tile, Error, TEXT("ABM_TileBase::MC_SetBorderMaterial: Not Valid Material!"));
+		}
+	}
 }
 
 void ABM_TileBase::SC_ApplyDamage(int32 InDamageAmount)
@@ -439,6 +430,6 @@ void ABM_TileBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME(ABM_TileBase, Axial);
 	DOREPLIFETIME(ABM_TileBase, CachedStatus);
 	DOREPLIFETIME(ABM_TileBase, bShowPreviewMesh);
-	DOREPLIFETIME_CONDITION(ABM_TileBase, TileColor, COND_SimulatedOnly);
-	DOREPLIFETIME_CONDITION(ABM_TileBase, BorderColor, COND_SimulatedOnly);
+	DOREPLIFETIME(ABM_TileBase, TileColor);
+	DOREPLIFETIME(ABM_TileBase, BannerColor);
 }

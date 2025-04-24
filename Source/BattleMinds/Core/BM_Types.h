@@ -40,6 +40,7 @@ UENUM(BlueprintType)
 enum class EQuestionResult : uint8
 {
 	ShotQuestionNeeded,
+	NobodyAnswered,
 	WrongAnswer,
 	TileDefended,
 	TileDamaged,

@@ -2,7 +2,9 @@
 
 #include "Core/Classic/BM_GameStateClassic.h"
 
+#include "Characters/BMCharacterSpawnSlot.h"
 #include "Core/BM_GameModeBase.h"
+#include "Kismet/GameplayStatics.h"
 #include "Player/BM_PlayerState.h"
 #include "Tiles/BM_TileManager.h"
 

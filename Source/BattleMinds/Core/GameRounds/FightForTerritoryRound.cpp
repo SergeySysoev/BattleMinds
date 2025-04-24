@@ -2,6 +2,9 @@
 
 
 #include "FightForTerritoryRound.h"
+
+#include "Characters/BMCharacterSpawnSlot.h"
+#include "Characters/BM_CharacterBase.h"
 #include "Core/BM_GameStateBase.h"
 #include "Player/BM_PlayerState.h"
 
@@ -23,6 +26,20 @@ void UFightForTerritoryRound::AssignAnsweringPlayers(TArray<int32>& AnsweringPla
 {
 	AnsweringPlayers.Add(CurrentPlayerIndex);
 	AnsweringPlayers.Add(DefendingPlayerIndex);
+	for (int i = 0; i < AnsweringPlayers.Num(); i++)
+	{
+		ABMCharacterSpawnSlot* LSpawnSlot = CurrentRoundSpawnSlots.FindRef(i);
+		if (IsValid(LSpawnSlot))
+		{
+			ABM_CharacterBase* LSpawnedCharacter = LSpawnSlot->SpawnCharacter();
+			if (IsValid(LSpawnedCharacter))
+			{
+				LSpawnedCharacter->SC_SetColor(OwnerGameState->GetPlayerColorByIndex(AnsweringPlayers[i]));
+				LSpawnedCharacter->SC_SetAttacker(AnsweringPlayers[i] == CurrentPlayerIndex);
+				CurrentSpawnedCharacters.Add(AnsweringPlayers[i], LSpawnedCharacter);
+			}
+		}
+	}
 }
 
 void UFightForTerritoryRound::GatherPlayerAnswers()
@@ -69,11 +86,10 @@ TMap<int32, EQuestionResult> UFightForTerritoryRound::VerifyChooseAnswers(FInsta
 	{
 		CurrentSiegeTileQuestionCount = 0;
 		// both Players gave wrong answer, cancel attack for Attacking, and don't give points to Defending
-		//HandleQuestionResults(EAnsweredPlayer::NoCorrectAnswer);
 		OwnerGameState->ConstructQuestionResult(DefendingPlayerState, QuestionNumber, LastQuestion, PlayersCurrentChoices, 0, false);
 		OwnerGameState->ConstructQuestionResult(AttackingPlayerState, QuestionNumber, LastQuestion, PlayersCurrentChoices, 0, false);
-		LQuestionResults.Add(PlayersCurrentChoices[0].GetPtr<FPlayerChoiceChoose>()->PlayerID, EQuestionResult::WrongAnswer);
-		LQuestionResults.Add(PlayersCurrentChoices[1].GetPtr<FPlayerChoiceChoose>()->PlayerID, EQuestionResult::WrongAnswer);
+		LQuestionResults.Add(PlayersCurrentChoices[0].GetPtr<FPlayerChoiceChoose>()->PlayerID, EQuestionResult::NobodyAnswered);
+		LQuestionResults.Add(PlayersCurrentChoices[1].GetPtr<FPlayerChoiceChoose>()->PlayerID, EQuestionResult::NobodyAnswered);
 		return LQuestionResults;
 	}
 	// Someone got the right answer
@@ -194,8 +210,8 @@ TMap<int32, EQuestionResult> UFightForTerritoryRound::VerifyShotAnswers(FInstanc
 		CurrentSiegeTileQuestionCount = 0;
 		OwnerGameState->ConstructQuestionResult(LDefendingPlayerState, QuestionNumber, LastQuestion, PlayersCurrentChoices, 0, false);
 		OwnerGameState->ConstructQuestionResult(LAttackingPlayerState, QuestionNumber, LastQuestion, PlayersCurrentChoices, 0, false);
-		LQuestionResults.Add(CurrentPlayerIndex, EQuestionResult::WrongAnswer);
-		LQuestionResults.Add(DefendingPlayerIndex, EQuestionResult::WrongAnswer);
+		LQuestionResults.Add(CurrentPlayerIndex, EQuestionResult::NobodyAnswered);
+		LQuestionResults.Add(DefendingPlayerIndex, EQuestionResult::NobodyAnswered);
 		return LQuestionResults;
 	}
 	int32 LWinnerIndex = ShotChoices[0].PlayerID;
@@ -220,7 +236,7 @@ TMap<int32, EQuestionResult> UFightForTerritoryRound::VerifyShotAnswers(FInstanc
 			if (CurrentSiegeTileQuestionCount == 0)
 			{
 				LQuestionResults.Add(CurrentPlayerIndex, EQuestionResult::TileCaptured);
-				LQuestionResults.Add(DefendingPlayerIndex, EQuestionResult::TileCaptured);
+				LQuestionResults.Add(DefendingPlayerIndex, EQuestionResult::WrongAnswer);
 				PlayerQuestionPoints.Add(CurrentPlayerIndex, LPoints);
 				PlayerQuestionPoints.Add(DefendingPlayerIndex, -LPoints);
 			}

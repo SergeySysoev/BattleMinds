@@ -6,6 +6,9 @@
 #include "GameRound.h"
 #include "FightForTheRemainsRound.generated.h"
 
+class ABM_CharacterBase;
+class ABMCharacterSpawnSlot;
+
 UCLASS()
 class BATTLEMINDS_API UFightForTheRemainsRound : public UGameRound
 {
@@ -15,6 +18,7 @@ class BATTLEMINDS_API UFightForTheRemainsRound : public UGameRound
 	virtual void Enter(ABM_GameStateBase* InGameState, ABM_TileManager* InTileManager) override;
 	virtual void HandleClickedTile(const FIntPoint& InClickedTile, ABM_PlayerState* CurrentPlayerState) override;
 	virtual void PassTurnToTheNextPlayer() override;
+	virtual void AssignAnsweringPlayers(TArray<int32>& AnsweringPlayers) override;
 	virtual void GatherPlayerAnswers() override;
 	virtual TMap<int32, EQuestionResult> VerifyShotAnswers(FInstancedStruct& LastQuestion, int32 QuestionNumber) override;
 	virtual void OnStartPostQuestion(TMap<int32, EQuestionResult> QuestionResults) override;

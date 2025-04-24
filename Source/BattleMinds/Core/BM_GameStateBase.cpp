@@ -4,6 +4,9 @@
 #include "Camera/CameraActor.h"
 #include "BM_GameInstance.h"
 #include "BM_GameModeBase.h"
+#include "Characters/BMCharacterSpawnSlot.h"
+#include "Characters/BM_MeleeCharacter.h"
+#include "Characters/BM_RangeCharacter.h"
 #include "GameRounds/BuildCastleRound.h"
 #include "GameRounds/FightForTerritoryRound.h"
 #include "GameRounds/FightForTheRemainsRound.h"
@@ -370,7 +373,6 @@ void ABM_GameStateBase::PrepareNextRound(EGameRound NextRound)
 		}
 	});
 	GetWorld()->GetTimerManager().SetTimer(PauseHandle, LNextRoundDelegate, 3.0f, false);
-	
 }
 
 void ABM_GameStateBase::StopAllTimers()
@@ -695,7 +697,6 @@ void ABM_GameStateBase::GatherPlayersAnswers()
 
 void ABM_GameStateBase::VerifyAnswers()
 {
-	PlayersToUpdatePoints.Empty();
 	UnbindAllOnBannerSpawnedTiles();
 	QuestionResults.Empty();
 	if (LastQuestion.GetPtr<FQuestion>())
@@ -734,6 +735,8 @@ void ABM_GameStateBase::ShowPlayerChoicesAndCorrectAnswer(TArray<FInstancedStruc
 			PlayerController->CC_ShowCorrectAnswers(CurrentPlayersChoices);
 		}
 	}
+	check(CurrentGameRoundObject != nullptr);
+	CurrentGameRoundObject->PlayAnimationOnSpawnedCharacters(QuestionResults);
 	GetWorld()->GetTimerManager().ClearTimer(PauseHandle);
 	FTimerDelegate LPostQuestionDelegate;
 	

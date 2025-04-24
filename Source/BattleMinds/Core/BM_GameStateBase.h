@@ -8,6 +8,10 @@
 #include "GameRounds/GameRound.h"
 #include "BM_GameStateBase.generated.h"
 
+class ABMCharacterSpawnSlot;
+class ABM_RangeCharacter;
+class ABM_MeleeCharacter;
+class ABM_CharacterBase;
 class UGameRound;
 class ABM_TileManager;
 class ABM_PlayerControllerBase;
@@ -81,9 +85,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	ABM_PlayerControllerBase* GetPlayerController(int32 PlayerIndex);
-
-	UFUNCTION()
-	void InitGameState();
+	
+	virtual void InitGameState();
 
 	UFUNCTION()
 	int32 GetPointsOfTile(EGameRound GameRound) const;
@@ -192,7 +195,7 @@ protected:
 	TMap<EGameRound, int32> MaxCyclesPerRound;
 
 	virtual void BeginPlay() override;
-
+	
 	template <typename T>
 	void SwitchGameRound()
 	{
@@ -297,13 +300,13 @@ private:
 
 	UPROPERTY(BlueprintReadOnly, meta=(AllowPrivateAccess=true))
 	TMap<int32, EQuestionResult> QuestionResults;
-
-	UPROPERTY()
-	int32 FightForTheRestTileWinnerIndex = -1;
-
-	UPROPERTY()
-	TArray<int32> PlayersToUpdatePoints;
-
+	
 	UPROPERTY()
 	TObjectPtr<UGameRound> CurrentGameRoundObject;
+
+	UPROPERTY()
+	TMap<int32, ABM_MeleeCharacter*> PlayerMeleeCharacters;
+
+	UPROPERTY()
+	TMap<int32, ABM_RangeCharacter*> PlayerRangeCharacters;
 };

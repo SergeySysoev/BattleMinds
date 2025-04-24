@@ -2,6 +2,9 @@
 
 
 #include "FightForTheRemainsRound.h"
+
+#include "Characters/BMCharacterSpawnSlot.h"
+#include "Characters/BM_CharacterBase.h"
 #include "Core/BM_GameStateBase.h"
 #include "Player/BM_PlayerControllerBase.h"
 #include "Player/BM_PlayerState.h"
@@ -50,6 +53,25 @@ void UFightForTheRemainsRound::PassTurnToTheNextPlayer()
 	}
 }
 
+void UFightForTheRemainsRound::AssignAnsweringPlayers(TArray<int32>& AnsweringPlayers)
+{
+	Super::AssignAnsweringPlayers(AnsweringPlayers);
+	for (int i = 0; i < AnsweringPlayers.Num(); i++)
+	{
+		ABMCharacterSpawnSlot* LSpawnSlot = CurrentRoundSpawnSlots.FindRef(i);
+		if (IsValid(LSpawnSlot))
+		{
+			ABM_CharacterBase* LSpawnedCharacter = LSpawnSlot->SpawnCharacter();
+			if (IsValid(LSpawnedCharacter))
+			{
+				LSpawnedCharacter->SC_SetColor(OwnerGameState->GetPlayerColorByIndex(AnsweringPlayers[i]));
+				LSpawnedCharacter->SC_SetAttacker(true);
+				CurrentSpawnedCharacters.Add(AnsweringPlayers[i], LSpawnedCharacter);
+			}
+		}
+	}
+}
+
 void UFightForTheRemainsRound::GatherPlayerAnswers()
 {
 	Super::GatherPlayerAnswers();
@@ -95,7 +117,7 @@ TMap<int32, EQuestionResult> UFightForTheRemainsRound::VerifyShotAnswers(FInstan
 			{
 				//TileManager->SC_CancelAttackOnClickedTile(LShotChoice.PlayerID);
 				OwnerGameState->ConstructQuestionResult(LoserPlayerController->GetPlayerState<ABM_PlayerState>(), QuestionNumber, LastQuestion, PlayersCurrentChoices, 0, false);
-				LQuestionResults.Add(LShotChoice.PlayerID, EQuestionResult::TileDefended);
+				LQuestionResults.Add(LShotChoice.PlayerID, EQuestionResult::NobodyAnswered);
 			}
 		}
 		return LQuestionResults;
