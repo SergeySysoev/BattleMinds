@@ -48,6 +48,18 @@ enum class EQuestionResult : uint8
 };
 
 UENUM(BlueprintType)
+enum class EQuestionUsableItem : uint8
+{
+	Bombs,
+	Ice,
+	ChopLetters,
+	FiftyFifty,
+	Clamp,
+	DenyDebuff,
+	SecondChance
+};
+
+UENUM(BlueprintType)
 enum class EGameRound : uint8
 {
 	BuildCastle,
@@ -127,23 +139,22 @@ struct FPrePlayerTurnPhaseInfo
 UENUM(BlueprintType)
 enum class EQuestionCategories : uint8
 {
-	Science UMETA(DisplayedName = "Science"),
+	Science UMETA(DisplayedName = "Science"), //
 	History UMETA(DisplayedName = "History"),
-	Literature UMETA(DisplayedName = "Literature"),
-	Sports UMETA(DisplayedName = "Sports"),
-	Movies UMETA(DisplayedName = "Movies"),
-	ComputerGames UMETA(DisplayedName = "Computer Games"),
-	Music UMETA(DisplayedName = "Music"),
+	Literature UMETA(DisplayedName = "Literature"), //
+	Sports UMETA(DisplayedName = "Sports"), //
+	Movies UMETA(DisplayedName = "Movies"), //
+	Videogames UMETA(DisplayedName = "Video Games"), //
+	Music UMETA(DisplayedName = "Music"), //
 	Technologies UMETA(DisplayedName = "Technologies"),
-	TwentyFirstCentury UMETA(DisplayedName = "XXI century")
+	TwentyFirstCentury UMETA(DisplayedName = "XXI century"),
+	Geography UMETA(DisplayedName = "Geography") //
 };
 
 UENUM(BlueprintType)
 enum class EAnswerType : uint8
 {
 	ChooseText UMETA(DisplayName = "Choose Text"),
-	ChooseImage UMETA(DisplayName = "Choose Image"),
-	ChooseNumeric UMETA(DisplayName = "Choose Numeric"),
 	Shot UMETA(DisplayName = "Shot")
 };
 

@@ -272,6 +272,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Territory", meta = (AllowPrivateAccess = "true", ExposeOnSpawn = true))
 	FIntPoint Axial;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Territory", meta = (AllowPrivateAccess = "true", ExposeOnSpawn = true))
+	EQuestionUsableItem QuestionUsableItem;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Territory")
 	TArray<EQuestionType> CurrentQuestionArray;
 
