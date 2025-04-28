@@ -147,7 +147,6 @@ enum class EQuestionCategories : uint8
 	Videogames UMETA(DisplayedName = "Video Games"), //
 	Music UMETA(DisplayedName = "Music"), //
 	Technologies UMETA(DisplayedName = "Technologies"),
-	TwentyFirstCentury UMETA(DisplayedName = "XXI century"),
 	Geography UMETA(DisplayedName = "Geography") //
 };
 
