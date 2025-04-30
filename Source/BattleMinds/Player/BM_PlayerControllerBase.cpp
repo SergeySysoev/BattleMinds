@@ -21,6 +21,18 @@ ABM_PlayerControllerBase::ABM_PlayerControllerBase()
 	bEnableMouseOverEvents = true;
 }
 
+void ABM_PlayerControllerBase::CC_SetPlayerCameraPivotLocation_Implementation(FVector InPivotLocation)
+{
+	if (IsValid(GetPawn()))
+	{
+		ABM_PlayerPawn* LPlayerPawn = Cast<ABM_PlayerPawn>(GetPawn());
+		if (IsValid(LPlayerPawn))
+		{
+			LPlayerPawn->CC_SetPlayerCameraPivotLocation(InPivotLocation);
+		}
+	}
+}
+
 void ABM_PlayerControllerBase::CC_SetViewTargetWithBlend_Implementation(AActor* NewViewTarget, float BlendTime)
 {
 	SetViewTargetWithBlend(NewViewTarget, BlendTime);

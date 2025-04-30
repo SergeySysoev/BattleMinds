@@ -54,6 +54,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "User Widgets")
 	TSubclassOf<UBM_UWPlayerHUD> PlayerHUDClass;
 
+	UFUNCTION(Client, Reliable, BlueprintCallable, Category= "Camera")
+	void CC_SetPlayerCameraPivotLocation(FVector InPivotLocation);
+
 	UFUNCTION(Client, Reliable, BlueprintCallable, Category= "Questions")
 	void CC_SetViewTargetWithBlend(AActor* NewViewTarget, float BlendTime);
 	

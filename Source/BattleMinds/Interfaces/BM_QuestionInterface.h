@@ -17,4 +17,22 @@ class BATTLEMINDS_API IBM_QuestionInterface
 	GENERATED_BODY()
 
 public:
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Question Effects | Debuff")
+	void AddBombs();
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Question Effects | Debuff")
+	void AddIce();
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Question Effects | Debuff")
+	void AddChopLetters();
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Question Effects | Buff")
+	void ApplyFiftyFifty();
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Question Effects | Buff")
+	void ApplyShield();
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Question Effects | Buff")
+	void ShowAnswerRange();
 };

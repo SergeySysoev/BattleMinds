@@ -49,10 +49,16 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Camera)
 	bool bEnableDynamicCamera = true;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Camera)
+	FVector RotationPivotLocation = FVector::ZeroVector;
+
 public:
 	ABM_PlayerPawn();
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	UFUNCTION(Client, Reliable, Category="Camera")
+	void CC_SetPlayerCameraPivotLocation(FVector InPivotLocation);
 
 	UFUNCTION(Client, Reliable, Category="Inputs")
 	void CC_SetInputEnabled(bool IsEnabled);

@@ -61,6 +61,22 @@ void ABM_GameStateBase::CalculateAndSetMaxCyclesPerRound()
 	}
 }
 
+void ABM_GameStateBase::SetPlayerCameraPivotLocation()
+{
+	for (const auto LPlayerState : PlayerArray)
+	{
+		ABM_PlayerControllerBase* LPlayerController = Cast<ABM_PlayerControllerBase>(LPlayerState->GetPlayerController());
+		if (IsValid(LPlayerController))
+		{
+			ABM_TileBase* LMapOriginTile = TileManager->GetTileByAxials(FIntPoint(0,0));
+			if (IsValid(LMapOriginTile))
+			{
+				LPlayerController->CC_SetPlayerCameraPivotLocation(LMapOriginTile->GetActorLocation());	
+			}
+		}
+	}
+}
+
 void ABM_GameStateBase::InitGameState()
 {
 	SetNextGameRound(EGameRound::BuildCastle);
@@ -72,6 +88,7 @@ void ABM_GameStateBase::InitGameState()
 	TSubclassOf<ABM_TileManager> LTileManagerClass = ABM_TileManager::StaticClass();
 	TileManager = Cast<ABM_TileManager>(UGameplayStatics::GetActorOfClass(GetWorld(), LTileManagerClass));
 	TileManager->OnMapGeneratedNative.AddUObject(this, &ABM_GameStateBase::CalculateAndSetMaxCyclesPerRound);
+	TileManager->OnMapGeneratedNative.AddUObject(this, &ABM_GameStateBase::SetPlayerCameraPivotLocation);
 	OpenNextQuestionPtr = &ABM_GameStateBase::OpenNextQuestion;
 }
 

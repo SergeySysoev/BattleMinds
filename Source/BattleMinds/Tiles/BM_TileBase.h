@@ -198,7 +198,10 @@ protected:
 	UCameraComponent* PlayerTurnCamera = nullptr;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-	UStaticMeshComponent* StaticMesh = nullptr;
+	UStaticMeshComponent* TileMesh = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	UStaticMeshComponent* TileBaseMesh = nullptr;
 
 	/* Static mesh that is the same form but slightly bigger
 	 * Used for highlight events
@@ -269,7 +272,7 @@ protected:
 	 /*
 	  * XY coordinate of the Hex tile for any Hex related functions
 	  */
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Territory", meta = (AllowPrivateAccess = "true", ExposeOnSpawn = true))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Territory", meta = (AllowPrivateAccess = "true", ExposeOnSpawn = true))
 	FIntPoint Axial;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "Territory", meta = (AllowPrivateAccess = "true", ExposeOnSpawn = true))

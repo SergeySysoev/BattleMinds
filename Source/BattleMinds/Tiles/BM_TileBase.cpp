@@ -25,12 +25,16 @@ ABM_TileBase::ABM_TileBase()
 	TileCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("TileCamera"));
 	TileCamera->SetupAttachment(TileSpringArm);
 	
-	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Tile Mesh"));
-	StaticMesh->SetupAttachment(RootComponent);
-	StaticMesh->SetIsReplicated(true);
+	TileBaseMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Tile Base Mesh"));
+	TileBaseMesh->SetupAttachment(RootComponent);
+	TileBaseMesh->SetIsReplicated(true);
 
+	TileMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Tile Mesh"));
+	TileMesh->SetupAttachment(TileBaseMesh);
+	TileMesh->SetIsReplicated(true);
+	
 	BorderStaticMesh  = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Tile Border Mesh"));
-	BorderStaticMesh->SetupAttachment(StaticMesh);
+	BorderStaticMesh->SetupAttachment(TileMesh);
 	BorderStaticMesh->SetIsReplicated(true);
 	
 	BannerMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Banner Mesh"));
@@ -234,7 +238,7 @@ void ABM_TileBase::OnRep_ShowPreviewMesh()
 
 void ABM_TileBase::OnRep_TileColorMeshChangeOR_Implementation()
 {
-	StaticMesh->SetMaterial(0, TileMeshMaterial);
+	TileMesh->SetMaterial(0, TileMeshMaterial);
 }
 
 void ABM_TileBase::OnRep_BannerColor()

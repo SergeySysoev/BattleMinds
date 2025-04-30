@@ -19,6 +19,29 @@ void ABM_TileManager::GenerateMap_Implementation(int32 NumberOfPlayers)
 {
 	if (HasAuthority())
 	{
+		TArray<AActor*> LFoundActors;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABM_TileBase::StaticClass(), LFoundActors);
+		for (auto LFoundActor : LFoundActors)
+		{
+			ABM_TileBase* LTile = Cast<ABM_TileBase>(LFoundActor);
+			if (IsValid(LTile))
+			{
+				LTile->SetOwner(this);
+				Tiles.Add(LTile->GetAxial(), LTile);
+				ClientTilesMap.Add(LTile->GetAxial(), LTile);
+				LTile->OnCastleDestroyed.AddDynamic(this, &ABM_TileManager::OnCastleDestroyed);
+				SC_SetCastleRotationToCenter_Implementation(LTile);
+			}
+		}
+		for (const auto LTile: Tiles)
+		{
+			LTile.Value->SetOwner(this);
+			SC_SetCastleRotationToCenter_Implementation(LTile.Value);
+		}
+		OnMapGeneratedNative.Broadcast();
+	}
+	/*if (HasAuthority())
+	{
 		for (const auto LTile: Tiles)
 		{
 			LTile.Value->SetOwner(this);
@@ -26,7 +49,7 @@ void ABM_TileManager::GenerateMap_Implementation(int32 NumberOfPlayers)
 			SC_SetCastleRotationToCenter_Implementation(LTile.Value);
 		}
 		OnMapGeneratedNative.Broadcast();
-	}
+	}*/
 }
 
 ABM_TileBase* ABM_TileManager::GetTileByAxials(FIntPoint TileAxials)

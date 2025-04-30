@@ -49,6 +49,11 @@ void ABM_PlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
+void ABM_PlayerPawn::CC_SetPlayerCameraPivotLocation_Implementation(FVector InPivotLocation)
+{
+	RotationPivotLocation = InPivotLocation;
+}
+
 void ABM_PlayerPawn::CC_SetInputEnabled_Implementation(bool IsEnabled)
 {
 	APlayerController* LPlayerController = Cast<APlayerController>(GetController());

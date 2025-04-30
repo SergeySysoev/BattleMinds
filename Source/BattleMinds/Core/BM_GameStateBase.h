@@ -284,6 +284,8 @@ protected:
 
 	virtual void CalculateAndSetMaxCyclesPerRound();
 
+	void SetPlayerCameraPivotLocation();
+
 private:
 
 	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess=true))
