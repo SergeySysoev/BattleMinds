@@ -414,6 +414,11 @@ void ABM_PlayerControllerBase::PrePlayerTurnFightForTerritory(FPrePlayerTurnPhas
 	}
 }
 
+void ABM_PlayerControllerBase::ReactToBombExplosion_Implementation(FVector Location, FVector WorldDirection)
+{
+	
+}
+
 void ABM_PlayerControllerBase::SC_SetCameraDefaultProperties_Implementation(const FUniversalCameraPositionSaveFormat& InDefaultProperties)
 {
 	ABM_PlayerPawn* LPlayerPawn = Cast<ABM_PlayerPawn>(GetPawn());

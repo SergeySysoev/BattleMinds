@@ -11,6 +11,7 @@
 #include "SharedStructs.h"
 #include "Interfaces/BMPostQuestionPhase.h"
 #include "Interfaces/BMPrePlayerTurnInterface.h"
+#include "Interfaces/BMQuestionEffectsInterface.h"
 #include "BM_PlayerControllerBase.generated.h"
 
 class UBM_GameInstance;
@@ -26,7 +27,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSetTimerDelegate);
 UCLASS()
 class BATTLEMINDS_API ABM_PlayerControllerBase
 	: public APlayerController, public IBMPostQuestionPhase,
-	  public IBMPrePlayerTurnInterface
+	  public IBMPrePlayerTurnInterface, public IBMQuestionEffectsInterface
 {
 	GENERATED_BODY()
 
@@ -181,6 +182,10 @@ protected:
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "PostQuestionPhase")
 	void SC_CheckPostQuestionPhaseHandled();
 	//~IBMPrePlayerTurn interface
+
+	// QuestionEffects interface
+	void ReactToBombExplosion_Implementation(FVector Location, FVector WorldDirection) override;
+	//~QuestionEffects interface
 	
 	UPROPERTY(BlueprintReadOnly, Category="Tiles")
 	TObjectPtr<ABM_TileBase> CachedTileWithPreview;

@@ -4,12 +4,13 @@
 #include "CoreMinimal.h"
 #include "Core/BM_Types.h"
 #include "GameFramework/Character.h"
+#include "Interfaces/BMQuestionEffectsInterface.h"
 #include "BM_CharacterBase.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogBM_Character, Display, All);
 
 UCLASS()
-class BATTLEMINDS_API ABM_CharacterBase : public ACharacter
+class BATTLEMINDS_API ABM_CharacterBase : public ACharacter, public IBMQuestionEffectsInterface
 {
 	GENERATED_BODY()
 
