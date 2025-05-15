@@ -10,20 +10,20 @@ public class BattleMinds : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[]
 		{
-			"Core", "CoreUObject", "Engine", "InputCore", "CoreOnline", "NetCore", "EnhancedInput", "UniversalCameraPlugin"
+			"Core", "CoreUObject", "Engine", "ApplicationCore", "InputCore", "CoreOnline", "NetCore", "EnhancedInput", "UniversalCameraPlugin",
+			"GameplayTags","GameSettings"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { 
 			"OnlineSubsystemSteam", 
-			"StructUtils", "AdvancedSessions"
+			"StructUtils", "AdvancedSessions", "UMGEditor", "CommonUI", "AudioModulation",
+			"RHI", "DeveloperSettings", "CommonInput", "Slate", "SlateCore", "AudioMixer", "EngineSettings"
 		});
 
 		PublicIncludePaths.AddRange(new string[]
 		{
 			"BattleMinds/"
 		});
-		// Uncomment if you are using Slate UI
-		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
 		
 		// Uncomment if you are using online features
 		PrivateDependencyModuleNames.Add("OnlineSubsystem");

@@ -11,7 +11,8 @@
 			"AdditionalDependencies": [
 				"Engine",
 				"UMG",
-				"CommonUI"
+				"CommonUI",
+				"DeveloperSettings"
 			]
 		},
 		{
@@ -41,6 +42,10 @@
 			]
 		},
 		{
+			"Name": "AudioModulation",
+			"Enabled": true
+		},
+		{
 			"Name": "CommonUI",
 			"Enabled": true
 		},
@@ -60,6 +65,19 @@
 			"Name": "UniversalCameraPlugin",
 			"Enabled": true,
 			"MarketplaceURL": "com.epicgames.launcher://ue/Fab/product/3e455250-77f9-4341-8c8b-00d7d680f1ae"
+		},
+		{
+			"Name": "NiagaraUIRenderer",
+			"Enabled": true,
+			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/fd24d23ca57b4c59a4e4b7368da250bd",
+			"SupportedTargetPlatforms": [
+				"Win64",
+				"Android"
+			]
+		},
+		{
+			"Name": "GameSettings",
+			"Enabled": true
 		}
 	],
 	"TargetPlatforms": [
