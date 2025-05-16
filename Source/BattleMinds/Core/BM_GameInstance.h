@@ -11,6 +11,8 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogBM_GameInstance, Log, All);
 
 class UAdvancedSessionsLibrary;
+class UGameUIManagerSubsystem;
+class UCommonLocalPlayer;
 
 UCLASS()
 class BATTLEMINDS_API UBM_GameInstance : public UAdvancedFriendsGameInstance
@@ -108,6 +110,9 @@ public:
 	void ClearPlayerAvatarsMap();
 
 	virtual void Init() override;
+	virtual int32 AddLocalPlayer(ULocalPlayer* NewPlayer, FPlatformUserId UserId) override;
+	virtual bool RemoveLocalPlayer(ULocalPlayer* ExistingPlayer) override;
+	virtual void ReturnToMainMenu() override;
 private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player Settings", meta = (AllowPrivateAccess = "true"))
@@ -120,4 +125,7 @@ private:
 	TMap<FUniqueNetIdRepl, FPlayerAvatars> PlayerAvatars;
 
 	void InitGraphicsSettings() const;
+
+	/** This is the primary player*/
+	TWeakObjectPtr<ULocalPlayer> PrimaryPlayer;
 };

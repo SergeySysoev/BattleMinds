@@ -3,15 +3,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CommonLocalPlayer.h"
 #include "Engine/LocalPlayer.h"
 #include "BMLocalPlayer.generated.h"
 
 class UInputMappingContext;
 class UBMSettingsShared;
 class UBMSettingsLocal;
+class UCommonLocalPlayer;
 
 UCLASS()
-class BATTLEMINDS_API UBMLocalPlayer : public ULocalPlayer
+class BATTLEMINDS_API UBMLocalPlayer : public UCommonLocalPlayer
 {
 	GENERATED_BODY()
 

@@ -2,10 +2,11 @@
 
 
 #include "BMLocalPlayer.h"
-
 #include "AudioMixerBlueprintLibrary.h"
 #include "Settings/BMSettingsLocal.h"
 #include "Settings/BMSettingsShared.h"
+
+#include UE_INLINE_GENERATED_CPP_BY_NAME(BMLocalPlayer)
 
 UBMLocalPlayer::UBMLocalPlayer() {}
 

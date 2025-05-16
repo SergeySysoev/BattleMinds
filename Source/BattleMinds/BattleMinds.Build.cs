@@ -11,13 +11,13 @@ public class BattleMinds : ModuleRules
 		PublicDependencyModuleNames.AddRange(new string[]
 		{
 			"Core", "CoreUObject", "Engine", "ApplicationCore", "InputCore", "CoreOnline", "NetCore", "EnhancedInput", "UniversalCameraPlugin",
-			"GameplayTags","GameSettings"
+			"GameplayTags","GameSettings", "ModularGameplayActors"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { 
 			"OnlineSubsystemSteam", 
 			"StructUtils", "AdvancedSessions", "UMGEditor", "CommonUI", "AudioModulation",
-			"RHI", "DeveloperSettings", "CommonInput", "Slate", "SlateCore", "AudioMixer", "EngineSettings"
+			"RHI", "DeveloperSettings", "CommonInput", "CommonGame", "CommonUser", "Slate", "SlateCore", "AudioMixer", "EngineSettings"
 		});
 
 		PublicIncludePaths.AddRange(new string[]

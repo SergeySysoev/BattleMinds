@@ -2,6 +2,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CommonPlayerController.h"
 #include "Core/BM_Types.h"
 #include "GameFramework/PlayerController.h"
 #include "Net/UnrealNetwork.h"
@@ -26,7 +27,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSetTimerDelegate);
 
 UCLASS()
 class BATTLEMINDS_API ABM_PlayerControllerBase
-	: public APlayerController, public IBMPostQuestionPhase,
+	: public ACommonPlayerController, public IBMPostQuestionPhase,
 	  public IBMPrePlayerTurnInterface, public IBMQuestionEffectsInterface
 {
 	GENERATED_BODY()

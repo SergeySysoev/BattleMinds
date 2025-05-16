@@ -46,7 +46,7 @@ void UBMGameSettingRegistry::OnInitialize(ULocalPlayer* InLocalPlayer)
 	InitializeVideoSettings_FrameRates(VideoSettings, BMLocalPlayer);
 	RegisterSetting(VideoSettings);
 
-	AudioSettings = InitializeAudioSettings(BMLocalPlayer);
+	/*AudioSettings = InitializeAudioSettings(BMLocalPlayer);
 	RegisterSetting(AudioSettings);
 
 	GameplaySettings = InitializeGameplaySettings(BMLocalPlayer);
@@ -56,7 +56,7 @@ void UBMGameSettingRegistry::OnInitialize(ULocalPlayer* InLocalPlayer)
 	RegisterSetting(MouseAndKeyboardSettings);
 
 	GamepadSettings = InitializeGamepadSettings(BMLocalPlayer);
-	RegisterSetting(GamepadSettings);
+	RegisterSetting(GamepadSettings);*/
 }
 
 bool UBMGameSettingRegistry::IsFinishedInitializing() const

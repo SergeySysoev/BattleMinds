@@ -176,39 +176,42 @@ UGameSettingCollection* UBMGameSettingRegistry::InitializeMouseAndKeyboardSettin
 
 		static TSet<FName> CreatedMappingNames;
 		CreatedMappingNames.Reset();
-		
-		for (const TPair<FGameplayTag, TObjectPtr<UEnhancedPlayerMappableKeyProfile>>& ProfilePair : UserSettings->GetAllSavedKeyProfiles())
+
+		if (IsValid(UserSettings))
 		{
-			const FGameplayTag& ProfileName = ProfilePair.Key;
-			const TObjectPtr<UEnhancedPlayerMappableKeyProfile>& Profile = ProfilePair.Value;
-
-			for (const TPair<FName, FKeyMappingRow>& RowPair : Profile->GetPlayerMappingRows())
+			for (const TPair<FGameplayTag, TObjectPtr<UEnhancedPlayerMappableKeyProfile>>& ProfilePair : UserSettings->GetAllSavedKeyProfiles())
 			{
-				// Create a setting row for anything with valid mappings and that we haven't created yet
-				if (RowPair.Value.HasAnyMappings() /* && !CreatedMappingNames.Contains(RowPair.Key)*/)
+				const FGameplayTag& ProfileName = ProfilePair.Key;
+				const TObjectPtr<UEnhancedPlayerMappableKeyProfile>& Profile = ProfilePair.Value;
+
+				for (const TPair<FName, FKeyMappingRow>& RowPair : Profile->GetPlayerMappingRows())
 				{
-					// We only want keyboard keys on this settings screen, so we will filter down by mappings
-					// that are set to keyboard keys
-					FPlayerMappableKeyQueryOptions Options = {};
-					Options.KeyToMatch = EKeys::W;
-					Options.bMatchBasicKeyTypes = true;
+					// Create a setting row for anything with valid mappings and that we haven't created yet
+					if (RowPair.Value.HasAnyMappings() /* && !CreatedMappingNames.Contains(RowPair.Key)*/)
+					{
+						// We only want keyboard keys on this settings screen, so we will filter down by mappings
+						// that are set to keyboard keys
+						FPlayerMappableKeyQueryOptions Options = {};
+						Options.KeyToMatch = EKeys::W;
+						Options.bMatchBasicKeyTypes = true;
 															
-					const FText& DesiredDisplayCategory = RowPair.Value.Mappings.begin()->GetDisplayCategory();
+						const FText& DesiredDisplayCategory = RowPair.Value.Mappings.begin()->GetDisplayCategory();
 					
-					if (UGameSettingCollection* Collection = GetOrCreateSettingCollection(DesiredDisplayCategory))
-					{
-						// Create the settings widget and initialize it, adding it to this config's section
-						USettingKeyboardInput* InputBinding = NewObject<USettingKeyboardInput>();
+						if (UGameSettingCollection* Collection = GetOrCreateSettingCollection(DesiredDisplayCategory))
+						{
+							// Create the settings widget and initialize it, adding it to this config's section
+							USettingKeyboardInput* InputBinding = NewObject<USettingKeyboardInput>();
 
-						InputBinding->InitializeInputData(Profile, RowPair.Value, Options);
-						InputBinding->AddEditCondition(WhenPlatformSupportsMouseAndKeyboard);
+							InputBinding->InitializeInputData(Profile, RowPair.Value, Options);
+							InputBinding->AddEditCondition(WhenPlatformSupportsMouseAndKeyboard);
 
-						Collection->AddSetting(InputBinding);
-						CreatedMappingNames.Add(RowPair.Key);
-					}
-					else
-					{
-						ensure(false);
+							Collection->AddSetting(InputBinding);
+							CreatedMappingNames.Add(RowPair.Key);
+						}
+						else
+						{
+							ensure(false);
+						}
 					}
 				}
 			}
